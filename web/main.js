@@ -1,65 +1,176 @@
-// src/main.js
-// Site-wide bootstrap: Dynamic auth + the MagicBlock EPHEMERAL ROLLUP VRF SDK
-// (src/magicblock-er-vrf.js). Games and sites use ONE SDK now — the legacy
-// pure/VRF module (magicblock-vrf.js) was removed with the /ludo page; every
-// dice roll is ER VRF (gasless free queue) by design.
+// web/main.js — Foskaay GGI standalone bootstrap.
+//
+// Auth via Dynamic: email one-time code, then Dynamic auto-creates the embedded
+// Solana AND EVM wallets (both, exactly as GFG did). Arc (EVM) is the rail, so
+// there is NO Solana/MagicBlock game SDK here.
+//
+// Exposes the globals the header and pages use, plus an EVM session-key helper
+// (the user's seat is signed by a client-held key, never by the sponsor).
+import {
+  createDynamicClient, sendEmailOTP, verifyOTP, logout, getWalletAccounts,
+} from '@dynamic-labs-sdk/client';
+import { generateSessionKeys, getSessionKeys, getSignedSessionId } from '@dynamic-labs-sdk/client/core';
+import { addSolanaExtension } from '@dynamic-labs-sdk/solana';
+import { addEvmExtension } from '@dynamic-labs-sdk/evm';
+import { createWaasWalletAccounts, getChainsMissingWaasWalletAccounts } from '@dynamic-labs-sdk/client/waas';
+import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 
-// ===== Developer console safety warning (site-wide) =====
-// Shown once when a player opens the developer tools, like Dynamic's own
-// warning. Protects casual users (and deters cheaters) from pasting code or
-// sharing login codes.
-(function showConsoleWarning() {
+const ENVIRONMENT_ID = '0fd49c9c-1b54-4dc5-88a0-924dd3607bf3';
+
+const dynamicClient = createDynamicClient({
+  environmentId: ENVIRONMENT_ID,
+  metadata: { name: 'Foskaay GGI', universalLink: window.location.origin },
+});
+addSolanaExtension();
+addEvmExtension();
+window.dynamicClient = dynamicClient;
+
+window.currentUser = null;
+window.currentProfile = null;
+
+function getSolanaWallet() {
   try {
-    const title = '%c⚠ GlobalFolkGames, developer tools warning';
-    const body = '%c\nThis browser feature is meant for developers and builders.\n\nIf someone told you to open this, paste code here, or share a code or password, STOP. That is a scam.\n\nPasting unknown code or tampering with this page can make your account unusable and is recorded. Play fair, your wins are provable on-chain anyway.';
-    const titleStyle = 'color:#ffffff; background:#e74c3c; font-size:16px; font-weight:bold; padding:8px 12px; border-radius:6px 6px 0 0;';
-    const bodyStyle = 'color:#ffd2c0; background:#7d1010; font-size:13px; padding:10px 12px; border-radius:0 0 6px 6px;';
-    console.log(title, titleStyle, body, bodyStyle);
-  } catch (e) { /* console may be unavailable */ }
-})();
+    const a = getWalletAccounts(dynamicClient);
+    const s = a.find(w => w.chain === 'SOL' && w.address);
+    return s ? s.address : null;
+  } catch (e) { return null; }
+}
+function getEvmWallet() {
+  try {
+    const a = getWalletAccounts(dynamicClient);
+    const e = a.find(w => w.chain === 'EVM' && w.address);
+    return e ? e.address : null;
+  } catch (e) { return null; }
+}
+window.getDynamicSolanaWallet = getSolanaWallet;
+window.getDynamicEvmWallet = getEvmWallet;
 
-import './dynamic-auth.js';
-import './magicblock-er-vrf.js';
-import { initMagicBlockDice } from './magicblock-er-vrf.js';
-import { GFG_DICE } from './gfg-dice-config.js';
-import { loadAdapter, CHAIN } from './chain/adapter.js';
-
-// Chain switch (arcv2m16/17): svm = Solana as today, evm = the Arc rail.
-// This MUST be set on EVERY page, not just ludo-lab: chain-gateway.js reads
-// window.GFG_CHAIN to decide Arc vs Solana. Without this line the whole site
-// except ludo-lab fell back to 'svm', so "isArc()"-guarded modules silently ran
-// their Solana branch on an Arc build. Default stays 'svm' when unset.
-window.GFG_CHAIN = CHAIN || 'svm';
-loadAdapter().then(function (a) { window.gfgChainAdapter = a; }).catch(function (e) { console.warn('[chain] adapter load failed', e); });
-
-// Expose the dice module on window (requires the Dynamic client to be ready).
-initMagicBlockDice();
-
-// Activate provably-fair dice only when the gfg-dice program is deployed.
-// ARC (arcv2m17 audit): on the Arc rail the Solana ER VRF SDK must NEVER be
-// configured. Configuring it on Arc was a latent Solana path; leaving it inert
-// guarantees no RPC can ever be reached from this SDK on Arc. The Arc dice come
-// from the committed seed via the relayer (window.gfgChain.roll).
-if (window.GFG_CHAIN === 'evm') {
-  console.log('[chain] Arc rail active: MagicBlock ER VRF (Solana) left inert by design.');
-} else if (GFG_DICE.programId && GFG_DICE.idl && window.magicblockDice) {
-  window.magicblockDice.configure(GFG_DICE);
-  console.log('[VRF] MagicBlock ER VRF dice configured:', GFG_DICE.programId);
-} else {
-  console.log('[VRF] gfg-dice not configured yet — Ludo will use local rolls');
+async function waitFor(fn, timeoutMs = 10000) {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    const v = fn();
+    if (v) return v;
+    await new Promise(r => setTimeout(r, 200));
+  }
+  return null;
 }
 
-// A page that must not touch Solana still loads this module (many files check
-// for window.magicblockDice existence), but configure() is the only thing that
-// arms an RPC. Belt-and-braces: on Arc, refuse to arm it even if called again.
-if (window.GFG_CHAIN === 'evm' && window.magicblockDice && typeof window.magicblockDice.configure === 'function') {
-  const _origConfigure = window.magicblockDice.configure.bind(window.magicblockDice);
-  window.magicblockDice.configure = function () {
-    console.warn('[chain] blocked magicblockDice.configure() on the Arc rail (Solana SDK stays inert).');
-    return null;
-  };
-  window.magicblockDice.__arcInert = true;
-  void _origConfigure; // kept for reference; never invoked on Arc
+async function ensureSessionKeys() {
+  try {
+    if (!getSessionKeys(dynamicClient)) await generateSessionKeys(dynamicClient);
+    return getSessionKeys(dynamicClient) || null;
+  } catch (e) { return null; }
+}
+window.getDynamicSessionKeys = function () {
+  try { return getSessionKeys(dynamicClient) || null; } catch (e) { return null; }
+};
+window.verifyDynamicSession = async function () {
+  try { return await getSignedSessionId(dynamicClient); } catch (e) { return null; }
+};
+
+// ---- EVM session key (the user seat's signer, no wallet popup) --------------
+// The relay records this address as the user seat's session key at connect; the
+// client signs the final settle hash with it. The private key never leaves the
+// browser.
+window.ggiSessionKey = null;
+window.ggiCreateSessionKey = function () {
+  const privateKey = generatePrivateKey();
+  const account = privateKeyToAccount(privateKey);
+  window.ggiSessionKey = { privateKey, address: account.address, account };
+  return window.ggiSessionKey;
+};
+window.ggiSignDigest = async function (digest) {
+  if (!window.ggiSessionKey) window.ggiCreateSessionKey();
+  return window.ggiSessionKey.account.sign({ hash: digest });
+};
+
+// ---- minimal email OTP modal (self-contained, no page markup needed) -------
+let otpVerification = null;
+
+function ensureModal() {
+  let m = document.getElementById('ggi-auth-modal');
+  if (m) return m;
+  m = document.createElement('div');
+  m.id = 'ggi-auth-modal';
+  m.style.cssText = 'position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.6);z-index:10000;';
+  m.innerHTML = '<div id="ggi-auth-box" style="background:#151515;border:1px solid #333;border-radius:14px;padding:22px;width:min(92vw,360px);color:#eee;font-family:inherit;"></div>';
+  document.body.appendChild(m);
+  m.addEventListener('click', (e) => { if (e.target === m) closeModal(); });
+  return m;
+}
+function openModal() { ensureModal().style.display = 'flex'; }
+function closeModal() { const m = document.getElementById('ggi-auth-modal'); if (m) m.style.display = 'none'; otpVerification = null; }
+function box() { return document.getElementById('ggi-auth-box'); }
+
+function emailStep() {
+  box().innerHTML = '<h2 style="margin:0 0 6px;color:#f39c12">Sign in</h2>'
+    + '<p style="margin:0 0 12px;font-size:.9rem;color:#bbb">Enter your email. We will send a one-time code.</p>'
+    + '<input id="ggi-email" type="email" placeholder="Email address" style="width:100%;padding:10px;border-radius:8px;border:1px solid #444;background:#0e0e0e;color:#fff;box-sizing:border-box">'
+    + '<button id="ggi-send" style="margin-top:12px;width:100%;padding:11px;border:0;border-radius:8px;background:#f39c12;color:#111;font-weight:700;cursor:pointer">Send Code</button>';
+  document.getElementById('ggi-send').onclick = sendOtp;
+}
+function otpStep(email) {
+  box().innerHTML = '<h2 style="margin:0 0 6px;color:#f39c12">Enter Code</h2>'
+    + '<p style="margin:0 0 12px;font-size:.9rem;color:#bbb">We sent a code to <b>' + email + '</b></p>'
+    + '<input id="ggi-otp" inputmode="numeric" maxlength="6" placeholder="6-digit code" style="width:100%;padding:10px;border-radius:8px;border:1px solid #444;background:#0e0e0e;color:#fff;box-sizing:border-box">'
+    + '<button id="ggi-verify" style="margin-top:12px;width:100%;padding:11px;border:0;border-radius:8px;background:#f39c12;color:#111;font-weight:700;cursor:pointer">Verify and Sign In</button>'
+    + '<button id="ggi-back" style="margin-top:8px;width:100%;padding:9px;border:1px solid #444;border-radius:8px;background:transparent;color:#ddd;cursor:pointer">Back</button>';
+  document.getElementById('ggi-verify').onclick = verifyOtp;
+  document.getElementById('ggi-back').onclick = emailStep;
+}
+async function sendOtp() {
+  const email = (document.getElementById('ggi-email').value || '').trim();
+  if (!email) { banner('Please enter your email'); return; }
+  const b = document.getElementById('ggi-send'); b.disabled = true; b.textContent = 'Sending...';
+  try { otpVerification = await sendEmailOTP({ email }); otpStep(email); }
+  catch (e) { banner(e.message || 'Failed to send code'); b.disabled = false; b.textContent = 'Send Code'; }
+}
+async function verifyOtp() {
+  const code = (document.getElementById('ggi-otp').value || '').trim();
+  if (!code) { banner('Please enter the code'); return; }
+  const b = document.getElementById('ggi-verify'); b.disabled = true; b.textContent = 'Verifying...';
+  try {
+    await verifyOTP({ otpVerification: otpVerification, verificationToken: code });
+    try {
+      const missing = getChainsMissingWaasWalletAccounts();
+      if (missing && missing.length) await createWaasWalletAccounts({ chains: missing });
+    } catch (e) { /* wallet may already exist */ }
+    try { if (!getSolanaWallet()) await createWaasWalletAccounts({ chains: ['SOL'] }); } catch (e) {}
+    try { if (!getEvmWallet()) await createWaasWalletAccounts({ chains: ['EVM'] }); } catch (e) {}
+    await waitFor(getSolanaWallet);
+    const evm = await waitFor(getEvmWallet);
+    await ensureSessionKeys();
+    window.currentUser = { dynamicId: evm || getSolanaWallet() || 'user', evm, solana: getSolanaWallet() };
+    closeModal();
+    banner('Signed in');
+    if (typeof window.refreshAuthHeader === 'function') await window.refreshAuthHeader();
+    try { window.dispatchEvent(new CustomEvent('gfg:auth-changed')); } catch (e) {}
+  } catch (e) {
+    banner(e.message || 'Invalid code'); b.disabled = false; b.textContent = 'Verify and Sign In';
+  }
 }
 
-console.log('Vite + Dynamic auth layer loaded (ER VRF SDK)');
+window.openDynamicLogin = function () { emailStep(); openModal(); };
+window.logoutDynamic = async function () {
+  try { await logout(); } catch (e) {}
+  window.currentUser = null;
+  if (typeof window.refreshAuthHeader === 'function') window.refreshAuthHeader();
+  try { window.dispatchEvent(new CustomEvent('gfg:auth-changed')); } catch (e) {}
+};
+window.showAuthBanner = function (msg) { banner(msg); };
+
+function banner(msg) {
+  let el = document.getElementById('ggi-auth-banner');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'ggi-auth-banner';
+    el.style.cssText = 'position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:999px;border:1px solid #444;z-index:10001;font-size:.85rem;';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.style.display = 'block';
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.style.display = 'none'; }, 4000);
+}
+
+console.log('Foskaay GGI: Dynamic auth + EVM session key ready');

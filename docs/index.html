@@ -7,7 +7,7 @@
     <meta property="og:title" content="Foskaay Gasless Games Infrastructure (Foskaay GGI) Docs">
     <meta property="og:description" content="Add gasless play to any on-chain game: open a session, do everything inside for free, settle once. Players never pay gas and never see a wallet popup. Four small contracts, no infrastructure to run.">
     <meta property="og:image" content="https://globalfolkgames.fun/media/GlobalFolkGames_banner_001.jpeg">
-    <meta property="og:url" content="https://globalfolkgames.fun/foskaay-ggi/docs/">
+    <meta property="og:url" content="https://foskaayggi.globalfolkgames.fun/docs/">
     <meta property="og:type" content="website">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Foskaay Gasless Games Infrastructure (Foskaay GGI) Docs">
@@ -65,7 +65,7 @@
             <a href="#demos">Demos</a>
             <a href="#usecases">Use cases</a>
             <a href="#contracts">Contracts</a>
-            <a href="/foskaay-ggi/explorer/">Explorer</a>
+            <a href="/explorer/">Explorer</a>
             <a href="#fees">Fees</a>
             <a href="#hardware">What you run</a>
             <a href="#faq">FAQ and fixes</a>
@@ -615,7 +615,7 @@ await ggi.settle({ sessionId, finalHash, seedReveal, sigs, signers });</code></d
                 <tr><td>ERC VRF</td><td>Free pure <span class="ggi-mono">random</span> / <span class="ggi-mono">randomN</span> on the registry (eth_call), so dice and cards cost nothing extra.</td><td>Rail: present</td></tr>
                 <tr><td>Commit / undelegate</td><td>Foskaay GGI <b>settle</b> (verify signatures, reveal seed) and, for batching, one settle carrying a session Merkle root.</td><td>Rail: present</td></tr>
                 <tr><td>Session + commit fees</td><td><span class="ggi-mono">FoskaayGGI</span> per-session fee (built in).</td><td>Rail: present</td></tr>
-                <tr><td>Two RPCs (base + ER) and its own explorer</td><td>One Arc RPC, plus the public Foskaay GGI <a href="/foskaay-ggi/explorer/">Explorer</a> (the ER's own explorer exists because base explorers cannot see ER transactions; ours exists for the same reason).</td><td>Rail: present</td></tr>
+                <tr><td>Two RPCs (base + ER) and its own explorer</td><td>One Arc RPC, plus the public Foskaay GGI <a href="/explorer/">Explorer</a> (the ER's own explorer exists because base explorers cannot see ER transactions; ours exists for the same reason).</td><td>Rail: present</td></tr>
                 <tr><td><span class="ggi-mono">@magicblock-labs/bolt-sdk</span> (contract side) + <span class="ggi-mono">ephemeral-rollups-sdk</span> (client side)</td><td><span class="ggi-mono">@foskaay/ggi-contracts-sdk</span> (contract side) + <span class="ggi-mono">@foskaay/ggi-sdk</span> (client side).</td><td>Published</td></tr>
             </tbody>
         </table>
@@ -631,7 +631,7 @@ await ggi.settle({ sessionId, finalHash, seedReveal, sigs, signers });</code></d
                 delegated for a game. Foskaay GGI now does the same thing in one line: when a game opens a
                 session it can register its own state account address against that session. The rail
                 stores the address as an opaque value, it never learns what it is, and any reader
-                (including the <a href="/foskaay-ggi/explorer/">Explorer</a>) can look up which game account
+                (including the <a href="/explorer/">Explorer</a>) can look up which game account
                 belongs to a session. This is the closest match to the delegation registry.</li>
             <li><b>The EVM limit, stated plainly:</b> there is no side chain to mutate accounts for free.
                 Where MagicBlock is free in the ER, Foskaay GGI makes the SPONSOR pay per write, and

@@ -8,7 +8,7 @@
     <meta property="og:title" content="Foskaay GGI | Gasless on-chain games on Arc">
     <meta property="og:description" content="Add gasless play to any on-chain game on Arc. Players pay nothing. Fully on-chain.">
     <meta property="og:image" content="https://globalfolkgames.fun/media/GlobalFolkGames_banner_001.jpeg">
-    <meta property="og:url" content="https://globalfolkgames.fun/foskaay-ggi/">
+    <meta property="og:url" content="https://foskaayggi.globalfolkgames.fun/">
     <meta property="og:type" content="website">
     <meta name="twitter:card" content="summary_large_image">
     <link rel="stylesheet" href="/style.css">
@@ -81,7 +81,7 @@
     <div class="fg-body">
         <div class="fg-section-title"><h2>Explore Foskaay GGI</h2></div>
         <div class="fg-grid">
-            <a class="fg-card live" href="/foskaay-ggi/demos/board/ludo/">
+            <a class="fg-card live" href="/demos/board/ludo/">
                 <span class="fg-card-glow"></span>
                 <span class="fg-badge live">Live</span>
                 <div class="fg-card-top">
@@ -91,7 +91,7 @@
                 <p class="fg-card-desc">A full Ludo match built on Foskaay GGI. The contract owns the rules, the dice, the crown and the points; the page only displays.</p>
                 <span class="fg-card-cta">Play the demo &rarr;</span>
             </a>
-            <a class="fg-card live" href="/foskaay-ggi/demos/">
+            <a class="fg-card live" href="/demos/">
                 <span class="fg-card-glow"></span>
                 <div class="fg-card-top">
                     <span class="fg-thumb">🎮</span>
@@ -100,7 +100,7 @@
                 <p class="fg-card-desc">Every playable Foskaay GGI demo, grouped by genre (idle, casual, PvP, RPG, metaverse, board).</p>
                 <span class="fg-card-cta">Browse demos &rarr;</span>
             </a>
-            <a class="fg-card live" href="/foskaay-ggi/docs/">
+            <a class="fg-card live" href="/docs/">
                 <span class="fg-card-glow"></span>
                 <div class="fg-card-top">
                     <span class="fg-thumb">📖</span>
@@ -109,7 +109,7 @@
                 <p class="fg-card-desc">The core, the fees, the cost ladder, how to design a game for the rail, and whether your contract should be upgradeable.</p>
                 <span class="fg-card-cta">Read the docs &rarr;</span>
             </a>
-            <a class="fg-card live" href="/foskaay-ggi/explorer/">
+            <a class="fg-card live" href="/explorer/">
                 <span class="fg-card-glow"></span>
                 <div class="fg-card-top">
                     <span class="fg-thumb">🔎</span>
@@ -144,7 +144,7 @@
         { q: 'What does it cost, and who pays?', a: 'One small fixed fee per session, paid by the game operator (the sponsor) in USDC, never per move. Measured on Arc testnet, a whole Ludo match with connect and settle included is a fraction of a cent, and the moves themselves add nothing.' },
         { q: 'Is it really on-chain?', a: 'Yes. The game rules, the state and the settlement live in contracts. The connect event carries the game link, and the settle verifies the players\' signatures on-chain. The frontend only draws what the chain returns. You can verify any session in the Explorer.' },
         { q: 'Where are the contracts?', a: 'Arc Testnet. Core: <a href="' + E + '0x793785CE66992211B7c60dFCf0318869678D33a4" target="_blank" rel="noopener">FoskaayGGI 0x793785CE66992211B7c60dFCf0318869678D33a4</a> (single contract, fee built in, permanent UUPS proxy). Game: <a href="' + E + '0x24e38ac2e80958782a8Bc5CD479bbe2e5D81EcDF" target="_blank" rel="noopener">FoskaayGGIGames 0x24e38ac2e80958782a8Bc5CD479bbe2e5D81EcDF</a>. Player: <a href="' + E + '0x1614ebc72eA1cB3D31975b3976B5B474FAcE3b3C" target="_blank" rel="noopener">FoskaayGGIPlayers 0x1614ebc72eA1cB3D31975b3976B5B474FAcE3b3C</a>.' },
-        { q: 'How do I add gasless play to my own game?', a: 'Install the SDK, connect a session with your game account, run your rules, and settle once. There is no fork and no contract to copy. Start at the <a href="/foskaay-ggi/docs/#quickstart">quickstart</a>, then read <a href="/foskaay-ggi/docs/#designing">designing a game for Foskaay GGI</a> before you write your contract.' },
+        { q: 'How do I add gasless play to my own game?', a: 'Install the SDK, connect a session with your game account, run your rules, and settle once. There is no fork and no contract to copy. Start at the <a href="/docs/#quickstart">quickstart</a>, then read <a href="/docs/#designing">designing a game for Foskaay GGI</a> before you write your contract.' },
         { q: 'Can I just copy the code and run my own?', a: 'Yes, it is open source. The trade is simple: the official rail keeps getting upgrades, the Explorer and the standard integrations, while a fork is frozen at the day you copied it. Most teams would rather build their game than maintain a rail.' },
         { q: 'Does it work on other chains?', a: 'Foskaay GGI is built for Arc (Circle\'s EVM L1 where USDC is the gas token). The design is chain-agnostic, but Arc is the home today, and the rail is deployed on Arc testnet first.' }
     ];
