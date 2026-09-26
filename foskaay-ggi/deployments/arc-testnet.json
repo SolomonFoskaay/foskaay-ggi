@@ -8,7 +8,9 @@
   "deployer": "0xAd0A4348C7202E44e96c3FAE1cBB0B645dD86EB4",
   "contracts": {
     "FoskaayGGI": "0x793785CE66992211B7c60dFCf0318869678D33a4",
-    "FoskaayGGILudo": "0xa5040Ece5945a8551499ad1148fc3cD15b165987"
+    "FoskaayGGILudo": "0xa5040Ece5945a8551499ad1148fc3cD15b165987",
+    "FoskaayGGIGames": "0x24e38ac2e80958782a8Bc5CD479bbe2e5D81EcDF",
+    "FoskaayGGIPlayers": "0x1614ebc72eA1cB3D31975b3976B5B474FAcE3b3C"
   },
   "upgradeable": true,
   "pattern": "UUPS proxy (ERC1967). Proxy addresses are permanent.",
@@ -18,7 +20,9 @@
   "coreNote": "v7 single core (SessionRegistry, fee built in, single 0.0004 fee; batching lowers gas only). Upgraded in place; address unchanged. Ludo is behind a UUPS proxy (upgradeable).",
   "implementations": {
     "FoskaayGGI": "0x6A7cF5Db0Df5d5Ae8D181A10BFfa9a0Eb2438017",
-    "FoskaayGGILudo": "0xDC38f721C5918A0B2AC234768aaAee25A01ab7b7"
+    "FoskaayGGILudo": "0xDC38f721C5918A0B2AC234768aaAee25A01ab7b7",
+    "FoskaayGGIGames": "0x83418a85B88a44859F95E321F2089fEd503f45d3",
+    "FoskaayGGIPlayers": "0xbEA1DE7d6F80f57C13e5840c8957a6C3Fd5BbACd"
   },
   "demoDeployedAt": "2026-09-24T15:05:23.630Z",
   "demoNote": "Ludo demo: FoskaayGGIDemoGames (all demo games, gameTag ludo) + FoskaayGGIDemoPlayer (one player account, per-game point buckets). Both UUPS, OZ-only, wired.",
@@ -48,5 +52,14 @@
   "foskaayGGIDeployTxs": {
     "implementation": "0xe071c804d580bed4997dff8d0d1d38634c4aee4152311b16606d7bd23f857fc7",
     "proxy": "0xab9e9f9797faca2d039e4e6528ef1bcdd7f0ba6c93475a7ae564fcd44c7c76e1"
+  },
+  "foskaayGGIGamesPlayersDeployedAt": "2026-09-26T14:40:00.000Z",
+  "foskaayGGIGamesPlayersNote": "Phase 2: FRESH Ludo game (FoskaayGGIGames: holds the match on-chain + the pure rules + settle(games[]) which credits the player in the same step) and FRESH player account (FoskaayGGIPlayers: per player, per game tag points/lives/records; credit callable only by its game). Both UUPS, OpenZeppelin only, permanent. Wired: players.game = games, games.players = players. The old demo FoskaayGGILudo (pure rules only) stays deployed untouched until the frontend moves to the new contracts in Phase 5.",
+  "foskaayGGIGamesPlayersTxs": {
+    "playersImplementation": "0x3b3f1dacc6db1b93561ea650a849bf8fcca933abcabee1f31c76b59d1414d07f",
+    "playersProxy": "0xe632c04808a7272463f9fe23111270515da3e5d82959ff00e74672f7bcb8af17",
+    "gamesImplementation": "0x18fe0b583c2c3bbf9951a38a24017b5bb37ca38066efc04d1ba51aca9ee95eaf",
+    "gamesProxy": "0xa6f7aaba75269b8b65637a4de7f8ae2261fa8157ce0c149c5af3ef131a251340",
+    "wireSetGame": "0x12aa79d03ead322e7018fdc1d9b8654ca162155befbe501a4bb2664918b6bfc7"
   }
 }

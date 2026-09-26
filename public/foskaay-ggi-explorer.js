@@ -19,6 +19,8 @@
         relay: '/api/foskaay-ggi-sponsor',
         contracts: {
             FoskaayGGI: '0x793785CE66992211B7c60dFCf0318869678D33a4',
+            FoskaayGGIGames: '0x24e38ac2e80958782a8Bc5CD479bbe2e5D81EcDF',
+            FoskaayGGIPlayers: '0x1614ebc72eA1cB3D31975b3976B5B474FAcE3b3C',
             FoskaayGGILudo: '0xa5040Ece5945a8551499ad1148fc3cD15b165987'
         }
     };

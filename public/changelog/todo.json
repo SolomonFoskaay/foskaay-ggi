@@ -8,7 +8,7 @@
     "DEPRECATED": "Removed or replaced, kept for the record, do not build"
   },
   "current": {
-    "title": "Foskaay GGI - Phase 1 DONE: fresh FoskaayGGI core (locked names, 3-part fee) deployed + propagated",
+    "title": "Foskaay GGI - Phase 2 DONE: fresh FoskaayGGIGames + FoskaayGGIPlayers (UUPS) deployed + wired; Phase 1 core done",
     "updated": "2026-09-26",
     "items": [
       {
@@ -45,7 +45,7 @@
       },
       {
         "t": "(8y2) Phase 2: fresh FoskaayGGIGames + FoskaayGGIPlayers (UUPS), wired, new addresses PENDING",
-        "s": "pending"
+        "s": "done"
       },
       {
         "t": "(8y3) Phase 3: relay rewired (accounts=Games,Players, games=N, 3-part fee; relay only signs) PENDING",
@@ -73,6 +73,10 @@
       },
       {
         "t": "(8y1 note) Freshest core deployed to Arc testnet: FoskaayGGI proxy 0x793785CE66992211B7c60dFCf0318869678D33a4 (impl 0x6A7cF5Db0Df5d5Ae8D181A10BFfa9a0Eb2438017), version 2, fees 0.0004/0.0004/0.0002; address propagated (SDK, contracts pkg, explorer, docs, relay, deployments, architecture)",
+        "s": "done"
+      },
+      {
+        "t": "(8y2 note) Fresh game + player deployed to Arc testnet: FoskaayGGIGames 0x24e38ac2e80958782a8Bc5CD479bbe2e5D81EcDF (impl 0x83418a85B88a44859F95E321F2089fEd503f45d3) + FoskaayGGIPlayers 0x1614ebc72eA1cB3D31975b3976B5B474FAcE3b3C (impl 0xbEA1DE7d6F80f57C13e5840c8957a6C3Fd5BbACd), both UUPS/wired; addresses propagated (SDK, contracts pkg, relay, deployments, explorer, docs, architecture)",
         "s": "done"
       }
     ]

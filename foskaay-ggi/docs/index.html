@@ -395,7 +395,9 @@ await ggi.settle({
             <thead><tr><th>Contract</th><th>Responsibility</th><th>Address</th></tr></thead>
             <tbody>
                 <tr><td>FoskaayGGI</td><td>Connect a session (paying the fee), settle the result, free randomness</td><td class="ggi-mono">0x793785CE66992211B7c60dFCf0318869678D33a4</td></tr>
-                <tr><td>FoskaayGGILudo <span class="ggi-tiny">(demo game, pure)</span></td><td>The Ludo rules as a pure function: board and points are compact bytes the contract returns</td><td class="ggi-mono">0xa5040Ece5945a8551499ad1148fc3cD15b165987</td></tr>
+                <tr><td>FoskaayGGIGames <span class="ggi-tiny">(game: match + rules + settle)</span></td><td>Holds the match on-chain, runs the Ludo rules free in the Foskaay GGI Midchain, and settles N games in one tx</td><td class="ggi-mono">0x24e38ac2e80958782a8Bc5CD479bbe2e5D81EcDF</td></tr>
+                <tr><td>FoskaayGGIPlayers <span class="ggi-tiny">(player account)</span></td><td>Per player, per game tag points/lives/records; credited by its game, pointsOf</td><td class="ggi-mono">0x1614ebc72eA1cB3D31975b3976B5B474FAcE3b3C</td></tr>
+                <tr><td>FoskaayGGILudo <span class="ggi-tiny">(legacy demo game, pure rules only)</span></td><td>The earlier pure-rules demo; superseded by FoskaayGGIGames in Phase 5</td><td class="ggi-mono">0xa5040Ece5945a8551499ad1148fc3cD15b165987</td></tr>
             </tbody>
         </table>
         <p class="ggi-tiny">

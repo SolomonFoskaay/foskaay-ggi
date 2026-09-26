@@ -5,6 +5,8 @@ import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.s
 
 import {FoskaayGGI} from "../src/FoskaayGGI.sol";
 import {FoskaayGGILudo} from "../demos/board/ludo/FoskaayGGILudo.sol";
+import {FoskaayGGIGames} from "../demos/board/ludo/FoskaayGGIGames.sol";
+import {FoskaayGGIPlayers} from "../demos/board/ludo/FoskaayGGIPlayers.sol";
 import {GGTestGame} from "../testproof/GGTestGame.sol";
 import {GGTestPlayer} from "../testproof/GGTestPlayer.sol";
 
@@ -25,6 +27,21 @@ library Deploy {
         FoskaayGGILudo impl = new FoskaayGGILudo();
         bytes memory init = abi.encodeCall(FoskaayGGILudo.initialize, (owner));
         return FoskaayGGILudo(address(new ERC1967Proxy(address(impl), init)));
+    }
+
+    /// The real player account BEHIND a UUPS proxy (points/lives/records). Its
+    /// `game` is pointed at the game right after, via setGame.
+    function ggPlayers(address owner) internal returns (FoskaayGGIPlayers) {
+        FoskaayGGIPlayers impl = new FoskaayGGIPlayers();
+        bytes memory init = abi.encodeCall(FoskaayGGIPlayers.initialize, (owner));
+        return FoskaayGGIPlayers(address(new ERC1967Proxy(address(impl), init)));
+    }
+
+    /// The real Ludo game BEHIND a UUPS proxy (rules + match + settle).
+    function ggGames(address owner, address players) internal returns (FoskaayGGIGames) {
+        FoskaayGGIGames impl = new FoskaayGGIGames();
+        bytes memory init = abi.encodeCall(FoskaayGGIGames.initialize, (owner, players));
+        return FoskaayGGIGames(address(new ERC1967Proxy(address(impl), init)));
     }
 
     /// PROOF-ONLY: a stateful game account behind a UUPS proxy.

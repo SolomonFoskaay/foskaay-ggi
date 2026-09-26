@@ -48,6 +48,18 @@ const registryAbi = parseAbi([
   'function isPaid(bytes32 sessionId) view returns (bool)',
 ]);
 
+// The game contract (FoskaayGGIGames) and the player account (FoskaayGGIPlayers).
+const gamesAbi = parseAbi([
+  'function settle(bytes32 sessionId, (uint8 turn, uint8 seats, uint32 step, bytes board, bytes32 boardHash, bool over)[] list, address[] seatPlayers, bytes32 gameTag) returns (uint256)',
+  'function gameCount(bytes32 sessionId) view returns (uint256)',
+]);
+
+const playersAbi = parseAbi([
+  'function pointsOf(address player, bytes32 gameTag) view returns (uint64)',
+  'function livesOf(address player, bytes32 gameTag) view returns (uint64)',
+  'function recordOf(address player, bytes32 gameTag) view returns (uint64 played, uint64 wins, uint64 best)',
+]);
+
 // ---------------------------------------------------------------- helpers
 
 function networkConfig(network) {
@@ -73,6 +85,8 @@ export class GgiClient {
     this.chain = makeChain(net);
     this.addresses = {
       FoskaayGGI: net.contracts.FoskaayGGI,
+      Games: net.contracts.FoskaayGGIGames,
+      Players: net.contracts.FoskaayGGIPlayers,
       Ludo: net.contracts.FoskaayGGILudo,
     };
     this.deployed = Boolean(this.addresses.FoskaayGGI);
@@ -284,6 +298,18 @@ export class GgiClient {
     return this.publicClient.readContract({
       address: this.addresses.FoskaayGGI, abi: registryAbi, functionName: 'isPaid', args: [sessionId],
     });
+  }
+
+  /// The player's points for a game tag, read from FoskaayGGIPlayers.
+  async pointsOf(player, gameTag) {
+    if (!this.addresses.Players) return 0n;
+    return this.publicClient.readContract({ address: this.addresses.Players, abi: playersAbi, functionName: 'pointsOf', args: [player, gameTag] });
+  }
+
+  /// How many games a session has committed, read from FoskaayGGIGames.
+  async gameCount(sessionId) {
+    if (!this.addresses.Games) return 0n;
+    return this.publicClient.readContract({ address: this.addresses.Games, abi: gamesAbi, functionName: 'gameCount', args: [sessionId] });
   }
 }
 

@@ -36,7 +36,10 @@ const ADDR = {
   // The SINGLE core: FoskaayGGI (the SessionRegistry renamed), UUPS. Phase 3
   // rewires this handler to handoverWithAccounts + FoskaayGGIGames/Players.
   FoskaayGGI: '0x793785CE66992211B7c60dFCf0318869678D33a4',
-  // The Ludo game: PURE (no storage), so every move is a free eth_call.
+  // Phase 2: the on-chain game (match + rules + settle) and the player account.
+  FoskaayGGIGames: '0x24e38ac2e80958782a8Bc5CD479bbe2e5D81EcDF',
+  FoskaayGGIPlayers: '0x1614ebc72eA1cB3D31975b3976B5B474FAcE3b3C',
+  // The Ludo game (pure rules only): still used by the demo until Phase 3/5.
   FoskaayGGILudo: '0xa5040Ece5945a8551499ad1148fc3cD15b165987',
 };
 

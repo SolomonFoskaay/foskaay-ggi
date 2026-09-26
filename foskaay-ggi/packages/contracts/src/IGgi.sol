@@ -133,3 +133,40 @@ interface IFeeVault {
     /// The config owner.
     function owner() external view returns (address);
 }
+
+/// THE GAME: the developer's own game contract (FoskaayGGIGames for Ludo). It
+/// holds the match on-chain plus the game's rules, and its `settle` writes N games
+/// in ONE transaction and credits the player account in the same step.
+interface IFoskaayGGIGames {
+    struct Game {
+        uint8 turn;
+        uint8 seats;
+        uint32 step;
+        bytes board;
+        bytes32 boardHash;
+        bool over;
+    }
+
+    /// The player account this game credits (FoskaayGGIPlayers).
+    function players() external view returns (address);
+
+    /// How many games a session has committed.
+    function gameCount(bytes32 sessionId) external view returns (uint256);
+
+    /// Commit N games in one transaction and credit the players in the same step.
+    /// `seatPlayers` maps seat => player (length must equal each game's seats).
+    function settle(bytes32 sessionId, Game[] calldata list, address[] calldata seatPlayers, bytes32 gameTag)
+        external
+        returns (uint256 credited);
+}
+
+/// THE PLAYER ACCOUNT: one per player for every game (FoskaayGGIPlayers). Holds
+/// points, lives and a record per game tag. Only its game may write it.
+interface IFoskaayGGIPlayers {
+    /// The game contract allowed to write this account.
+    function game() external view returns (address);
+
+    function pointsOf(address player, bytes32 gameTag) external view returns (uint64);
+    function livesOf(address player, bytes32 gameTag) external view returns (uint64);
+    function recordOf(address player, bytes32 gameTag) external view returns (uint64 played, uint64 wins, uint64 best);
+}
