@@ -1,0 +1,52 @@
+/* public/ggi.css - shared styles for the simplified Foskaay GGI pages. */
+.ggi-wrap { max-width: 900px; margin: 0 auto; padding: 0 0 70px; }
+.ggi-hero { position: relative; overflow: hidden; padding: 40px 18px 34px; text-align: center;
+  background: radial-gradient(900px 300px at 18% -10%, rgba(243,156,18,0.22), transparent 60%), radial-gradient(900px 320px at 86% 0%, rgba(155,89,182,0.22), transparent 60%), linear-gradient(180deg,#101018,#0f0f13);
+  border-bottom: 1px solid rgba(255,255,255,0.07); }
+.ggi-eyebrow { position: relative; display: inline-block; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em; color: #f39c12; border: 1px solid rgba(243,156,18,0.4); background: rgba(243,156,18,0.08); border-radius: 999px; padding: 5px 12px; margin-bottom: 14px; }
+.ggi-h1 { position: relative; margin: 0 0 10px; font-size: 1.85rem; line-height: 1.2; color: #fff; }
+.ggi-h1 .grad { background: linear-gradient(135deg,#f39c12,#9b59b6); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.ggi-sub { position: relative; margin: 0 auto; max-width: 680px; color: #b9b9c6; font-size: 0.96rem; line-height: 1.7; }
+.ggi-body { padding: 22px 16px 0; }
+.ggi-section-title { display: flex; align-items: center; gap: 10px; margin: 28px 0 12px; }
+.ggi-section-title h2 { margin: 0; font-size: 1.12rem; color: #fff; }
+.ggi-p { color: #b9b9c6; font-size: 0.92rem; line-height: 1.75; }
+.ggi-p a { color: #f39c12; }
+.ggi-list { color: #b9b9c6; font-size: 0.9rem; line-height: 1.75; padding-left: 18px; }
+.ggi-list li { margin-bottom: 8px; }
+.ggi-list b { color: #fff; }
+
+.ggi-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+@media (min-width: 640px) { .ggi-grid { grid-template-columns: 1fr 1fr; } }
+.ggi-card { position: relative; display: block; text-decoration: none; color: inherit; background: linear-gradient(180deg,#191922,#15151c); border: 1px solid rgba(255,255,255,0.09); border-radius: 16px; padding: 16px; overflow: hidden; }
+.ggi-card.gold { border-color: rgba(243,156,18,0.45); }
+.ggi-card-top { position: relative; display: flex; align-items: center; gap: 12px; }
+.ggi-thumb { flex: 0 0 auto; width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; background: linear-gradient(135deg, rgba(243,156,18,0.2), rgba(155,89,182,0.2)); border: 1px solid rgba(255,255,255,0.1); }
+.ggi-card-name { position: relative; margin: 0; font-size: 1rem; color: #fff; }
+.ggi-card-tag { position: relative; margin: 3px 0 0; font-size: 0.76rem; color: #8f8fa0; }
+.ggi-card-desc { position: relative; margin: 12px 0 0; color: #b9b9c6; font-size: 0.86rem; line-height: 1.6; }
+.ggi-card-cta { position: relative; display: inline-block; margin-top: 12px; font-size: 0.84rem; font-weight: 800; color: #f39c12; }
+
+.ggi-btn { display: inline-block; padding: 12px 20px; border-radius: 999px; font-weight: 800; font-size: 0.9rem; text-decoration: none; }
+.ggi-btn.primary { background: linear-gradient(135deg,#f39c12,#e67e22); color: #111; }
+.ggi-btn.ghost { background: rgba(255,255,255,0.06); color: #fff; border: 1px solid rgba(255,255,255,0.18); }
+.ggi-ctas { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 20px; }
+
+.ggi-code { background: rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px 16px; margin: 12px 0; overflow-x: auto; }
+.ggi-code code { color: #e8e8e8; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.8rem; line-height: 1.7; white-space: pre; }
+
+.ggi-table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 0.84rem; }
+.ggi-table th, .ggi-table td { text-align: left; padding: 9px 8px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.ggi-table th { color: #f39c12; font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.03em; }
+.ggi-table td:first-child { color: #fff; font-weight: 700; }
+
+.ggi-faq details { border: 1px solid rgba(255,255,255,0.09); border-radius: 12px; margin-bottom: 8px; background: rgba(255,255,255,0.02); }
+.ggi-faq summary { cursor: pointer; padding: 13px 14px; font-weight: 800; color: #fff; font-size: 0.9rem; list-style: none; display: flex; justify-content: space-between; gap: 10px; }
+.ggi-faq summary::-webkit-details-marker { display: none; }
+.ggi-faq summary::after { content: '+'; color: #f39c12; font-weight: 900; }
+.ggi-faq details[open] summary::after { content: '-'; }
+.ggi-faq .ggi-a { padding: 0 14px 13px; color: #b9b9c6; font-size: 0.86rem; line-height: 1.65; }
+.ggi-faq .ggi-a a { color: #f39c12; }
+
+.ggi-mail { display: inline-block; padding: 12px 22px; border-radius: 999px; background: linear-gradient(135deg,#f39c12,#e67e22); color: #111; font-weight: 800; text-decoration: none; font-size: 0.92rem; }
+.ggi-note { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 14px 16px; color: #b9b9c6; font-size: 0.88rem; line-height: 1.7; margin: 14px 0; }
