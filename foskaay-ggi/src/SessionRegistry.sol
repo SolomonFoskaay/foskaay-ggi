@@ -37,11 +37,15 @@ contract SessionRegistry is Initializable, UUPSUpgradeable, OwnableUpgradeable {
     /// Where the fee goes (the project treasury). A direct transfer, no vault.
     address public destination;
 
-    /// Fee for a single (unbatched) session, in native USDC wei (Arc USDC is 18dp).
+    /// Fee for a single session in native USDC wei (Arc USDC is 18dp). ONE fee:
+    /// batching a session with MANY games only saves gas (the 21k base tx is
+    /// shared), never changes this fee.
     uint256 public fee;
 
-    /// Fee for a session inside `handoverMany` (the batched tier, cheaper).
-    uint256 public feeBatch;
+    /// RESERVED (unused): kept only so the storage layout stays append-only for
+    /// the in-place upgrade. Do not add a second tier; batching lowers GAS, not
+    /// the fee per game.
+    uint256 public reservedFeeSlot;
 
     /// Monotonic session counter. Emitted in Handover for off-chain indexing.
     uint64 public sessionCounter;
@@ -81,7 +85,6 @@ contract SessionRegistry is Initializable, UUPSUpgradeable, OwnableUpgradeable {
     /// `seedReveal` opens the seed committed at connect.
     event Settled(bytes32 indexed sessionId, bytes32 finalHash, bytes32 seedReveal, address indexed payer);
     event FeeSet(uint256 fee);
-    event FeeBatchSet(uint256 feeBatch);
     event DestinationSet(address destination);
 
     error BadFee();
@@ -102,10 +105,8 @@ contract SessionRegistry is Initializable, UUPSUpgradeable, OwnableUpgradeable {
         __Ownable_init(owner_);
         destination = destination_;
         fee = fee_;
-        feeBatch = fee_;
         emit DestinationSet(destination_);
         emit FeeSet(fee_);
-        emit FeeBatchSet(fee_);
     }
 
     /// @dev The implementation contract can never be used directly.
@@ -120,11 +121,6 @@ contract SessionRegistry is Initializable, UUPSUpgradeable, OwnableUpgradeable {
     function setFee(uint256 fee_) external onlyOwner {
         fee = fee_;
         emit FeeSet(fee_);
-    }
-
-    function setFeeBatch(uint256 feeBatch_) external onlyOwner {
-        feeBatch = feeBatch_;
-        emit FeeBatchSet(feeBatch_);
     }
 
     function setDestination(address destination_) external onlyOwner {
@@ -167,7 +163,7 @@ contract SessionRegistry is Initializable, UUPSUpgradeable, OwnableUpgradeable {
     ) external payable {
         uint256 n = sessionIds.length;
         if (n == 0 || n != startHashes.length || n != seedCommits_.length || n != players.length || n != sessionKeys.length) revert BadInput();
-        if (msg.value != feeBatch * n) revert BadFee();
+        if (msg.value != fee * n) revert BadFee();
         for (uint256 i = 0; i < n; i++) {
             if (players[i].length == 0 || players[i].length != sessionKeys[i].length) revert BadInput();
             if (commitments[sessionIds[i]] != bytes32(0)) revert BadInput();

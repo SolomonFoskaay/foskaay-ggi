@@ -36,7 +36,7 @@ const ADDR = {
   // The SINGLE core (v7): SessionRegistry with the FeeVault merged in. UUPS.
   SessionRegistry: '0x9f078527082b3bCc7c00e27f7C53D31CF1D17A85',
   // The Ludo game: PURE (no storage), so every move is a free eth_call.
-  FoskaayGGILudo: '0xc3Dd1243B74373Bc015Fd305727E729785B41C08',
+  FoskaayGGILudo: '0xa5040Ece5945a8551499ad1148fc3cD15b165987',
 };
 
 const ludoAbi = parseAbi([

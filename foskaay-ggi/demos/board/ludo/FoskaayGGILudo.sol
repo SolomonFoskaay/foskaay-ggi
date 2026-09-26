@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-/// @title FoskaayGGILudo — the Ludo rules as a PURE function (no storage).
+import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
+import {OwnableUpgradeable} from "@openzeppelin/contracts/access/OwnableUpgradeable.sol";
+
+/// @title FoskaayGGILudo — the Ludo rules as a PURE function (no game storage).
 ///
 /// @notice This is the first Foskaay GGI game. It keeps NO state on the base
 /// chain: every function is `pure`, so the midchain runs the whole game with
@@ -21,11 +25,17 @@ pragma solidity ^0.8.24;
 /// @notice Capture ("pe") matches ludo-lab exactly: a token landing on a common-track
 /// cell that holds an opponent sends that opponent home, and the capturing token
 /// completes its circuit and exits. The four coloured start cells are safe.
-contract FoskaayGGILudo {
+contract FoskaayGGILudo is Initializable, UUPSUpgradeable, OwnableUpgradeable {
     uint8 internal constant YARD = 0xFF;
     uint8 internal constant SEATS = 4;
     uint8 internal constant TOKENS_PER_SEAT = 4;
     uint256 internal constant STATE_LEN = 36;
+
+    /// Layout marker. Bump only on a layout change.
+    uint8 public version;
+    /// Reserved slots. The game has no game storage today, but it is behind a
+    /// UUPS proxy so its address is permanent and its logic is upgradeable.
+    uint256[20] private __gap;
 
     error BadSeat();
     error BadState();
@@ -37,6 +47,20 @@ contract FoskaayGGILudo {
     error AlreadyHome();
     error OverflowHome();
     error BadKind();
+
+    /// @notice Initialize the proxy. The game keeps no state, so there is nothing
+    ///         to set up beyond the upgrade owner.
+    function initialize(address owner_) external initializer {
+        __Ownable_init(owner_);
+    }
+
+    /// @dev The implementation can never be used directly.
+    constructor() {
+        _disableInitializers();
+    }
+
+    /// @dev Only the owner may authorize an upgrade.
+    function _authorizeUpgrade(address) internal override onlyOwner {}
 
     // ---------------------------------------------------------------- init
 

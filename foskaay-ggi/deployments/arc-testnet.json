@@ -8,16 +8,17 @@
   "deployer": "0xAd0A4348C7202E44e96c3FAE1cBB0B645dD86EB4",
   "contracts": {
     "SessionRegistry": "0x9f078527082b3bCc7c00e27f7C53D31CF1D17A85",
-    "FoskaayGGILudo": "0xc3Dd1243B74373Bc015Fd305727E729785B41C08"
+    "FoskaayGGILudo": "0xa5040Ece5945a8551499ad1148fc3cD15b165987"
   },
   "upgradeable": true,
   "pattern": "UUPS proxy (ERC1967). Proxy addresses are permanent.",
   "registryUpgradedAt": "2026-09-23T03:59:50.272Z",
   "registryUpgradeNote": "Event-based Foskaay GGI Midchain functions added (additive, no storage change). Proxy unchanged.",
   "cleanCoreDeployedAt": "2026-09-23T06:59:41.464Z",
-  "coreNote": "v7 SINGLE core: SessionRegistry with FeeVault merged in, UUPS proxy, fee 0.0004 unbatched / 0.0002 batched (native USDC 18dp). Ludo is a pure contract (no proxy).",
+  "coreNote": "v7 single core (SessionRegistry, fee built in, single 0.0004 fee; batching lowers gas only). Upgraded in place; address unchanged. Ludo is behind a UUPS proxy (upgradeable).",
   "implementations": {
-    "SessionRegistry": "0x7c26fee3284Afd17A021d6663297Cb9027Fb1a1D"
+    "SessionRegistry": "0x287a946015Eda93842bE51fCeC9b0B3bF6fab8AF",
+    "FoskaayGGILudo": "0xDC38f721C5918A0B2AC234768aaAee25A01ab7b7"
   },
   "demoDeployedAt": "2026-09-24T15:05:23.630Z",
   "demoNote": "Ludo demo: FoskaayGGIDemoGames (all demo games, gameTag ludo) + FoskaayGGIDemoPlayer (one player account, per-game point buckets). Both UUPS, OZ-only, wired.",
@@ -28,5 +29,6 @@
   "demoUpgradedAt": "2026-09-25T11:21:20.057Z",
   "demoUpgradeNote": "In-place UUPS upgrade of the permanent demo proxies (same addresses). Top-level layout unchanged.",
   "coreV7DeployedAt": "2026-09-25T14:37:25.609Z",
-  "ludoDeployedAt": "2026-09-25T14:37:25.609Z"
+  "ludoDeployedAt": "2026-09-25T14:37:25.609Z",
+  "coreV7UpgradedAt": "2026-09-26T09:15:52.085Z"
 }

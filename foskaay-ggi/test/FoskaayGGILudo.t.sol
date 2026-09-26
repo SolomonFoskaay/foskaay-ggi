@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import {FoskaayGGILudo} from "../demos/board/ludo/FoskaayGGILudo.sol";
+import {Deploy} from "./Deploy.sol";
 
 interface Vm {
     function expectRevert() external;
@@ -17,7 +18,7 @@ contract FoskaayGGILudoTest {
     uint8 constant YARD = 0xFF;
 
     function setUp() public {
-        ludo = new FoskaayGGILudo();
+        ludo = Deploy.ludo(address(this));
     }
 
     function _build(uint8 turn, uint8 finishCount, uint8 userSeat, uint8 seatCount, uint8 dieA, uint8 dieB, uint8[16] memory steps) internal pure returns (bytes memory s) {
