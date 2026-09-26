@@ -42,7 +42,7 @@
 (function () {
   'use strict';
 
-  var MODULE_SRC = (typeof window.GFG_HEADER_MODULE === 'string' && window.GFG_HEADER_MODULE) ? window.GFG_HEADER_MODULE : '/src/main.js';
+  var MODULE_SRC = (typeof window.GFG_HEADER_MODULE === 'string' && window.GFG_HEADER_MODULE) ? window.GFG_HEADER_MODULE : '/web/main.js';
 
   // The exact homepage header stack, in order. The supabase CDN + the classic
   // scripts must load synchronously and in sequence (auth.js needs window

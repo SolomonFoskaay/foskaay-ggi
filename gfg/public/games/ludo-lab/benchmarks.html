@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GlobalFolkGames – On-Chain Roll Benchmark</title>
+    <meta property="og:title" content="GlobalFolkGames – On-Chain Roll Benchmark">
+    <meta property="og:description" content="Play classic folk games on-chain with a web2 feel: sign in with email, no wallet popups, no gas, provably fair. Live at globalfolkgames.fun.">
+    <meta property="og:image" content="https://globalfolkgames.fun/media/GlobalFolkGames_banner_001.jpeg">
+    <meta property="og:url" content="https://globalfolkgames.fun/public/games/ludo-lab/benchmarks.html">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="GlobalFolkGames – On-Chain Roll Benchmark">
+    <meta name="twitter:description" content="Play classic folk games on-chain with a web2 feel: sign in with email, no wallet popups, no gas, provably fair. Live at globalfolkgames.fun.">
+    <meta name="twitter:image" content="https://globalfolkgames.fun/media/GlobalFolkGames_banner_001.jpeg">
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        .bench-wrap { padding: 16px 18px 48px; max-width: 720px; margin: 0 auto; }
+        .bench-wrap h2 { margin: 8px 0 4px; font-size: 1.35rem; }
+        .bench-wrap .sub { color: #8b93a7; font-size: .8rem; margin-bottom: 18px; }
+        .bench-table {
+            width: 100%; border-collapse: collapse; margin: 14px 0 22px;
+            font-size: .82rem; background: #1b2130; border-radius: 12px; overflow: hidden;
+        }
+        .bench-table th, .bench-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #262e42; }
+        .bench-table th { color: #9aa3b8; font-weight: 600; font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; }
+        .bench-table tr:last-child td { border-bottom: none; }
+        .bench-table .fast { color: #5ee09a; font-weight: 700; }
+        .bench-table .mid { color: #f2c063; font-weight: 700; }
+        .bench-table .slow { color: #f07d7d; font-weight: 700; }
+        .bench-note {
+            background: #141926; border: 1px solid #262e42; border-radius: 12px;
+            padding: 14px 16px; font-size: .8rem; color: #c3cadb; line-height: 1.5;
+        }
+        .bench-note code { background: #0e1220; padding: 1px 6px; border-radius: 6px; color: #8fd6ff; }
+        .bench-meta { font-size: .72rem; color: #6b7388; margin-top: 18px; border-top: 1px solid #22293b; padding-top: 12px; }
+    </style>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7686312364288737" crossorigin="anonymous"></script>
+  </head>
+<body>
+
+    <main class="mobile-container">
+        <div class="bench-wrap">
+
+            <h2>Dice-Roll Latency: Web2 vs On-Chain</h2>
+            <p class="sub">Real transactions on Solana devnet (MagicBlock). Updated from <code>scripts/lab/bench-roll-comparison.mjs</code>.</p>
+
+            <table class="bench-table">
+                <thead>
+                    <tr><th>Path</th><th>Avg</th><th>p95</th><th>Min</th><th>Player fee</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Web2 local dice (Math.random)</td>
+                        <td class="fast">0ms</td>
+                        <td>0ms</td>
+                        <td>0ms</td>
+                        <td>—</td>
+                    </tr>
+                    <tr>
+                        <td>MagicBlock ER roll (gasless VRF)</td>
+                        <td class="mid">~1.7s</td>
+                        <td>~2.0s</td>
+                        <td>~1.6s</td>
+                        <td>0 SOL</td>
+                    </tr>
+                    <tr>
+                        <td>Base-chain VRF roll (paid queue)</td>
+                        <td class="slow">~4.8s</td>
+                        <td>~5.1s</td>
+                        <td>~4.6s</td>
+                        <td>paid (sponsor)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="bench-note">
+                <strong>Reading:</strong> the ER executes game logic in <strong>~10&ndash;20ms</strong> per move &mdash; the ~1.7s above is only
+                the <strong>VRF random-dice callback</strong> (matching MagicBlock's own ~2s devnet oracle latency). That means
+                every board move can be validated on-chain while feeling instantaneous, with the dice roll masked by a short
+                animation. The base chain (old web3 path) is ~2.8x slower and the sponsor pays for every roll.
+            </div>
+
+            <p class="bench-meta">
+                Measured: <code>bench-roll-comparison.mjs</code> &mdash; ER queue 5hBR57..., base queue Cuj97..., 5 rolls/leg on devnet.
+                Regenerate anytime with <code>LEG=all node scripts/lab/bench-roll-comparison.mjs</code>.
+            </p>
+
+        </div>
+    </main>
+
+</body>
+</html>

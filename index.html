@@ -3,191 +3,163 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GlobalFolkGames – Preserving Native Games On-Chain</title>
-    <meta property="og:title" content="GlobalFolkGames – Preserving Native Games On-Chain">
-    <meta property="og:description" content="Play classic folk games on-chain with a web2 feel: sign in with email, no wallet popups, no gas, provably fair. Live at globalfolkgames.fun.">
+    <title>Foskaay GGI | Gasless on-chain games on Arc</title>
+    <meta name="description" content="Foskaay Gasless Games Infrastructure. Add gasless play to any on-chain game on Arc. Players pay nothing, no wallet popups, one small fee per session, fully on-chain.">
+    <meta property="og:title" content="Foskaay GGI | Gasless on-chain games on Arc">
+    <meta property="og:description" content="Add gasless play to any on-chain game on Arc. Players pay nothing. Fully on-chain.">
     <meta property="og:image" content="https://globalfolkgames.fun/media/GlobalFolkGames_banner_001.jpeg">
-    <meta property="og:url" content="https://globalfolkgames.fun/">
+    <meta property="og:url" content="https://globalfolkgames.fun/foskaay-ggi/">
     <meta property="og:type" content="website">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="GlobalFolkGames – Preserving Native Games On-Chain">
-    <meta name="twitter:description" content="Play classic folk games on-chain with a web2 feel: sign in with email, no wallet popups, no gas, provably fair. Live at globalfolkgames.fun.">
-    <meta name="twitter:image" content="https://globalfolkgames.fun/media/GlobalFolkGames_banner_001.jpeg">
-    <meta name="description" content="Classic folk games from across the world, played on-chain so every result can be verified and your record lives forever. Start with native games, 50+ on the way.">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        .fg-wrap { max-width: 980px; margin: 0 auto; padding: 0 0 80px; }
+        .fg-hero { position: relative; overflow: hidden; padding: 40px 18px 34px; text-align: center;
+            background: radial-gradient(900px 300px at 18% -10%, rgba(243,156,18,0.24), transparent 60%), radial-gradient(900px 320px at 86% 0%, rgba(155,89,182,0.24), transparent 60%), linear-gradient(180deg,#101018,#0f0f13);
+            border-bottom: 1px solid rgba(255,255,255,0.07); }
+        .fg-hero::after { content: ''; position: absolute; inset: 0; pointer-events: none;
+            background-image: linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px);
+            background-size: 34px 34px; mask-image: linear-gradient(180deg, rgba(0,0,0,0.85), transparent 85%); -webkit-mask-image: linear-gradient(180deg, rgba(0,0,0,0.85), transparent 85%); }
+        .fg-eyebrow { position: relative; display: inline-block; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em; color: #f39c12; border: 1px solid rgba(243,156,18,0.4); background: rgba(243,156,18,0.08); border-radius: 999px; padding: 5px 12px; margin-bottom: 14px; }
+        .fg-h1 { position: relative; margin: 0 0 10px; font-size: 1.9rem; line-height: 1.2; color: #fff; }
+        .fg-h1 .grad { background: linear-gradient(135deg,#f39c12,#9b59b6); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .fg-sub { position: relative; margin: 0 auto; max-width: 660px; color: #b9b9c6; font-size: 0.95rem; line-height: 1.65; }
+        .fg-chips { position: relative; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 18px; }
+        .fg-chip { font-size: 0.74rem; font-weight: 700; color: #dcdce6; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); border-radius: 999px; padding: 6px 11px; }
+        .fg-chip b { color: #2ecc71; }
+        .fg-body { padding: 22px 16px 0; }
+
+        .fg-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+        @media (min-width: 640px) { .fg-grid { grid-template-columns: 1fr 1fr; } }
+        .fg-card { position: relative; display: block; text-decoration: none; color: inherit; background: linear-gradient(180deg,#191922,#15151c); border: 1px solid rgba(255,255,255,0.09); border-radius: 16px; padding: 16px; overflow: hidden; transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease; }
+        .fg-card:active { transform: scale(0.99); }
+        .fg-card.live { border-color: rgba(46,204,113,0.4); }
+        .fg-card.live:hover { box-shadow: 0 10px 30px rgba(46,204,113,0.12); border-color: rgba(46,204,113,0.7); }
+        .fg-card-glow { position: absolute; top: -60px; right: -60px; width: 160px; height: 160px; border-radius: 50%; filter: blur(46px); pointer-events: none; background: rgba(243,156,18,0.16); }
+        .fg-card.live .fg-card-glow { background: rgba(46,204,113,0.20); }
+        .fg-card-top { position: relative; display: flex; align-items: center; gap: 12px; }
+        .fg-thumb { flex: 0 0 auto; width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; background: linear-gradient(135deg, rgba(243,156,18,0.2), rgba(155,89,182,0.2)); border: 1px solid rgba(255,255,255,0.1); }
+        .fg-card-name { position: relative; margin: 0; font-size: 1rem; color: #fff; }
+        .fg-card-tag { position: relative; margin: 3px 0 0; font-size: 0.76rem; color: #8f8fa0; }
+        .fg-badge { position: absolute; top: 14px; right: 14px; font-size: 0.66rem; font-weight: 800; letter-spacing: 0.04em; border-radius: 999px; padding: 4px 10px; text-transform: uppercase; }
+        .fg-badge.live { background: rgba(46,204,113,0.16); color: #2ecc71; border: 1px solid rgba(46,204,113,0.45); }
+        .fg-badge.soon { background: rgba(255,255,255,0.05); color: #9a9aa8; border: 1px dashed rgba(255,255,255,0.2); }
+        .fg-card-desc { position: relative; margin: 12px 0 0; color: #b9b9c6; font-size: 0.86rem; line-height: 1.6; }
+        .fg-card-cta { position: relative; display: inline-block; margin-top: 12px; font-size: 0.84rem; font-weight: 800; color: #f39c12; }
+        .fg-card.soon .fg-card-cta { color: #9a9aa8; }
+
+        .fg-section-title { display: flex; align-items: center; gap: 10px; margin: 26px 0 12px; }
+        .fg-section-title h2 { margin: 0; font-size: 1.08rem; color: #fff; }
+        .fg-list { color: #b9b9c6; font-size: 0.88rem; line-height: 1.7; padding-left: 18px; }
+        .fg-list b { color: #fff; }
+
+        .fg-faq details { border: 1px solid rgba(255,255,255,0.09); border-radius: 12px; margin-bottom: 8px; background: rgba(255,255,255,0.02); }
+        .fg-faq summary { cursor: pointer; padding: 13px 14px; font-weight: 800; color: #fff; font-size: 0.9rem; list-style: none; display: flex; justify-content: space-between; gap: 10px; }
+        .fg-faq summary::-webkit-details-marker { display: none; }
+        .fg-faq summary::after { content: '+'; color: #f39c12; font-weight: 900; }
+        .fg-faq details[open] summary::after { content: '-'; }
+        .fg-faq .fg-a { padding: 0 14px 13px; color: #b9b9c6; font-size: 0.85rem; line-height: 1.65; }
+        .fg-faq .fg-a a { color: #f39c12; }
+        .fg-faq .fg-a code { color: #cfe8ff; font-size: 0.78rem; word-break: break-all; }
+    </style>
 </head>
 <body>
 
-    <!-- Shared Global Header (injected by header.js) -->
-    <!-- Will appear here automatically -->
+<main class="fg-wrap">
+    <section class="fg-hero">
+        <span class="fg-eyebrow">FOSKAAY GGI</span>
+        <h1 class="fg-h1">Gasless on-chain games, <span class="grad">on Arc</span></h1>
+        <p class="fg-sub">Foskaay Gasless Games Infrastructure lets any game run fully on-chain while its players pay nothing and never see a wallet popup. The game connects a session, plays everything inside for free, and settles once. The player pays no gas, ever.</p>
+        <div class="fg-chips">
+            <span class="fg-chip">⚡ <b>Zero gas</b> for players</span>
+            <span class="fg-chip">📱 Works on any phone</span>
+            <span class="fg-chip">🔒 Fully on-chain</span>
+            <span class="fg-chip">🧩 Any game type</span>
+        </div>
+    </section>
 
-    <main class="mobile-container">
-
-        <!-- HIGH CONVERTING BILLBOARD (original, restored) -->
-        <section class="onboarding-billboard">
-            <h2>Preserving Global Native Games On-Chain</h2>
-            <p>Play traditional local games from across the world, accumulate lifetime milestone points, and join a monthly Member Cup to share membership fees for real wins.</p>
-            <p style="margin-top:12px; font-size:0.85rem; color:#ddd;"><b class="gfg-stats-count" id="home-gamer-count">—</b> gamers LIVE now on the platform. Join now and be one of them next to play a native game.</p>
-        </section>
-
-        <!-- PLATFORM TABS: Games / Countries / Earn as Gamer (inline previews) -->
-        <nav class="level-tabs-scroll" id="home-tabs" style="justify-content:center; margin-top:16px;">
-            <button class="tab-btn active" data-panel="games">Games</button>
-            <button class="tab-btn" data-panel="countries">Countries</button>
-            <button class="tab-btn" data-panel="competitions">Earn as Gamer</button>
-        </nav>
-        <p class="swipe-hint" style="font-size:0.7rem; color:#666; text-align:center; margin:6px 0 0;">Swipe left or right to move between them.</p>
-
-        <div id="home-panels">
-            <div class="game-card home-panel" data-show="games">
-                <h3>🎮 Native games from around the world</h3>
-                <p style="color:var(--muted); font-size:0.9rem; line-height:1.7; margin:6px 0 0;">How good are you at your native games? Step up to the games your parents and grandparents played, prove your skills on a verifiable board, and compete with the world.</p>
-                <div id="home-game-icons" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(84px,1fr)); gap:8px; margin-top:12px;"></div>
-                <p style="margin-top:12px; text-align:center;"><a href="/games/" style="color:#f87818; font-weight:700;">Explore and play all native games globally</a></p>
-            </div>
-            <div class="game-card home-panel" data-show="countries" style="display:none;">
-                <h3>🌍 Games by country</h3>
-                <p style="color:var(--muted); font-size:0.9rem; line-height:1.7; margin:6px 0 0;">Every country has games worth keeping. We start with the nations whose native games are already loved by digital players.</p>
-                <div id="home-country-flags" style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:12px;"></div>
-                <p style="margin-top:12px; text-align:center;"><a href="/countries/" style="color:#f87818; font-weight:700;">See all games by country</a></p>
-            </div>
-            <div class="game-card home-panel" data-show="competitions" style="display:none;">
-                <h3>🏆 Earn as a gamer, not a streamer</h3>
-                <p style="color:var(--muted); font-size:0.9rem; line-height:1.7; margin:6px 0 0;">Creators earn on social media for making the content they love. So why can&rsquo;t gamers earn for playing the games they love, without turning into a content creator first? That is the idea. GlobalFolkGames wants to make it possible: play native games from across the world, and each month share a slice of that month&rsquo;s membership money with the players who actually played and won.</p>
-                <p style="color:var(--muted); font-size:0.9rem; line-height:1.7; margin:8px 0 0;">You can also earn by referring other players to the platform. When someone you referred upgrades to a paid plan, you get 20% of their first upgrade. On-chain dice. On-chain result.</p>
-                <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
-                    <a href="/competitions/" class="launch-btn onchain" style="text-align:center; text-decoration:none; flex:1; min-width:180px;">Earn as a gamer</a>
-                    <a href="/profile/affiliate.html" class="launch-btn" style="text-align:center; text-decoration:none; flex:1; min-width:180px; background:#1a1a24; border:1px solid #333; color:#bbb;">Earn by referring</a>
+    <div class="fg-body">
+        <div class="fg-section-title"><h2>Explore Foskaay GGI</h2></div>
+        <div class="fg-grid">
+            <a class="fg-card live" href="/foskaay-ggi/demos/board/ludo/">
+                <span class="fg-card-glow"></span>
+                <span class="fg-badge live">Live</span>
+                <div class="fg-card-top">
+                    <span class="fg-thumb">🎲</span>
+                    <div><h3 class="fg-card-name">Ludo demo</h3><p class="fg-card-tag">Board game</p></div>
                 </div>
-            </div>
+                <p class="fg-card-desc">A full Ludo match built on Foskaay GGI. The contract owns the rules, the dice, the crown and the points; the page only displays.</p>
+                <span class="fg-card-cta">Play the demo &rarr;</span>
+            </a>
+            <a class="fg-card live" href="/foskaay-ggi/demos/">
+                <span class="fg-card-glow"></span>
+                <div class="fg-card-top">
+                    <span class="fg-thumb">🎮</span>
+                    <div><h3 class="fg-card-name">All demos</h3><p class="fg-card-tag">By genre</p></div>
+                </div>
+                <p class="fg-card-desc">Every playable Foskaay GGI demo, grouped by genre (idle, casual, PvP, RPG, metaverse, board).</p>
+                <span class="fg-card-cta">Browse demos &rarr;</span>
+            </a>
+            <a class="fg-card live" href="/foskaay-ggi/docs/">
+                <span class="fg-card-glow"></span>
+                <div class="fg-card-top">
+                    <span class="fg-thumb">📖</span>
+                    <div><h3 class="fg-card-name">Docs</h3><p class="fg-card-tag">How it works</p></div>
+                </div>
+                <p class="fg-card-desc">The core, the fees, the cost ladder, how to design a game for the rail, and whether your contract should be upgradeable.</p>
+                <span class="fg-card-cta">Read the docs &rarr;</span>
+            </a>
+            <a class="fg-card live" href="/foskaay-ggi/explorer/">
+                <span class="fg-card-glow"></span>
+                <div class="fg-card-top">
+                    <span class="fg-thumb">🔎</span>
+                    <div><h3 class="fg-card-name">Explorer</h3><p class="fg-card-tag">Proof, not promises</p></div>
+                </div>
+                <p class="fg-card-desc">Look up a session and read the connect event, the settled result and the fee straight from the contracts. No backend.</p>
+                <span class="fg-card-cta">Open the explorer &rarr;</span>
+            </a>
         </div>
 
-        <!-- ===== THE ORIGINAL TOP ENDS HERE; EXPANSION BELOW ===== -->
+        <div class="fg-section-title"><h2>What Foskaay GGI is</h2></div>
+        <ul class="fg-list">
+            <li><b>One core contract.</b> A single FoskaayGGI (connect a session and pay the fee straight to the destination, settle the result, free randomness). The fee is built in, so connect is one storage write and one transfer, OpenZeppelin only, upgradeable.</li>
+            <li><b>Cheap by design.</b> Moves, dice, timers, the computer opponent and the points all run inside a session for free. Only the connect and the settle are transactions, so cost is per session, not per action.</li>
+            <li><b>Game-agnostic.</b> The rail never learns your game. A board, an idle farm or a shared world are all the same to it: participants, opaque state, one settlement.</li>
+            <li><b>Fully on-chain.</b> Your contract owns the rules and the state. The frontend only displays; there is no local storage and no browser game state.</li>
+            <li><b>Any player, no wallet setup.</b> Sign in with email, the embedded wallet is created silently, and the player never holds or pays gas.</li>
+        </ul>
 
-        <!-- ABOUT / USP -->
-        <section class="game-card" style="margin-top:16px;">
-            <h3>What GlobalFolkGames is</h3>
-            <p style="color:var(--muted); font-size:0.86rem; line-height:1.7; margin:0;">GlobalFolkGames is a growing library of the world's traditional and folk games - board games, dice games, word games, strategy games and family favourites from every continent. Each game is played true to its origins, and every match you finish is recorded on-chain, so results are verifiable and your playing record lives forever.</p>
-            <p style="color:var(--muted); font-size:0.86rem; line-height:1.7; margin:10px 0 0;">The games themselves are the point: the heritage, the strategy, the fun. The on-chain layer simply protects that experience with a permanent, checkable record and keeps your earned points safely in your own ledger. We are preserving native games for the world, one match at a time.</p>
-        </section>
+        <div class="fg-section-title"><h2>Foskaay GGI FAQ</h2></div>
+        <div class="fg-faq" id="fg-faq"></div>
+    </div>
+</main>
 
-        <!-- WHY ON-CHAIN -->
-        <section class="game-card" style="margin-top:16px;">
-            <h3>The record you can trust</h3>
-            <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;">
-                <span style="border:1px solid #2a2a36; border-radius:999px; padding:6px 12px; font-size:0.78rem; color:#ddd;">✓ Every finished match is recorded on-chain</span>
-                <span style="border:1px solid #2a2a36; border-radius:999px; padding:6px 12px; font-size:0.78rem; color:#ddd;">✓ Result signatures you can re-check yourself</span>
-                <span style="border:1px solid #2a2a36; border-radius:999px; padding:6px 12px; font-size:0.78rem; color:#ddd;">✓ Points sit in your own on-chain ledger</span>
-                <span style="border:1px solid #2a2a36; border-radius:999px; padding:6px 12px; font-size:0.78rem; color:#ddd;">✓ Fair randomness for dice games</span>
-                <span style="border:1px solid #2a2a36; border-radius:999px; padding:6px 12px; font-size:0.78rem; color:#ddd;">✓ Works on any phone</span>
-            </div>
-            <ol style="color:var(--muted); font-size:0.86rem; line-height:1.8; margin:12px 0 0; padding-left:18px;">
-                <li><b style="color:#fff;">Sign in with your email</b> - one tap, nothing complicated to set up.</li>
-                <li><b style="color:#fff;">Choose a folk game</b> - start with Ludo today (India&rsquo;s Pachisi), with more native and folk games from around the world on the way.</li>
-                <li><b style="color:#fff;">Play and finish a match</b> - your result gets a permanent on-chain signature you can open and verify any time.</li>
-                <li><b style="color:#fff;">Keep your points</b> - earned points are written to your own ledger and never expire.</li>
-            </ol>
-        </section>
-
-        <!-- COMPETITIONS (optional, side feature) -->
-        <section class="game-card" style="border:1px solid rgba(155,89,182,0.4); margin-top:16px;">
-            <h3>Competitions are optional</h3>
-            <p style="color:var(--muted); font-size:0.84rem; line-height:1.7; margin:0;">Alongside free play, a monthly Member Cup with real reward pools appears each month. Joining the cup is completely optional and only the members who qualify share that month's membership fees. Playing, recording and collecting points is always open to everyone; the cup just adds a bit of friendly rivalry for those who want it.</p>
-        </section>
-
-        <!-- FAQ -->
-        <section class="game-card" style="margin-top:16px;">
-            <h3>Common questions</h3>
-            <details style="margin-top:10px;"><summary style="cursor:pointer; color:#f87818; font-weight:700;">Is this hard to set up or play?</summary><p style="color:var(--muted); font-size:0.84rem; line-height:1.6; margin-top:6px;">No. Sign in with your email, pick a game and play. The technical side runs in the background - you just enjoy the games.</p></details>
-            <details style="margin-top:10px;"><summary style="cursor:pointer; color:#f87818; font-weight:700;">How is my result verified?</summary><p style="color:var(--muted); font-size:0.84rem; line-height:1.6; margin-top:6px;">Every finished match keeps a permanent on-chain signature. On the receipt explorer you can open any finished match and confirm the result yourself. For dice games the dice themselves are provably random.</p></details>
-            <details style="margin-top:10px;"><summary style="cursor:pointer; color:#f87818; font-weight:700;">What are Level 1 and Level 2?</summary><p style="color:var(--muted); font-size:0.84rem; line-height:1.6; margin-top:6px;">Level 1 is the free way in: play, record your results and collect points at the base rate. Level 2 is an optional monthly plan that doubles your win points, lifts your daily reward to 200 points and gives you more lives each day. You can play at any level and switch any time.</p></details>
-            <details style="margin-top:10px;"><summary style="cursor:pointer; color:#f87818; font-weight:700;">What happens to my points?</summary><p style="color:var(--muted); font-size:0.84rem; line-height:1.6; margin-top:6px;">Lifetime points stay on your ledger and never expire. Spendable points are what you use to enter optional competitions and buy boosts. Every entry and payout is recorded on-chain, so totals can always be checked.</p></details>
-            <details style="margin-top:10px;"><summary style="cursor:pointer; color:#f87818; font-weight:700;">How do competition windows work?</summary><p style="color:var(--muted); font-size:0.84rem; line-height:1.6; margin-top:6px;">Each window has a set pool. Only results made while it is live count toward its leaderboard. When the window closes, the players at the top of the final board share the pool. Winners are recorded on-chain and paid by the platform, and each completed window stays listed with its winners and paid status as proof.</p></details>
-            <div style="margin-top:16px; text-align:center; background:#1a1a24; border:1px solid #2a2a36; border-radius:12px; padding:16px 12px;">
-                <h3 style="margin:0 0 6px;">Start with native games</h3>
-                <p style="color:var(--muted); font-size:0.84rem; line-height:1.6; margin:0 0 12px;">Sign in with your email and play folk games from around the world, with every match recorded and safe.</p>
-                <a href="/games/" class="launch-btn onchain" style="text-align:center; text-decoration:none; display:inline-block;">Play Native Games</a>
-            </div>
-            <p style="margin-top:14px;"><a href="/about/" style="color:#f87818; font-size:0.86rem;">Learn more about the project</a></p>
-        </section>
-
-    </main>
-
-    <!-- Scripts – order is important -->
-    <script src="/global_header.js"></script>
-
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            var tabs = document.querySelectorAll('#home-tabs .tab-btn');
-            var tabNames = Array.from(tabs).map(function (b) { return b.getAttribute('data-panel'); });
-            var active = 'games';
-            function show(name) {
-                active = name;
-                document.querySelectorAll('.home-panel').forEach(function (p) { p.style.display = (p.getAttribute('data-show') === name) ? '' : 'none'; });
-                tabs.forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-panel') === name); });
-            }
-            tabs.forEach(function (b) { b.addEventListener('click', function () { show(b.getAttribute('data-panel')); }); });
-            // Swipe the three home tabs left/right like the Earn page (whole panel area).
-            (function () {
-                var cont = document.getElementById('home-panels');
-                if (!cont) return;
-                var sx = 0, dx = 0, sy = 0, tracking = false;
-                cont.addEventListener('touchstart', function (e) { var t = e.touches[0]; sx = t.clientX; sy = t.clientY; dx = 0; tracking = true; }, { passive: true });
-                cont.addEventListener('touchmove', function (e) { if (!tracking) return; var t = e.touches[0]; dx = t.clientX - sx; }, { passive: true });
-                cont.addEventListener('touchend', function () {
-                    if (!tracking) return; tracking = false;
-                    if (Math.abs(dx) < 50) return;
-                    var i = tabNames.indexOf(active);
-                    var j = Math.min(tabNames.length - 1, Math.max(0, i + (dx < 0 ? 1 : -1)));
-                    if (j !== i) show(tabNames[j]);
-                }, { passive: true });
-                var tb = document.getElementById('home-tabs');
-                tb.addEventListener('touchstart', function (e) { var t = e.touches[0]; sx = t.clientX; sy = t.clientY; dx = 0; tracking = true; }, { passive: true });
-                tb.addEventListener('touchmove', function (e) { if (!tracking) return; var t = e.touches[0]; dx = t.clientX - sx; }, { passive: true });
-                tb.addEventListener('touchend', function () {
-                    if (!tracking) return; tracking = false;
-                    if (Math.abs(dx) < 50) return;
-                    var i = tabNames.indexOf(active);
-                    var j = Math.min(tabNames.length - 1, Math.max(0, i + (dx < 0 ? 1 : -1)));
-                    if (j !== i) show(tabNames[j]);
-                }, { passive: true });
-            })();
-            // Fill the Games icons + Country flags from the shared catalog.
-            (function () {
-                var icons = document.getElementById('home-game-icons');
-                var flags = document.getElementById('home-country-flags');
-                fetch('/games/data.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
-                    var gs = (j.games || []).slice(0, 12);
-                    if (icons) icons.innerHTML = gs.map(function (g) {
-                        return '<a href="/games/" style="text-decoration:none; display:block; text-align:center; background:#1a1a24; border:1px solid #2a2a36; border-radius:10px; padding:8px 4px;">' +
-                            '<div style="font-size:1.4rem;">' + g.emoji + '</div><div style="font-size:0.66rem; color:#bbb; margin-top:4px;">' + g.name + '</div></a>';
-                    }).join('');
-                    if (flags) flags.innerHTML = [['🇨🇳','China'],['🇮🇳','India'],['🇺🇸','United States'],['🇧🇷','Brazil'],['🇮🇩','Indonesia'],['🇯🇵','Japan'],['🇩🇪','Germany'],['🇰🇷','South Korea'],['🇬🇧','United Kingdom'],['🇫🇷','France'],['🇳🇬','Nigeria'],['🇪🇬','Egypt'],['🇿🇦','South Africa']].map(function (f) {
-                        return '<a href="/countries/" style="text-decoration:none; text-align:center; color:inherit;">' +
-                            '<div style="font-size:1.9rem;">' + f[0] + '</div><div style="font-size:0.66rem; color:#bbb; margin-top:2px; max-width:76px;">' + f[1] + '</div></a>';
-                    }).join('');
-                }).catch(function () { if (icons) icons.innerHTML = '<p class="hidden-note">Load the games catalog to see icons.</p>'; });
-            })();
-            // Fill the community gamer count on the hero (via the sitewide feed).
-            (function () {
-                var el = document.getElementById('home-gamer-count');
-                if (!el) return;
-                var doFill = function () {
-                    try {
-                        if (window.gfgCommunityCount && typeof window.gfgCommunityCount === 'function') {
-                            window.gfgCommunityCount().then(function (n) { if (n) el.textContent = Number(n).toLocaleString(); }).catch(function () { el.textContent = '—'; });
-                        } else {
-                            el.textContent = '—';
-                        }
-                    } catch (e) { el.textContent = '—'; }
-                };
-                setTimeout(doFill, 1500);
-                setInterval(doFill, 60000);
-            })();
-            show('games');
-        });
-    </script>
-
+<script src="/global_header.js"></script>
+<script>
+(function () {
+    var E = 'https://explorer.testnet.arc.io/address/';
+    var FAQ = [
+        { q: 'What is Foskaay GGI in one sentence?', a: 'It is the rail that makes an on-chain game gasless for its players: the game connects a session, everything inside runs free, and one settlement closes it. Players pay nothing and see no wallet popup.' },
+        { q: 'Do players need a wallet or any gas?', a: 'No. They sign in however the game onboards them (here, an email code), an embedded wallet is created silently, and every action is signed for them. They never hold gas and never see a top-up wall. There is no player-pay option in the rail at all.' },
+        { q: 'What does it cost, and who pays?', a: 'One small fixed fee per session, paid by the game operator (the sponsor) in USDC, never per move. Measured on Arc testnet, a whole Ludo match with connect and settle included is a fraction of a cent, and the moves themselves add nothing.' },
+        { q: 'Is it really on-chain?', a: 'Yes. The game rules, the state and the settlement live in contracts. The connect event carries the game link, and the settle verifies the players\' signatures on-chain. The frontend only draws what the chain returns. You can verify any session in the Explorer.' },
+        { q: 'Where are the contracts?', a: 'Arc Testnet. Core: <a href="' + E + '0x793785CE66992211B7c60dFCf0318869678D33a4" target="_blank" rel="noopener">FoskaayGGI 0x793785CE66992211B7c60dFCf0318869678D33a4</a> (single contract, fee built in, permanent UUPS proxy). Game: <a href="' + E + '0x24e38ac2e80958782a8Bc5CD479bbe2e5D81EcDF" target="_blank" rel="noopener">FoskaayGGIGames 0x24e38ac2e80958782a8Bc5CD479bbe2e5D81EcDF</a>. Player: <a href="' + E + '0x1614ebc72eA1cB3D31975b3976B5B474FAcE3b3C" target="_blank" rel="noopener">FoskaayGGIPlayers 0x1614ebc72eA1cB3D31975b3976B5B474FAcE3b3C</a>.' },
+        { q: 'How do I add gasless play to my own game?', a: 'Install the SDK, connect a session with your game account, run your rules, and settle once. There is no fork and no contract to copy. Start at the <a href="/foskaay-ggi/docs/#quickstart">quickstart</a>, then read <a href="/foskaay-ggi/docs/#designing">designing a game for Foskaay GGI</a> before you write your contract.' },
+        { q: 'Can I just copy the code and run my own?', a: 'Yes, it is open source. The trade is simple: the official rail keeps getting upgrades, the Explorer and the standard integrations, while a fork is frozen at the day you copied it. Most teams would rather build their game than maintain a rail.' },
+        { q: 'Does it work on other chains?', a: 'Foskaay GGI is built for Arc (Circle\'s EVM L1 where USDC is the gas token). The design is chain-agnostic, but Arc is the home today, and the rail is deployed on Arc testnet first.' }
+    ];
+    var host = document.getElementById('fg-faq');
+    FAQ.forEach(function (f) {
+        var d = document.createElement('details');
+        d.innerHTML = '<summary>' + f.q + '</summary><div class="fg-a">' + f.a + '</div>';
+        host.appendChild(d);
+    });
+})();
+</script>
+<script src="/dash-nav.js"></script>
+<script src="/foskaay-ggi-nav.js"></script>
+<script>
+    window.GFG_GGI_NAV.render({ active: 'home' });
+</script>
 </body>
 </html>

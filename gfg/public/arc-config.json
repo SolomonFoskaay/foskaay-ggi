@@ -1,0 +1,21 @@
+{
+  "note": "PUBLIC Arc rail config. These are contract addresses and endpoints only, safe to serve to any browser. NEVER put secrets here (keys, tokens, .env values). Secrets stay in the server env.",
+  "rails": {
+    "evm": {
+      "name": "Arc Testnet",
+      "chainId": 5042002,
+      "rpc": "https://rpc.testnet.arc.io",
+      "explorer": "https://explorer.testnet.arc.io",
+      "usdcDecimalsNative": 18,
+      "usdcDecimalsErc20": 6,
+      "contracts": {
+        "gameRegistry": "0x19BbC0C9e71318cDa9ca03994380a73B1280b38a",
+        "matchSettlement": "0x9171dd39f5ee581c240473080f0052c1652f0963",
+        "randomness": "0xb406295b4F7E5B513b656122AfFF29AF720E9E23",
+        "playerCore": "0x892CdbeD707425cdD3F0b0f9FE5428084E2FC730"
+      },
+      "sponsor": "0xAd0A4348C7202E44e96c3FAE1cBB0B645dD86EB4",
+      "sponsorNote": "Public address of the self-hosted relayer that pays the tiny USDC gas. The key is NEVER here (it lives only in the server env)."
+    }
+  }
+}
