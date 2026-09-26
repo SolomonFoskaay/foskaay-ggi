@@ -6,69 +6,71 @@ import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeab
 import {OwnableUpgradeable} from "@openzeppelin/contracts/access/OwnableUpgradeable.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
-/// @title SessionRegistry — the SINGLE core of Foskaay GGI.
+/// @title FoskaayGGI — the SINGLE, non-opinionated core of Foskaay GGI.
 ///
-/// @notice ONE contract (the FeeVault is merged in; there is no second core).
-/// A game connects once (paying the fee, which is transferred straight to the
-/// destination), plays every move for free, and settles once. It knows NOTHING
-/// about any game: no board, token, seat or dice. The game state is opaque bytes.
+/// @notice The session rail. It knows NOTHING about any game: it takes a
+/// dev-declared list of accounts (ANY count), charges ONE fee at connect, records
+/// a committable session, and settles once. It never learns game, player, points,
+/// board, seats or dice. Everything inside a session runs in the Foskaay GGI
+/// Midchain for FREE (moves, dice, computer turns, point credits); only connect
+/// and settle are transactions.
 ///
-/// @notice THE MIDCHAIN: `random`/`randomN` are pure, so dice, cards and loot
-/// cost nothing via eth_call. Moves run in the GAME's own pure functions via
-/// eth_call, signed with the session keys into a hash chain; only handover and
-/// settle are real transactions (2 per session, not 200).
+/// @notice FEE (unbypassable, charged at connect ONLY): a base + a per-account fee
+/// + a per-game fee. The base and per-account parts are charged ONCE per session;
+/// only the per-game part grows with batching. The fee is forwarded straight to
+/// `destination` in the same transaction, and the ONE storage write at connect
+/// (`commitments[sessionId]`) is BOTH the paid flag and the seed/participant
+/// commitment, so a session cannot start unpaid and cannot settle unless it paid.
 ///
-/// @notice FEE, UNBYPASSABLE: `handover` is payable and requires exactly the fee,
-/// forwarding it to `destination` in the SAME transaction. The ONE storage write
-/// at connect (`commitments[sessionId]`) is BOTH the paid flag and the committed
-/// randomness/participant commitment, so a session cannot start unpaid and cannot
-/// be settled unless it connected.
+/// @notice FREE RANDOMNESS: `random`/`randomN` are pure, so dice/cards/loot cost
+/// nothing via eth_call. The game derives them from the committed seed.
 ///
 /// @dev OPENZEPPELIN ONLY: UUPS + Initializable + Ownable for upgrades, ECDSA for
 ///      signature recovery (rejects malleable/malformed signatures).
 ///
-/// @dev UPGRADEABLE (UUPS). Storage is APPEND-ONLY: new variables go at the top of
-///      `__gap`, which shrinks by the same count. `version` marks layout changes.
-///
-/// @dev GAS TARGET: connect ~50k gas + settle ~35k gas + the fee = about $1/1000
-///      at Arc mainnet gas (5-10 Gwei) unbatched; `handoverMany`/`settleMany`
-///      amortize the 21k base tx and go well under $1/1000.
-contract SessionRegistry is Initializable, UUPSUpgradeable, OwnableUpgradeable {
+/// @dev UPGRADEABLE (UUPS). Storage is APPEND-ONLY: new variables consume from the
+///      top of `__gap`, which shrinks by the same count. `version` marks changes.
+contract FoskaayGGI is Initializable, UUPSUpgradeable, OwnableUpgradeable {
     /// Where the fee goes (the project treasury). A direct transfer, no vault.
     address public destination;
 
-    /// Fee for a single session in native USDC wei (Arc USDC is 18dp). ONE fee:
-    /// batching a session with MANY games only saves gas (the 21k base tx is
-    /// shared), never changes this fee.
+    /// LEGACY single fee for the plain `handover`/`handoverMany` (kept as-is).
     uint256 public fee;
 
-    /// RESERVED (unused): kept only so the storage layout stays append-only for
-    /// the in-place upgrade. Do not add a second tier; batching lowers GAS, not
-    /// the fee per game.
-    uint256 public reservedFeeSlot;
+    /// The session fee: base + per-account + per-game, all charged at connect.
+    uint256 public feeBase;
+    uint256 public feePerAccount;
+    uint256 public feePerGame;
 
     /// Monotonic session counter. Emitted in Handover for off-chain indexing.
     uint64 public sessionCounter;
 
     /// sessionId => commitment = keccak256(abi.encode(seedCommit, players, sessionKeys)).
-    /// A NON-ZERO value means "paid and connected". It binds the randomness
-    /// commitment AND the exact player/session-key set, so:
-    ///   - settle can prove the revealed seed is the one committed at connect, and
-    ///   - a stranger cannot settle with their own key (the signer set is bound).
+    /// NON-ZERO means "paid and connected". Binds the randomness commitment AND the
+    /// exact player/session-key set, so a stranger cannot settle with their own key.
     mapping(bytes32 => bytes32) public commitments;
 
     /// sessionId => settled. Blocks a second settle of the same session.
     mapping(bytes32 => bool) public settled;
 
-    /// Layout marker. Bump only on a layout change.
+    /// sessionId => the accounts the DEV declared to lift (ANY count). The core
+    /// NEVER interprets the list; it only records it so a settle can commit the
+    /// right set. This is the generic hook a game uses to bring its own accounts
+    /// (game, player, points, ...) into one session.
+    mapping(bytes32 => address[]) public liftedAccounts;
+
+    /// sessionId => the number of games this session will cover (the dev's
+    /// declared count). Used only for the per-game fee; the core never learns what
+    /// a "game" is.
+    mapping(bytes32 => uint16) public sessionGames;
+
+    /// Layout marker. This fresh core is version 2.
     uint8 public version;
 
     /// Reserved slots for future variables. Consume from the top, shrink by the
     /// same count. DO NOT reorder or remove.
     uint256[20] private __gap;
 
-    /// The connect event. Carries the game link and committed seed so the Explorer
-    /// can index it from eth_getLogs with no backend and no extra tx.
     event Handover(
         bytes32 indexed sessionId,
         address indexed gameLogic,
@@ -80,11 +82,9 @@ contract SessionRegistry is Initializable, UUPSUpgradeable, OwnableUpgradeable {
         address indexed payer,
         uint64 counter
     );
-
-    /// The settle event. `finalHash` commits to the whole game (board AND points);
-    /// `seedReveal` opens the seed committed at connect.
     event Settled(bytes32 indexed sessionId, bytes32 finalHash, bytes32 seedReveal, address indexed payer);
     event FeeSet(uint256 fee);
+    event FeesSet(uint256 feeBase, uint256 feePerAccount, uint256 feePerGame);
     event DestinationSet(address destination);
 
     error BadFee();
@@ -99,14 +99,29 @@ contract SessionRegistry is Initializable, UUPSUpgradeable, OwnableUpgradeable {
     /// @notice Initialize the proxy.
     /// @param owner_ the upgrade/config owner (the project owner).
     /// @param destination_ where fees are sent (the treasury).
-    /// @param fee_ unbatched fee (native USDC wei). Batched defaults to the same.
-    function initialize(address owner_, address destination_, uint256 fee_) external initializer {
+    /// @param fee_ legacy single fee for `handover` (native USDC wei).
+    /// @param feeBase_ session base fee.
+    /// @param feePerAccount_ fee per lifted account.
+    /// @param feePerGame_ fee per game in the session.
+    function initialize(
+        address owner_,
+        address destination_,
+        uint256 fee_,
+        uint256 feeBase_,
+        uint256 feePerAccount_,
+        uint256 feePerGame_
+    ) external initializer {
         if (owner_ == address(0) || destination_ == address(0)) revert ZeroAddress();
         __Ownable_init(owner_);
         destination = destination_;
         fee = fee_;
+        feeBase = feeBase_;
+        feePerAccount = feePerAccount_;
+        feePerGame = feePerGame_;
+        version = 2;
         emit DestinationSet(destination_);
         emit FeeSet(fee_);
+        emit FeesSet(feeBase_, feePerAccount_, feePerGame_);
     }
 
     /// @dev The implementation contract can never be used directly.
@@ -114,13 +129,20 @@ contract SessionRegistry is Initializable, UUPSUpgradeable, OwnableUpgradeable {
         _disableInitializers();
     }
 
-    /// @dev Only the owner may authorize an upgrade. Move to a timelock/multisig
-    ///      before mainnet.
+    /// @dev Only the owner may authorize an upgrade.
     function _authorizeUpgrade(address) internal override onlyOwner {}
 
     function setFee(uint256 fee_) external onlyOwner {
         fee = fee_;
         emit FeeSet(fee_);
+    }
+
+    /// @notice Set the three session-fee parts (native USDC wei).
+    function setFees(uint256 feeBase_, uint256 feePerAccount_, uint256 feePerGame_) external onlyOwner {
+        feeBase = feeBase_;
+        feePerAccount = feePerAccount_;
+        feePerGame = feePerGame_;
+        emit FeesSet(feeBase_, feePerAccount_, feePerGame_);
     }
 
     function setDestination(address destination_) external onlyOwner {
@@ -131,8 +153,7 @@ contract SessionRegistry is Initializable, UUPSUpgradeable, OwnableUpgradeable {
 
     // ------------------------------------------------------------- connect
 
-    /// @notice Connect a session and pay the fee. `msg.value` must equal `fee`.
-    ///         The fee is forwarded to `destination` in this same transaction.
+    /// @notice LEGACY connect: pay the single `fee`. Kept exactly as before.
     function handover(
         bytes32 sessionId,
         address gameLogic,
@@ -144,14 +165,14 @@ contract SessionRegistry is Initializable, UUPSUpgradeable, OwnableUpgradeable {
     ) external payable {
         if (players.length == 0 || players.length != sessionKeys.length) revert BadInput();
         if (msg.value != fee) revert BadFee();
-        if (commitments[sessionId] != bytes32(0)) revert BadInput(); // already connected
+        if (commitments[sessionId] != bytes32(0)) revert BadInput();
         commitments[sessionId] = _commitment(seedCommit, players, sessionKeys);
         sessionCounter += 1;
         _pay(msg.value);
         emit Handover(sessionId, gameLogic, startHash, seedCommit, players, sessionKeys, randomCount, msg.sender, sessionCounter);
     }
 
-    /// @notice Connect MANY sessions in ONE transaction at the batched fee.
+    /// @notice LEGACY connect MANY sessions in ONE transaction (single `fee` each).
     function handoverMany(
         bytes32[] calldata sessionIds,
         address gameLogic,
@@ -174,13 +195,46 @@ contract SessionRegistry is Initializable, UUPSUpgradeable, OwnableUpgradeable {
         _pay(msg.value);
     }
 
+    /// @notice Connect a session, record the DEV-declared accounts (ANY count) and
+    ///         the number of games. Charges, ONCE, the full session fee:
+    ///         feeBase + feePerAccount * accounts.length + feePerGame * games.
+    ///         Nothing else is charged: everything inside the Foskaay GGI Midchain
+    ///         (moves, dice, point credits, computer turns) is free.
+    function handoverWithAccounts(
+        bytes32 sessionId,
+        address gameLogic,
+        bytes32 startHash,
+        bytes32 seedCommit,
+        address[] calldata players,
+        address[] calldata sessionKeys,
+        uint16 randomCount,
+        address[] calldata accounts,
+        uint16 games
+    ) external payable {
+        if (players.length == 0 || players.length != sessionKeys.length) revert BadInput();
+        uint256 required = feeBase + feePerAccount * accounts.length + feePerGame * uint256(games);
+        if (msg.value != required) revert BadFee();
+        if (commitments[sessionId] != bytes32(0)) revert BadInput();
+        commitments[sessionId] = _commitment(seedCommit, players, sessionKeys);
+        liftedAccounts[sessionId] = accounts;   // ANY count, the dev's choice
+        sessionGames[sessionId] = games;        // the declared game count
+        sessionCounter += 1;
+        _pay(msg.value);
+        emit Handover(sessionId, gameLogic, startHash, seedCommit, players, sessionKeys, randomCount, msg.sender, sessionCounter);
+    }
+
+    /// @notice The accounts the dev declared for a session (0..N).
+    function sessionAccounts(bytes32 sessionId) external view returns (address[] memory) {
+        return liftedAccounts[sessionId];
+    }
+
+    /// @notice Owner-only layout marker bump.
+    function setVersion(uint8 v) external onlyOwner {
+        version = v;
+    }
+
     // -------------------------------------------------------------- settle
 
-    /// @notice Settle one session. Requires: it connected (paid), the revealed
-    ///         seed matches the commitment, it is not already settled, and every
-    ///         declared session key signed (sessionId, finalHash). Emits the
-    ///         result; the game's points are inside `finalHash` (midchain), so no
-    ///         extra storage is written for them.
     function settle(
         bytes32 sessionId,
         bytes32 finalHash,
@@ -193,7 +247,6 @@ contract SessionRegistry is Initializable, UUPSUpgradeable, OwnableUpgradeable {
         _settleOne(sessionId, finalHash, seedReveal, players, sessionKeys, sigs, signers);
     }
 
-    /// @notice Settle MANY sessions in ONE transaction (batched cadence).
     function settleMany(
         bytes32[] calldata sessionIds,
         bytes32[] calldata finalHashes,
@@ -210,7 +263,6 @@ contract SessionRegistry is Initializable, UUPSUpgradeable, OwnableUpgradeable {
         }
     }
 
-    /// @dev One settle, factored out so settleMany stays within the stack limit.
     function _settleOne(
         bytes32 sessionId,
         bytes32 finalHash,
@@ -221,8 +273,7 @@ contract SessionRegistry is Initializable, UUPSUpgradeable, OwnableUpgradeable {
         address[] calldata signers
     ) private {
         bytes32 stored = commitments[sessionId];
-        if (stored == bytes32(0)) revert FeeNotPaid();      // never connected / unpaid
-        // Rebuild the commitment from the reveal + the exact participant sets.
+        if (stored == bytes32(0)) revert FeeNotPaid();
         bytes32 seedCommit = keccak256(abi.encodePacked(seedReveal));
         if (_commitment(seedCommit, players, sessionKeys) != stored) revert BadReveal();
         if (settled[sessionId]) revert AlreadySettled();
@@ -230,7 +281,6 @@ contract SessionRegistry is Initializable, UUPSUpgradeable, OwnableUpgradeable {
         if (n == 0 || n != sigs.length) revert BadInput();
         bytes32 digest = midchainDigest(sessionId, finalHash);
         for (uint256 i = 0; i < n; i++) {
-            // OpenZeppelin ECDSA.recover rejects malleable/malformed signatures.
             if (ECDSA.recover(digest, sigs[i]) != signers[i]) revert BadSignature();
         }
         settled[sessionId] = true;
@@ -239,26 +289,20 @@ contract SessionRegistry is Initializable, UUPSUpgradeable, OwnableUpgradeable {
 
     // ---------------------------------------------------------------- reads
 
-    /// @notice The exact digest a session key signs to authorise a settlement.
-    ///         Bound to this contract and chain, so it cannot be replayed.
     function midchainDigest(bytes32 sessionId, bytes32 finalHash) public view returns (bytes32) {
         return keccak256(abi.encodePacked("FoskaayGGI", block.chainid, address(this), sessionId, finalHash));
     }
 
-    /// @notice True once a session connected and paid.
     function isPaid(bytes32 sessionId) external view returns (bool) {
         return commitments[sessionId] != bytes32(0);
     }
 
     // ------------------------------------------------------- free randomness
 
-    /// @notice One free random seed: keccak(seed, counter). Pure, costs nothing
-    ///         via eth_call. The game derives dice/cards/loot from it.
     function random(bytes32 seed, uint256 counter) public pure returns (bytes32) {
         return keccak256(abi.encode(seed, counter));
     }
 
-    /// @notice N free random seeds in one call. Pure and free.
     function randomN(bytes32 seed, uint256 counter, uint256 count) public pure returns (bytes32[] memory out) {
         out = new bytes32[](count);
         for (uint256 i = 0; i < count; i++) {

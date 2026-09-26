@@ -2,7 +2,7 @@
 //
 // Usage (ESM):
 //   import ggiContracts from '@foskaay/ggi-contracts-sdk';
-//   ggiContracts.testnet.contracts.SessionRegistry;
+//   ggiContracts.testnet.contracts.FoskaayGGI;
 //   ggiContracts.forChain(5042002).name;
 //
 // Usage (CommonJS):

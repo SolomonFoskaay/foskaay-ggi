@@ -114,7 +114,7 @@ Never trust the publish; test the install in a clean folder:
 mkdir /tmp/ggi-check && cd /tmp/ggi-check
 npm init -y
 npm install @foskaay/ggi-sdk @foskaay/ggi-contracts-sdk viem
-node -e "const {testnet} = require('@foskaay/ggi-contracts-sdk'); console.log(testnet.contracts.SessionRegistry)"
+node -e "const {testnet} = require('@foskaay/ggi-contracts-sdk'); console.log(testnet.contracts.FoskaayGGI)"
 ```
 
 If that prints the address, the package is genuinely installable. If it fails,

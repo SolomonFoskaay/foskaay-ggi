@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {SessionRegistry} from "../src/SessionRegistry.sol";
+import {FoskaayGGI} from "../src/FoskaayGGI.sol";
 import {Deploy} from "./Deploy.sol";
 
 interface Vm {
@@ -16,7 +16,7 @@ interface Vm {
 /// The single core (v7): connect pays the fee straight to the destination and the
 /// ONE storage write is both the paid flag and the seed/participant commitment.
 /// Free randomness, settle by session-key signatures. There is no FeeVault.
-contract SessionRegistryTest {
+contract FoskaayGGITest {
     Vm constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
 
     uint256 constant FEE = 4e14; // 0.0004 native USDC (18 decimals)
@@ -26,7 +26,7 @@ contract SessionRegistryTest {
     bytes32 constant SID = keccak256("session-1");
     bytes32 constant SEED = keccak256("reveal-me");
 
-    SessionRegistry reg;
+    FoskaayGGI reg;
     address p0;
     address p1;
 
@@ -76,13 +76,13 @@ contract SessionRegistryTest {
     }
 
     function testHandoverWrongFeeReverts() public {
-        vm.expectRevert(SessionRegistry.BadFee.selector);
+        vm.expectRevert(FoskaayGGI.BadFee.selector);
         reg.handover{value: FEE - 1}(SID, address(0x1234), bytes32("start"), _commit(), _players(), _keys(), 2);
     }
 
     function testDoubleHandoverReverts() public {
         _handover();
-        vm.expectRevert(SessionRegistry.BadInput.selector);
+        vm.expectRevert(FoskaayGGI.BadInput.selector);
         _handover();
     }
 
@@ -95,7 +95,7 @@ contract SessionRegistryTest {
     function testSettleWrongSeedReverts() public {
         _handover();
         bytes[] memory s = _sigs();
-        vm.expectRevert(SessionRegistry.BadReveal.selector);
+        vm.expectRevert(FoskaayGGI.BadReveal.selector);
         reg.settle(SID, bytes32("final"), keccak256("other"), _players(), _keys(), s, _keys());
     }
 
@@ -103,13 +103,13 @@ contract SessionRegistryTest {
         _handover();
         bytes[] memory s = _sigs();
         s[1] = _sig(PK0); // signer set expects p1 here
-        vm.expectRevert(SessionRegistry.BadSignature.selector);
+        vm.expectRevert(FoskaayGGI.BadSignature.selector);
         reg.settle(SID, bytes32("final"), SEED, _players(), _keys(), s, _keys());
     }
 
     function testSettleUnpaidReverts() public {
         bytes[] memory s = _sigs();
-        vm.expectRevert(SessionRegistry.FeeNotPaid.selector);
+        vm.expectRevert(FoskaayGGI.FeeNotPaid.selector);
         reg.settle(SID, bytes32("final"), SEED, _players(), _keys(), s, _keys());
     }
 
@@ -117,7 +117,7 @@ contract SessionRegistryTest {
         _handover();
         bytes[] memory s = _sigs();
         reg.settle(SID, bytes32("final"), SEED, _players(), _keys(), s, _keys());
-        vm.expectRevert(SessionRegistry.AlreadySettled.selector);
+        vm.expectRevert(FoskaayGGI.AlreadySettled.selector);
         reg.settle(SID, bytes32("final"), SEED, _players(), _keys(), s, _keys());
     }
 
@@ -129,7 +129,7 @@ contract SessionRegistryTest {
         address[] memory fake = new address[](2);
         fake[0] = address(0xDEAD);
         fake[1] = address(0xBEEF);
-        vm.expectRevert(SessionRegistry.BadReveal.selector);
+        vm.expectRevert(FoskaayGGI.BadReveal.selector);
         reg.settle(SID, bytes32("final"), SEED, _players(), fake, s, _keys());
     }
 

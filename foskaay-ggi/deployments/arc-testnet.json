@@ -7,8 +7,10 @@
   "deployedAt": "2026-09-22T04:06:51.469Z",
   "deployer": "0xAd0A4348C7202E44e96c3FAE1cBB0B645dD86EB4",
   "contracts": {
-    "SessionRegistry": "0x9f078527082b3bCc7c00e27f7C53D31CF1D17A85",
-    "FoskaayGGILudo": "0xa5040Ece5945a8551499ad1148fc3cD15b165987"
+    "FoskaayGGI": "0x793785CE66992211B7c60dFCf0318869678D33a4",
+    "FoskaayGGILudo": "0xa5040Ece5945a8551499ad1148fc3cD15b165987",
+    "FoskaayGGIGames": "0x24e38ac2e80958782a8Bc5CD479bbe2e5D81EcDF",
+    "FoskaayGGIPlayers": "0x1614ebc72eA1cB3D31975b3976B5B474FAcE3b3C"
   },
   "upgradeable": true,
   "pattern": "UUPS proxy (ERC1967). Proxy addresses are permanent.",
@@ -17,8 +19,10 @@
   "cleanCoreDeployedAt": "2026-09-23T06:59:41.464Z",
   "coreNote": "v7 single core (SessionRegistry, fee built in, single 0.0004 fee; batching lowers gas only). Upgraded in place; address unchanged. Ludo is behind a UUPS proxy (upgradeable).",
   "implementations": {
-    "SessionRegistry": "0x287a946015Eda93842bE51fCeC9b0B3bF6fab8AF",
-    "FoskaayGGILudo": "0xDC38f721C5918A0B2AC234768aaAee25A01ab7b7"
+    "FoskaayGGI": "0x6A7cF5Db0Df5d5Ae8D181A10BFfa9a0Eb2438017",
+    "FoskaayGGILudo": "0xDC38f721C5918A0B2AC234768aaAee25A01ab7b7",
+    "FoskaayGGIGames": "0x83418a85B88a44859F95E321F2089fEd503f45d3",
+    "FoskaayGGIPlayers": "0xbEA1DE7d6F80f57C13e5840c8957a6C3Fd5BbACd"
   },
   "demoDeployedAt": "2026-09-24T15:05:23.630Z",
   "demoNote": "Ludo demo: FoskaayGGIDemoGames (all demo games, gameTag ludo) + FoskaayGGIDemoPlayer (one player account, per-game point buckets). Both UUPS, OZ-only, wired.",
@@ -30,5 +34,32 @@
   "demoUpgradeNote": "In-place UUPS upgrade of the permanent demo proxies (same addresses). Top-level layout unchanged.",
   "coreV7DeployedAt": "2026-09-25T14:37:25.609Z",
   "ludoDeployedAt": "2026-09-25T14:37:25.609Z",
-  "coreV7UpgradedAt": "2026-09-26T09:15:52.085Z"
+  "coreV7UpgradedAt": "2026-09-26T09:15:52.085Z",
+  "proof": {
+    "game": "0x30Ec2A596A78E7ffeB6e685E5D4B6F35c67443D8",
+    "player": "0x7826Ac206bfca77B34Db0185c130e763006F4707",
+    "measuredAt": "2026-09-26T10:45:05.723Z"
+  },
+  "foskaayGGICoreDeployedAt": "2026-09-26T13:59:40.000Z",
+  "foskaayGGINote": "Phase 1: FRESH core, the SessionRegistry renamed to the locked FoskaayGGI, still a UUPS proxy (new permanent address) and still OpenZeppelin only. Adds the 3-part session fee (0.0004 base + 0.0004 per lifted account + 0.0002 per game) and handoverWithAccounts(games). Legacy single-fee handover/handoverMany are unchanged. version = 2, append-only __gap. The demo game FoskaayGGILudo is untouched (Phase 2 replaces it with FoskaayGGIGames + FoskaayGGIPlayers).",
+  "foskaayGGIFees": {
+    "legacyFee": "400000000000000",
+    "base": "400000000000000",
+    "perAccount": "400000000000000",
+    "perGame": "200000000000000",
+    "note": "Native USDC wei (18 decimals). Base + per-account are charged once per session; only per-game grows with batching."
+  },
+  "foskaayGGIDeployTxs": {
+    "implementation": "0xe071c804d580bed4997dff8d0d1d38634c4aee4152311b16606d7bd23f857fc7",
+    "proxy": "0xab9e9f9797faca2d039e4e6528ef1bcdd7f0ba6c93475a7ae564fcd44c7c76e1"
+  },
+  "foskaayGGIGamesPlayersDeployedAt": "2026-09-26T14:40:00.000Z",
+  "foskaayGGIGamesPlayersNote": "Phase 2: FRESH Ludo game (FoskaayGGIGames: holds the match on-chain + the pure rules + settle(games[]) which credits the player in the same step) and FRESH player account (FoskaayGGIPlayers: per player, per game tag points/lives/records; credit callable only by its game). Both UUPS, OpenZeppelin only, permanent. Wired: players.game = games, games.players = players. The old demo FoskaayGGILudo (pure rules only) stays deployed untouched until the frontend moves to the new contracts in Phase 5.",
+  "foskaayGGIGamesPlayersTxs": {
+    "playersImplementation": "0x3b3f1dacc6db1b93561ea650a849bf8fcca933abcabee1f31c76b59d1414d07f",
+    "playersProxy": "0xe632c04808a7272463f9fe23111270515da3e5d82959ff00e74672f7bcb8af17",
+    "gamesImplementation": "0x18fe0b583c2c3bbf9951a38a24017b5bb37ca38066efc04d1ba51aca9ee95eaf",
+    "gamesProxy": "0xa6f7aaba75269b8b65637a4de7f8ae2261fa8157ce0c149c5af3ef131a251340",
+    "wireSetGame": "0x12aa79d03ead322e7018fdc1d9b8654ca162155befbe501a4bb2664918b6bfc7"
+  }
 }

@@ -34,14 +34,30 @@ import ggiContracts from '@foskaay/ggi-contracts-sdk';
 const registryAbi = parseAbi([
   'function handover(bytes32 sessionId, address gameLogic, bytes32 startHash, bytes32 seedCommit, address[] players, address[] sessionKeys, uint16 randomCount) payable',
   'function handoverMany(bytes32[] sessionIds, address gameLogic, bytes32[] startHashes, bytes32[] seedCommits, address[][] players, address[][] sessionKeys, uint16 randomCount) payable',
+  'function handoverWithAccounts(bytes32 sessionId, address gameLogic, bytes32 startHash, bytes32 seedCommit, address[] players, address[] sessionKeys, uint16 randomCount, address[] accounts, uint16 games) payable',
   'function settle(bytes32 sessionId, bytes32 finalHash, bytes32 seedReveal, address[] players, address[] sessionKeys, bytes[] sigs, address[] signers)',
   'function settleMany(bytes32[] sessionIds, bytes32[] finalHashes, bytes32[] seedReveals, address[][] players, address[][] sessionKeys, bytes[][] sigs, address[][] signers)',
   'function midchainDigest(bytes32 sessionId, bytes32 finalHash) view returns (bytes32)',
   'function random(bytes32 seed, uint256 counter) pure returns (bytes32)',
   'function randomN(bytes32 seed, uint256 counter, uint256 count) pure returns (bytes32[])',
   'function fee() view returns (uint256)',
+  'function feeBase() view returns (uint256)',
+  'function feePerAccount() view returns (uint256)',
+  'function feePerGame() view returns (uint256)',
   'function destination() view returns (address)',
   'function isPaid(bytes32 sessionId) view returns (bool)',
+]);
+
+// The game contract (FoskaayGGIGames) and the player account (FoskaayGGIPlayers).
+const gamesAbi = parseAbi([
+  'function settle(bytes32 sessionId, (uint8 turn, uint8 seats, uint32 step, bytes board, bytes32 boardHash, bool over)[] list, address[] seatPlayers, bytes32 gameTag) returns (uint256)',
+  'function gameCount(bytes32 sessionId) view returns (uint256)',
+]);
+
+const playersAbi = parseAbi([
+  'function pointsOf(address player, bytes32 gameTag) view returns (uint64)',
+  'function livesOf(address player, bytes32 gameTag) view returns (uint64)',
+  'function recordOf(address player, bytes32 gameTag) view returns (uint64 played, uint64 wins, uint64 best)',
 ]);
 
 // ---------------------------------------------------------------- helpers
@@ -68,10 +84,12 @@ export class GgiClient {
     this.network = network;
     this.chain = makeChain(net);
     this.addresses = {
-      SessionRegistry: net.contracts.SessionRegistry,
+      FoskaayGGI: net.contracts.FoskaayGGI,
+      Games: net.contracts.FoskaayGGIGames,
+      Players: net.contracts.FoskaayGGIPlayers,
       Ludo: net.contracts.FoskaayGGILudo,
     };
-    this.deployed = Boolean(this.addresses.SessionRegistry);
+    this.deployed = Boolean(this.addresses.FoskaayGGI);
     this.publicClient = opts.publicClient || createPublicClient({ chain: this.chain, transport: http(net.rpc) });
     this.walletClient = opts.walletClient || null;
   }
@@ -86,8 +104,30 @@ export class GgiClient {
 
   /// The current per-session fee, in native USDC base units (18 decimals on Arc).
   async fee() {
-    if (!this.addresses.SessionRegistry) return 0n;
-    return this.publicClient.readContract({ address: this.addresses.SessionRegistry, abi: registryAbi, functionName: 'fee' });
+    if (!this.addresses.FoskaayGGI) return 0n;
+    return this.publicClient.readContract({ address: this.addresses.FoskaayGGI, abi: registryAbi, functionName: 'fee' });
+  }
+
+  async feeBase() {
+    if (!this.addresses.FoskaayGGI) return 0n;
+    return this.publicClient.readContract({ address: this.addresses.FoskaayGGI, abi: registryAbi, functionName: 'feeBase' });
+  }
+
+  async feePerAccount() {
+    if (!this.addresses.FoskaayGGI) return 0n;
+    return this.publicClient.readContract({ address: this.addresses.FoskaayGGI, abi: registryAbi, functionName: 'feePerAccount' });
+  }
+
+  async feePerGame() {
+    if (!this.addresses.FoskaayGGI) return 0n;
+    return this.publicClient.readContract({ address: this.addresses.FoskaayGGI, abi: registryAbi, functionName: 'feePerGame' });
+  }
+
+  /// The exact session fee for a declared account count and game count, read live
+  /// from the core (never hardcoded).
+  async sessionFee(accountsCount, games) {
+    const [base, perAccount, perGame] = await Promise.all([this.feeBase(), this.feePerAccount(), this.feePerGame()]);
+    return base + perAccount * BigInt(accountsCount) + perGame * BigInt(games);
   }
 
   /// CONNECT one session and pay the fee in the same transaction. `cfg` =
@@ -96,7 +136,7 @@ export class GgiClient {
     const owner = this.requireWallet();
     const value = await this.fee();
     return this.walletClient.writeContract({
-      address: this.addresses.SessionRegistry,
+      address: this.addresses.FoskaayGGI,
       abi: registryAbi,
       functionName: 'handover',
       args: [
@@ -118,7 +158,7 @@ export class GgiClient {
     this.requireWallet();
     const value = (await this.fee()) * BigInt(cfg.sessionIds.length);
     return this.walletClient.writeContract({
-      address: this.addresses.SessionRegistry,
+      address: this.addresses.FoskaayGGI,
       abi: registryAbi,
       functionName: 'handoverMany',
       args: [
@@ -135,13 +175,43 @@ export class GgiClient {
     });
   }
 
+  /// CONNECT one session and pay the 3-part fee in the same transaction, recording
+  /// the DEV-declared accounts (ANY count) and the number of games. `cfg` adds
+  /// { accounts[], games } to the `handover` config. Value =
+  /// feeBase + feePerAccount * accounts.length + feePerGame * games.
+  async handoverWithAccounts(cfg = {}) {
+    this.requireWallet();
+    const accounts = cfg.accounts || [];
+    const games = BigInt(cfg.games || 0);
+    const [base, perAccount, perGame] = await Promise.all([this.feeBase(), this.feePerAccount(), this.feePerGame()]);
+    const value = base + perAccount * BigInt(accounts.length) + perGame * games;
+    return this.walletClient.writeContract({
+      address: this.addresses.FoskaayGGI,
+      abi: registryAbi,
+      functionName: 'handoverWithAccounts',
+      args: [
+        cfg.sessionId,
+        cfg.gameLogic,
+        cfg.startHash,
+        cfg.seedCommit || ('0x' + '00'.repeat(32)),
+        cfg.players,
+        cfg.sessionKeys,
+        cfg.randomCount || 0,
+        accounts,
+        Number(games),
+      ],
+      value,
+      account: this.walletClient.account,
+    });
+  }
+
   /// SETTLE one session. `cfg` = { sessionId, finalHash, seedReveal, players[],
   /// sessionKeys[], sigs[], signers[] }. `finalHash` may be one game's final hash
   /// or a session root. The players/sessionKeys must match the connect.
   async settle(cfg = {}) {
     this.requireWallet();
     return this.walletClient.writeContract({
-      address: this.addresses.SessionRegistry,
+      address: this.addresses.FoskaayGGI,
       abi: registryAbi,
       functionName: 'settle',
       args: [cfg.sessionId, cfg.finalHash, cfg.seedReveal || ('0x' + '00'.repeat(32)), cfg.players, cfg.sessionKeys, cfg.sigs, cfg.signers],
@@ -153,7 +223,7 @@ export class GgiClient {
   async settleMany(cfg = {}) {
     this.requireWallet();
     return this.walletClient.writeContract({
-      address: this.addresses.SessionRegistry,
+      address: this.addresses.FoskaayGGI,
       abi: registryAbi,
       functionName: 'settleMany',
       args: [
@@ -182,7 +252,7 @@ export class GgiClient {
   /// The exact digest a participant signs to authorise a settlement.
   async midchainDigest(sessionId, finalHash) {
     return this.publicClient.readContract({
-      address: this.addresses.SessionRegistry,
+      address: this.addresses.FoskaayGGI,
       abi: registryAbi,
       functionName: 'midchainDigest',
       args: [sessionId, finalHash],
@@ -210,14 +280,14 @@ export class GgiClient {
   /// One free random seed: keccak(seed, counter), via eth_call. Costs nothing.
   async random(seed, counter) {
     return this.publicClient.readContract({
-      address: this.addresses.SessionRegistry, abi: registryAbi, functionName: 'random', args: [seed, BigInt(counter)],
+      address: this.addresses.FoskaayGGI, abi: registryAbi, functionName: 'random', args: [seed, BigInt(counter)],
     });
   }
 
   /// N free random seeds in one call.
   async randomN(seed, counter, count) {
     return this.publicClient.readContract({
-      address: this.addresses.SessionRegistry, abi: registryAbi, functionName: 'randomN', args: [seed, BigInt(counter), BigInt(count)],
+      address: this.addresses.FoskaayGGI, abi: registryAbi, functionName: 'randomN', args: [seed, BigInt(counter), BigInt(count)],
     });
   }
 
@@ -226,8 +296,20 @@ export class GgiClient {
   /// Whether a session was paid at connect (the registry checks this to settle).
   async isPaid(sessionId) {
     return this.publicClient.readContract({
-      address: this.addresses.SessionRegistry, abi: registryAbi, functionName: 'isPaid', args: [sessionId],
+      address: this.addresses.FoskaayGGI, abi: registryAbi, functionName: 'isPaid', args: [sessionId],
     });
+  }
+
+  /// The player's points for a game tag, read from FoskaayGGIPlayers.
+  async pointsOf(player, gameTag) {
+    if (!this.addresses.Players) return 0n;
+    return this.publicClient.readContract({ address: this.addresses.Players, abi: playersAbi, functionName: 'pointsOf', args: [player, gameTag] });
+  }
+
+  /// How many games a session has committed, read from FoskaayGGIGames.
+  async gameCount(sessionId) {
+    if (!this.addresses.Games) return 0n;
+    return this.publicClient.readContract({ address: this.addresses.Games, abi: gamesAbi, functionName: 'gameCount', args: [sessionId] });
   }
 }
 

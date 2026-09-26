@@ -5,8 +5,8 @@
 // WHAT THIS IS: the tiny serverless relay that pays the tiny fee and gas so the
 // PLAYER NEVER PAYS and never sees a wallet popup. The clean core is TWO
 // contracts, so this relay does exactly two things:
-//   1. connect: SessionRegistry.handover (payable; forwards the fee to FeeVault)
-//   2. settle:  SessionRegistry.settle   (verifies the players' signatures)
+//   1. connect: FoskaayGGI.handover (payable; forwards the fee to destination)
+//   2. settle:  FoskaayGGI.settle   (verifies the players' signatures)
 // The two demo actions (midchainHandover / midchainSettle) are thin wrappers the
 // PvP demo calls; they are the same two core calls with demo-friendly arguments.
 //
@@ -33,9 +33,13 @@ const CHAIN_ID = 5042002;
 // The deployed Foskaay GGI core (proxy addresses; permanent). Kept here as data so
 // this handler has no build dependency on the packages.
 const ADDR = {
-  // The SINGLE core (v7): SessionRegistry with the FeeVault merged in. UUPS.
-  SessionRegistry: '0x9f078527082b3bCc7c00e27f7C53D31CF1D17A85',
-  // The Ludo game: PURE (no storage), so every move is a free eth_call.
+  // The SINGLE core: FoskaayGGI (the SessionRegistry renamed), UUPS. Phase 3
+  // rewires this handler to handoverWithAccounts + FoskaayGGIGames/Players.
+  FoskaayGGI: '0x793785CE66992211B7c60dFCf0318869678D33a4',
+  // Phase 2: the on-chain game (match + rules + settle) and the player account.
+  FoskaayGGIGames: '0x24e38ac2e80958782a8Bc5CD479bbe2e5D81EcDF',
+  FoskaayGGIPlayers: '0x1614ebc72eA1cB3D31975b3976B5B474FAcE3b3C',
+  // The Ludo game (pure rules only): still used by the demo until Phase 3/5.
   FoskaayGGILudo: '0xa5040Ece5945a8551499ad1148fc3cD15b165987',
 };
 
@@ -152,7 +156,7 @@ async function step(sess, kind, seat, tokenIndex, value, seeds) {
   const newState = await ludoRead(pub, 'applyMove', [sess.state, kind, seat, tokenIndex, value, seeds || []]);
   const prevHash = sess.state === sess.startState ? sess.startHash : sess.lastHash;
   const newHash = await ludoRead(pub, 'hashState', [newState]);
-  const digest = await pub.readContract({ address: ADDR.SessionRegistry, abi: coreAbi, functionName: 'midchainDigest', args: [sess.sessionId, newHash] });
+  const digest = await pub.readContract({ address: ADDR.FoskaayGGI, abi: coreAbi, functionName: 'midchainDigest', args: [sess.sessionId, newHash] });
   const sig = await account.sign({ hash: digest });
   sess.state = newState;
   sess.lastHash = newHash;
@@ -181,9 +185,9 @@ async function doDemoCreate(body) {
   players[userSeat] = user;
   const sessionKeys = new Array(seatCount).fill(account.address);
 
-  const fee = await pub.readContract({ address: ADDR.SessionRegistry, abi: coreAbi, functionName: 'fee' });
+  const fee = await pub.readContract({ address: ADDR.FoskaayGGI, abi: coreAbi, functionName: 'fee' });
   const r = await send(wallet, pub, {
-    address: ADDR.SessionRegistry, abi: coreAbi, functionName: 'handover',
+    address: ADDR.FoskaayGGI, abi: coreAbi, functionName: 'handover',
     args: [sessionId, ADDR.FoskaayGGILudo, startHash, seedCommit, players, sessionKeys, 2],
     value: fee, account,
   });
@@ -198,7 +202,7 @@ async function doDemoRoll(body) {
   const { pub } = clients();
   const sess = needSession(body);
   const d = decodeState(sess.state);
-  const seeds = await pub.readContract({ address: ADDR.SessionRegistry, abi: coreAbi, functionName: 'randomN', args: [sess.seed, d.rollCounter, 2] });
+  const seeds = await pub.readContract({ address: ADDR.FoskaayGGI, abi: coreAbi, functionName: 'randomN', args: [sess.seed, d.rollCounter, 2] });
   const view = await step(sess, 0, d.turn, 0, 0, Array.from(seeds));
   const nd = decodeState(sess.state);
   return { view, dice1: nd.dieA, dice2: nd.dieB, costUsdc6: '0', gasless: true };
@@ -242,8 +246,8 @@ async function doDemoSettle(body) {
   const sess = needSession(body);
   const finalHash = await ludoRead(pub, 'hashState', [sess.state]);
   const r = await send(wallet, pub, {
-    address: ADDR.SessionRegistry, abi: coreAbi, functionName: 'settle',
-    args: [sess.sessionId, finalHash, sess.seed, sess.players, sess.sessionKeys, [await account.sign({ hash: await pub.readContract({ address: ADDR.SessionRegistry, abi: coreAbi, functionName: 'midchainDigest', args: [sess.sessionId, finalHash] }) })], [account.address]],
+    address: ADDR.FoskaayGGI, abi: coreAbi, functionName: 'settle',
+    args: [sess.sessionId, finalHash, sess.seed, sess.players, sess.sessionKeys, [await account.sign({ hash: await pub.readContract({ address: ADDR.FoskaayGGI, abi: coreAbi, functionName: 'midchainDigest', args: [sess.sessionId, finalHash] }) })], [account.address]],
     account,
   });
   return { tx: r.hash, finalHash, costUsdc6: r.costUsdc6.toString() };
@@ -268,7 +272,7 @@ export default async function handler(req, res) {
         const { account } = clients();
         out = {
           address: account.address,
-          sessionRegistry: ADDR.SessionRegistry,
+          sessionRegistry: ADDR.FoskaayGGI,
           ludo: ADDR.FoskaayGGILudo,
         };
         break;

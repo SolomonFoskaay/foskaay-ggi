@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-25",
+  "updated": "2026-09-26",
   "note": "ADMIN TODO LEDGER. CURRENT is the live nested list; HISTORY keeps the most recent 10 archived lists (owner 2026-09-21, was 3), newest first; older ones are dropped so the file never grows unbounded. Rule: on every report/commit/push the agent archives the previous current to the front of history, caps history at 10, and writes the fresh full list as current. See .opencode/rules/todo-admin.md. This file is client-served, so it holds task text only, never secrets.",
   "statusLegend": {
     "DONE": "Completed and verified",
@@ -8,280 +8,354 @@
     "DEPRECATED": "Removed or replaced, kept for the record, do not build"
   },
   "current": {
-    "title": "Foskaay GGI - core, SDK, game demo, cost ladder, storage + event-based Foskaay GGI Midchain + Ludo demo on the Foskaay GGI Midchain (on-chain rules, free moves) + v7 single-core midchain (event-only, $1/1000 target) + moved to its own repo (foskaay-ggi)",
-    "updated": "2026-09-25",
+    "title": "Foskaay GGI - Phase 2 DONE: fresh FoskaayGGIGames + FoskaayGGIPlayers (UUPS) deployed + wired; Phase 1 core done",
+    "updated": "2026-09-26",
     "items": [
       {
-        "t": "(1) Foskaay GGI CORE - 4 unopinionated contracts (the rail)",
+        "t": "(1)-(4) DONE",
         "s": "done"
       },
       {
-        "t": "(1i) SessionRegistry DONE - open/close sessions, participant authorities, session keys scope+expiry, 1..N participants, un-front-runnable ids, capped TTL; 35/35 tests",
+        "t": "(5) OPTIONAL patterns WORKING",
         "s": "done"
       },
       {
-        "t": "(1ii) SessionState DONE - signed events with strictly-increasing sequence (no replay/reorder), opaque payloads, off-chain digest commit + final seal, bounded storage; 28/28 tests",
+        "t": "(6) GFG migration PENDING",
+        "s": "pending"
+      },
+      {
+        "t": "(7) Ludo scaffold DONE",
         "s": "done"
       },
       {
-        "t": "(1iii) Session keys - silent signer + on-chain scope/expiry token, so players never see a popup",
-        "s": "done"
-      },
-      {
-        "t": "(1iv) Randomness - commit-reveal seed(s), stored as a LIST for future extra streams; hash(seed, counter)",
-        "s": "done"
-      },
-      {
-        "t": "(1v) FeeVault - per-session fee on open and settle; destination = owner wallet; charged on devnet too",
-        "s": "done"
-      },
-      {
-        "t": "(1vi) Foundry tests for each core contract (local, no chain, no cost)",
-        "s": "done"
-      },
-      {
-        "t": "(1vii) Live Arc testnet proof: one real session opened, acted on, settled, and verified on-chain",
-        "s": "done"
-      },
-      {
-        "t": "(1viii) RENAME DONE - GlobalFolkGames Gasless Infrastructure -> Foskaay Gasless Games Infrastructure (short: Foskaay GGI). Folder foskaay-ggi/, URL /foskaay-ggi/demos/, npm @foskaay/ggi-*. arcv2m17 (GFG-BS) left untouched. 4 core contracts redeployed to Arc testnet; live proof PASS.",
-        "s": "done"
-      },
-      {
-        "t": "(2) Foskaay GGI SDK - the one-line integration",
-        "s": "done"
-      },
-      {
-        "t": "(2i) @foskaay/ggi-contracts-sdk - Solidity interfaces + deployed addresses per network",
-        "s": "done"
-      },
-      {
-        "t": "(2ii) @foskaay/ggi-sdk - open/act/dispute/settle wrappers + session-key signing + read helpers",
-        "s": "done"
-      },
-      {
-        "t": "(2iii) A README a stranger can follow: install, adapter, four calls, measured cost",
-        "s": "done"
-      },
-      {
-        "t": "(3) FIRST DEMO - prove Foskaay GGI works for a real game",
-        "s": "done"
-      },
-      {
-        "t": "(3i) Choose the first demo genre (owner pick: idle or casual). Decide before building.",
-        "s": "done"
-      },
-      {
-        "t": "(3ii) Build the demo 50-line adapter (the only game-specific code)",
-        "s": "done"
-      },
-      {
-        "t": "(3iii) Wire the demo to the SDK and prove it plays gasless end to end",
-        "s": "done"
-      },
-      {
-        "t": "(3iv) Ship the demo live and playable from /foskaay-ggi/demos/ on a phone",
-        "s": "done"
-      },
-      {
-        "t": "(3v) Ported MagicBlock on-chain Generals to Arc as the first real demo: GeneralsGame.sol keeps the board and rules on-chain, every move gated by canSign; 138/138 forge tests",
-        "s": "done"
-      },
-      {
-        "t": "(3vi) GeneralsGame deployed to Arc testnet 0xD674eD1f118855868b4B002F4A167C953Cc549ca; playable PvP page at /foskaay-ggi/demos/pvp/generals/ with MagicBlock graphics, moves relayed by the sponsor",
-        "s": "done"
-      },
-      {
-        "t": "(3vii) Agent findings recorded: the missing Foskaay GGI Midchain + the EVM tools Arc inherits we had not used (eth_call free execution, EIP-712, hash chain, EIP-7702, EIP-1153); written into the v5 build guide, the Research library (ggi-Foskaay GGI Midchain), and arcv2m18",
-        "s": "done"
-      },
-      {
-        "t": "(3viii) Foskaay GGI Midchain prototype built and proven on Arc testnet: GeneralsMidchain pure rules engine + EIP-712 signed hash-chained moves via eth_call, verifier replay PASS; no core change (4 core + 1 optional stands)",
-        "s": "done"
-      },
-      {
-        "t": "(3ix) PvP demo card links to the live page and carries a plain-language note on what is gasless and how cost works",
-        "s": "done"
-      },
-      {
-        "t": "(4) Cost proof (the number that sells Foskaay GGI)",
-        "s": "done"
-      },
-      {
-        "t": "(4i) Measure the real per-session sponsor cost on Arc and publish it vs MagicBlock ER",
-        "s": "done"
-      },
-      {
-        "t": "(4ii) Prove the floor: heavy play costs the same as light play inside a session",
-        "s": "done"
-      },
-      {
-        "t": "(4iii) Live measured cost per match on Arc testnet, unbatched vs batched, recorded in foskaay-ggi/deployments/generals-cost.json",
-        "s": "done"
-      },
-      {
-        "t": "(4iv) Foskaay GGI Midchain cost measured on Arc testnet: port 0.098172/match (about 10 games/1 USD), Foskaay GGI Midchain unbatched 0.012206 (about 81), batched 0.009788 (about 102); recorded in foskaay-ggi/deployments/midchain-cost*.json",
-        "s": "done"
-      },
-      {
-        "t": "(5) OPTIONAL patterns - offered, never enforced (build only when a game asks)",
+        "t": "(8) On-chain game + non-opinionated core WORKING",
         "s": "in_progress"
       },
       {
-        "t": "(5i) Batched Settlement - Merkle window flush, cadence chosen by the dev (never forced to 100/1h)",
+        "t": "(8i)-(8ix) proofs done (core additive, game+player UUPS, communicate, points persist, batching measured) DONE",
         "s": "done"
       },
       {
-        "t": "(5ii) Managed Accounts - PlayerCore-style single account per player with slots (a cost optimisation)",
+        "t": "(8x) Fee chosen: 0.0002/game; names locked (FoskaayGGI / FoskaayGGIGames / FoskaayGGIPlayers) DONE",
+        "s": "done"
+      },
+      {
+        "t": "(8y1) Phase 1: fresh FoskaayGGI core (rename + fee fields), UUPS, new address, update everywhere PENDING",
+        "s": "done"
+      },
+      {
+        "t": "(8y2) Phase 2: fresh FoskaayGGIGames + FoskaayGGIPlayers (UUPS), wired, new addresses PENDING",
+        "s": "done"
+      },
+      {
+        "t": "(8y3) Phase 3: relay rewired (accounts=Games,Players, games=N, 3-part fee; relay only signs) PENDING",
         "s": "pending"
       },
       {
-        "t": "(5iii) Verifiers - per-game referee for disputes (Ludo first, when it matters)",
+        "t": "(8y4) Phase 4: real player seat (Dynamic wallet + session key; house signs computer) PENDING",
         "s": "pending"
       },
       {
-        "t": "(5iv) Session reader/explorer - so sessions and receipts are visible (MagicBlock needed one too)",
-        "s": "done"
-      },
-      {
-        "t": "(5v) Event-only handover/settle in core (no SSTORE on the happy path, events for eth_getLogs) so the Foskaay GGI Midchain can approach the v5 target of about 1000 games/1 USD; the remaining cost is core storage writes, not moves",
+        "t": "(8y5) Phase 5: Ludo page + bridge (display only; tx links; Explorer link) PENDING",
         "s": "pending"
       },
       {
-        "t": "(5vi) Event-only handover/settle prototype tested on Arc testnet: EventOnlyCore emits logs (no SSTORE) and verifies player signatures; 0.001709 USDC/match = about 585 games/1 USD (vs 81 for the core Foskaay GGI Midchain, 10 for the board port); 4 tests pass",
-        "s": "done"
-      },
-      {
-        "t": "(5vii) Event-based Foskaay GGI Midchain batched test done on Arc testnet: handoverMany/settleMany put many games in one tx; per game 0.001098 (3), 0.000939 (5), 0.000820 (10), 0.000713 (100) USDC = about 910/1064/1219/1403 games per 1 USD; crosses the v5 $1/1000 target at 5 games per batch; link is inside the Handover event so 2 txs not 3",
-        "s": "done"
-      },
-      {
-        "t": "(5viii) PENDING owner decision: build the event-based Foskaay GGI Midchain into CORE (UUPS logic upgrade, same address, append-only, + nullifier) and SDKs (handover/settle/signMove/verifyMidchain); batching stays optional; needs architecture.json update first",
+        "t": "(8y6) Phase 6: Explorer (sessions + midchain; points from Players) PENDING",
         "s": "pending"
       },
       {
-        "t": "(5vii) PENDING owner decision: test the BATCHED event-only variant (many sessions per tx) to reach the v5 target of about 1000 games/1 USD, then decide what event-only capability (if any) goes into core + SDKs (needs replay protection/nullifier)",
-        "s": "done"
-      },
-      {
-        "t": "(6) GFG itself migrates onto Foskaay GGI (later - after GI is proven)",
+        "t": "(8y7) Phase 7: one Pricing section + remove other pricing mentions PENDING",
         "s": "pending"
       },
       {
-        "t": "(6i) Decide how GFG maximises GI (owner call: account layout, cadence, patterns)",
+        "t": "(8y8) Phase 8: measure vs under 1 USDC per 1,000; no-regression check PENDING",
         "s": "pending"
       },
       {
-        "t": "(6ii) Ludo becomes the first real GFG game on GI",
-        "s": "pending"
-      },
-      {
-        "t": "(6iii) Then points, lives, premium as event/slot types",
-        "s": "pending"
-      },
-      {
-        "t": "(6iv) Then multiplayer, competitions, AGM, ERC-20 rewards",
-        "s": "pending"
-      },
-      {
-        "t": "(6v) Retire the old GFG settlement path (arcv2m17) once GI carries everything",
-        "s": "pending"
-      },
-      {
-        "t": "(7) Ludo demo on the Foskaay GGI Midchain (Arc): on-chain rules, free moves, gasless",
+        "t": "(8y1 note) Freshest core deployed to Arc testnet: FoskaayGGI proxy 0x793785CE66992211B7c60dFCf0318869678D33a4 (impl 0x6A7cF5Db0Df5d5Ae8D181A10BFfa9a0Eb2438017), version 2, fees 0.0004/0.0004/0.0002; address propagated (SDK, contracts pkg, explorer, docs, relay, deployments, architecture)",
         "s": "done"
       },
       {
-        "t": "(7i) Port the real ludo-lab mechanics into the demo contracts (two dice, double-six bonus, capture \"pe\", 45s timer, position scoring 4P 100/50/25/0, 2P 100/0)",
-        "s": "done"
-      },
-      {
-        "t": "(7ii) Relay is stateless: rolls, moves, passes and board reads are FREE; only connect + settle are transactions",
-        "s": "done"
-      },
-      {
-        "t": "(7iii) Contract is the ONLY rules engine: added previewLog view, relay replays the move log through the contract (no server truth, no localStorage)",
-        "s": "done"
-      },
-      {
-        "t": "(7iv) Tests 34/34 including previewLog == settle parity and tamper rejection",
-        "s": "done"
-      },
-      {
-        "t": "(7v) Upgraded the demo contracts IN PLACE (previewLog added): addresses unchanged, data preserved, cost printed",
-        "s": "done"
-      },
-      {
-        "t": "(7vi) Frontend: ludo-lab board + 3D dice skin driven by the contract board (no localStorage)",
-        "s": "done"
-      },
-      {
-        "t": "(7vii) Live proof on Arc testnet: 2 transactions (connect 0.0125 + settle 0.0119 USDC), 119 free midchain calls, tampered log rejected",
-        "s": "done"
-      },
-      {
-        "t": "(7viii) Owner tests the demo on a real phone",
-        "s": "in_progress"
-      },
-      {
-        "t": "(7ix) v7 core: SINGLE SessionRegistry (FeeVault merged in, direct transfer to destination, fee 0.0004 unbatched / 0.0002 batched, one SSTORE = paid flag + seed/participant commitment), UUPS/OZ; 22/22 tests",
-        "s": "done"
-      },
-      {
-        "t": "(7x) Pure Ludo game (FoskaayGGILudo): getInitialState/applyMove/isTerminal, board as bytes, points INSIDE the midchain state, no per-move SSTORE, capture \"pe\" matches ludo-lab; tests",
-        "s": "done"
-      },
-      {
-        "t": "(7xi) Deployed to Arc testnet: core 0x9f078527082b3bCc7c00e27f7C53D31CF1D17A85, Ludo 0xc3Dd1243B74373Bc015Fd305727E729785B41C08 (0.0717 USDC)",
-        "s": "done"
-      },
-      {
-        "t": "(7xii) Midchain relay: every move is a free eth_call + signed hash chain; only handover + settle are txs; NO replay. Live: 2 txs, ~0.0035 USDC/match, ~280 games/$1 on testnet (25 Gwei)",
-        "s": "done"
-      },
-      {
-        "t": "(7xiii) Ludo page: tx ids link to the Arc explorer, Foskaay GGI Explorer link, blinking tokens + centre dice, crown only after a real finish, token move",
-        "s": "done"
-      },
-      {
-        "t": "(7xiv) Explorer: single core + Midchain tab (hash-chain verify to the on-chain final hash)",
-        "s": "done"
-      },
-      {
-        "t": "(7xv) Owner creates + approves the PR",
-        "s": "pending"
-      },
-      {
-        "t": "(7xvi) Swap remote to the new standalone repo github.com/SolomonFoskaay/foskaay-ggi (branch osv1Arc kept) and push for the first PR",
-        "s": "done"
-      },
-      {
-        "t": "(7xvii) Owner tests the live Ludo demo on the PR (meter, Foskaay GGI Explorer, Arc explorer links)",
-        "s": "in_progress"
-      },
-      {
-        "t": "(7xviii) SINGLE fee 0.0004 (batched tier removed; batching lowers GAS only). Core upgraded IN PLACE, address unchanged 0x9f07...1D17A85",
-        "s": "done"
-      },
-      {
-        "t": "(7xix) Ludo game now behind a UUPS proxy (upgradeable, permanent address): 0xa5040Ece5945a8551499ad1148fc3cD15b165987",
-        "s": "done"
-      },
-      {
-        "t": "(7xx) HARD RULE added: never build a contract that is not upgradeable unless the owner says so (.opencode/rules/upgradeable-contracts.md, auto-loaded)",
-        "s": "done"
-      },
-      {
-        "t": "(7xxi) Fixed Ludo freeze: auto-settle was skipped because it ran while busy was true, so a finished match never sealed",
-        "s": "done"
-      },
-      {
-        "t": "(7xxii) Crown now shows ranks only for seats actually finished (counts order up to finishCount)",
+        "t": "(8y2 note) Fresh game + player deployed to Arc testnet: FoskaayGGIGames 0x24e38ac2e80958782a8Bc5CD479bbe2e5D81EcDF (impl 0x83418a85B88a44859F95E321F2089fEd503f45d3) + FoskaayGGIPlayers 0x1614ebc72eA1cB3D31975b3976B5B474FAcE3b3C (impl 0xbEA1DE7d6F80f57C13e5840c8957a6C3Fd5BbACd), both UUPS/wired; addresses propagated (SDK, contracts pkg, relay, deployments, explorer, docs, architecture)",
         "s": "done"
       }
     ]
   },
   "history": [
+    {
+      "title": "Foskaay GGI - core, SDK, game demo, cost ladder, storage + event-based Foskaay GGI Midchain + Ludo demo on the Foskaay GGI Midchain (on-chain rules, free moves) + v7 single-core midchain (event-only, $1/1000 target) + moved to its own repo (foskaay-ggi)",
+      "updated": "2026-09-25",
+      "items": [
+        {
+          "t": "(1) Foskaay GGI CORE - 4 unopinionated contracts (the rail)",
+          "s": "done"
+        },
+        {
+          "t": "(1i) SessionRegistry DONE - open/close sessions, participant authorities, session keys scope+expiry, 1..N participants, un-front-runnable ids, capped TTL; 35/35 tests",
+          "s": "done"
+        },
+        {
+          "t": "(1ii) SessionState DONE - signed events with strictly-increasing sequence (no replay/reorder), opaque payloads, off-chain digest commit + final seal, bounded storage; 28/28 tests",
+          "s": "done"
+        },
+        {
+          "t": "(1iii) Session keys - silent signer + on-chain scope/expiry token, so players never see a popup",
+          "s": "done"
+        },
+        {
+          "t": "(1iv) Randomness - commit-reveal seed(s), stored as a LIST for future extra streams; hash(seed, counter)",
+          "s": "done"
+        },
+        {
+          "t": "(1v) FeeVault - per-session fee on open and settle; destination = owner wallet; charged on devnet too",
+          "s": "done"
+        },
+        {
+          "t": "(1vi) Foundry tests for each core contract (local, no chain, no cost)",
+          "s": "done"
+        },
+        {
+          "t": "(1vii) Live Arc testnet proof: one real session opened, acted on, settled, and verified on-chain",
+          "s": "done"
+        },
+        {
+          "t": "(1viii) RENAME DONE - GlobalFolkGames Gasless Infrastructure -> Foskaay Gasless Games Infrastructure (short: Foskaay GGI). Folder foskaay-ggi/, URL /foskaay-ggi/demos/, npm @foskaay/ggi-*. arcv2m17 (GFG-BS) left untouched. 4 core contracts redeployed to Arc testnet; live proof PASS.",
+          "s": "done"
+        },
+        {
+          "t": "(2) Foskaay GGI SDK - the one-line integration",
+          "s": "done"
+        },
+        {
+          "t": "(2i) @foskaay/ggi-contracts-sdk - Solidity interfaces + deployed addresses per network",
+          "s": "done"
+        },
+        {
+          "t": "(2ii) @foskaay/ggi-sdk - open/act/dispute/settle wrappers + session-key signing + read helpers",
+          "s": "done"
+        },
+        {
+          "t": "(2iii) A README a stranger can follow: install, adapter, four calls, measured cost",
+          "s": "done"
+        },
+        {
+          "t": "(3) FIRST DEMO - prove Foskaay GGI works for a real game",
+          "s": "done"
+        },
+        {
+          "t": "(3i) Choose the first demo genre (owner pick: idle or casual). Decide before building.",
+          "s": "done"
+        },
+        {
+          "t": "(3ii) Build the demo 50-line adapter (the only game-specific code)",
+          "s": "done"
+        },
+        {
+          "t": "(3iii) Wire the demo to the SDK and prove it plays gasless end to end",
+          "s": "done"
+        },
+        {
+          "t": "(3iv) Ship the demo live and playable from /foskaay-ggi/demos/ on a phone",
+          "s": "done"
+        },
+        {
+          "t": "(3v) Ported MagicBlock on-chain Generals to Arc as the first real demo: GeneralsGame.sol keeps the board and rules on-chain, every move gated by canSign; 138/138 forge tests",
+          "s": "done"
+        },
+        {
+          "t": "(3vi) GeneralsGame deployed to Arc testnet 0xD674eD1f118855868b4B002F4A167C953Cc549ca; playable PvP page at /foskaay-ggi/demos/pvp/generals/ with MagicBlock graphics, moves relayed by the sponsor",
+          "s": "done"
+        },
+        {
+          "t": "(3vii) Agent findings recorded: the missing Foskaay GGI Midchain + the EVM tools Arc inherits we had not used (eth_call free execution, EIP-712, hash chain, EIP-7702, EIP-1153); written into the v5 build guide, the Research library (ggi-Foskaay GGI Midchain), and arcv2m18",
+          "s": "done"
+        },
+        {
+          "t": "(3viii) Foskaay GGI Midchain prototype built and proven on Arc testnet: GeneralsMidchain pure rules engine + EIP-712 signed hash-chained moves via eth_call, verifier replay PASS; no core change (4 core + 1 optional stands)",
+          "s": "done"
+        },
+        {
+          "t": "(3ix) PvP demo card links to the live page and carries a plain-language note on what is gasless and how cost works",
+          "s": "done"
+        },
+        {
+          "t": "(4) Cost proof (the number that sells Foskaay GGI)",
+          "s": "done"
+        },
+        {
+          "t": "(4i) Measure the real per-session sponsor cost on Arc and publish it vs MagicBlock ER",
+          "s": "done"
+        },
+        {
+          "t": "(4ii) Prove the floor: heavy play costs the same as light play inside a session",
+          "s": "done"
+        },
+        {
+          "t": "(4iii) Live measured cost per match on Arc testnet, unbatched vs batched, recorded in foskaay-ggi/deployments/generals-cost.json",
+          "s": "done"
+        },
+        {
+          "t": "(4iv) Foskaay GGI Midchain cost measured on Arc testnet: port 0.098172/match (about 10 games/1 USD), Foskaay GGI Midchain unbatched 0.012206 (about 81), batched 0.009788 (about 102); recorded in foskaay-ggi/deployments/midchain-cost*.json",
+          "s": "done"
+        },
+        {
+          "t": "(5) OPTIONAL patterns - offered, never enforced (build only when a game asks)",
+          "s": "in_progress"
+        },
+        {
+          "t": "(5i) Batched Settlement - Merkle window flush, cadence chosen by the dev (never forced to 100/1h)",
+          "s": "done"
+        },
+        {
+          "t": "(5ii) Managed Accounts - PlayerCore-style single account per player with slots (a cost optimisation)",
+          "s": "pending"
+        },
+        {
+          "t": "(5iii) Verifiers - per-game referee for disputes (Ludo first, when it matters)",
+          "s": "pending"
+        },
+        {
+          "t": "(5iv) Session reader/explorer - so sessions and receipts are visible (MagicBlock needed one too)",
+          "s": "done"
+        },
+        {
+          "t": "(5v) Event-only handover/settle in core (no SSTORE on the happy path, events for eth_getLogs) so the Foskaay GGI Midchain can approach the v5 target of about 1000 games/1 USD; the remaining cost is core storage writes, not moves",
+          "s": "pending"
+        },
+        {
+          "t": "(5vi) Event-only handover/settle prototype tested on Arc testnet: EventOnlyCore emits logs (no SSTORE) and verifies player signatures; 0.001709 USDC/match = about 585 games/1 USD (vs 81 for the core Foskaay GGI Midchain, 10 for the board port); 4 tests pass",
+          "s": "done"
+        },
+        {
+          "t": "(5vii) Event-based Foskaay GGI Midchain batched test done on Arc testnet: handoverMany/settleMany put many games in one tx; per game 0.001098 (3), 0.000939 (5), 0.000820 (10), 0.000713 (100) USDC = about 910/1064/1219/1403 games per 1 USD; crosses the v5 $1/1000 target at 5 games per batch; link is inside the Handover event so 2 txs not 3",
+          "s": "done"
+        },
+        {
+          "t": "(5viii) PENDING owner decision: build the event-based Foskaay GGI Midchain into CORE (UUPS logic upgrade, same address, append-only, + nullifier) and SDKs (handover/settle/signMove/verifyMidchain); batching stays optional; needs architecture.json update first",
+          "s": "pending"
+        },
+        {
+          "t": "(5vii) PENDING owner decision: test the BATCHED event-only variant (many sessions per tx) to reach the v5 target of about 1000 games/1 USD, then decide what event-only capability (if any) goes into core + SDKs (needs replay protection/nullifier)",
+          "s": "done"
+        },
+        {
+          "t": "(6) GFG itself migrates onto Foskaay GGI (later - after GI is proven)",
+          "s": "pending"
+        },
+        {
+          "t": "(6i) Decide how GFG maximises GI (owner call: account layout, cadence, patterns)",
+          "s": "pending"
+        },
+        {
+          "t": "(6ii) Ludo becomes the first real GFG game on GI",
+          "s": "pending"
+        },
+        {
+          "t": "(6iii) Then points, lives, premium as event/slot types",
+          "s": "pending"
+        },
+        {
+          "t": "(6iv) Then multiplayer, competitions, AGM, ERC-20 rewards",
+          "s": "pending"
+        },
+        {
+          "t": "(6v) Retire the old GFG settlement path (arcv2m17) once GI carries everything",
+          "s": "pending"
+        },
+        {
+          "t": "(7) Ludo demo on the Foskaay GGI Midchain (Arc): on-chain rules, free moves, gasless",
+          "s": "done"
+        },
+        {
+          "t": "(7i) Port the real ludo-lab mechanics into the demo contracts (two dice, double-six bonus, capture \"pe\", 45s timer, position scoring 4P 100/50/25/0, 2P 100/0)",
+          "s": "done"
+        },
+        {
+          "t": "(7ii) Relay is stateless: rolls, moves, passes and board reads are FREE; only connect + settle are transactions",
+          "s": "done"
+        },
+        {
+          "t": "(7iii) Contract is the ONLY rules engine: added previewLog view, relay replays the move log through the contract (no server truth, no localStorage)",
+          "s": "done"
+        },
+        {
+          "t": "(7iv) Tests 34/34 including previewLog == settle parity and tamper rejection",
+          "s": "done"
+        },
+        {
+          "t": "(7v) Upgraded the demo contracts IN PLACE (previewLog added): addresses unchanged, data preserved, cost printed",
+          "s": "done"
+        },
+        {
+          "t": "(7vi) Frontend: ludo-lab board + 3D dice skin driven by the contract board (no localStorage)",
+          "s": "done"
+        },
+        {
+          "t": "(7vii) Live proof on Arc testnet: 2 transactions (connect 0.0125 + settle 0.0119 USDC), 119 free midchain calls, tampered log rejected",
+          "s": "done"
+        },
+        {
+          "t": "(7viii) Owner tests the demo on a real phone",
+          "s": "in_progress"
+        },
+        {
+          "t": "(7ix) v7 core: SINGLE SessionRegistry (FeeVault merged in, direct transfer to destination, fee 0.0004 unbatched / 0.0002 batched, one SSTORE = paid flag + seed/participant commitment), UUPS/OZ; 22/22 tests",
+          "s": "done"
+        },
+        {
+          "t": "(7x) Pure Ludo game (FoskaayGGILudo): getInitialState/applyMove/isTerminal, board as bytes, points INSIDE the midchain state, no per-move SSTORE, capture \"pe\" matches ludo-lab; tests",
+          "s": "done"
+        },
+        {
+          "t": "(7xi) Deployed to Arc testnet: core 0x9f078527082b3bCc7c00e27f7C53D31CF1D17A85, Ludo 0xc3Dd1243B74373Bc015Fd305727E729785B41C08 (0.0717 USDC)",
+          "s": "done"
+        },
+        {
+          "t": "(7xii) Midchain relay: every move is a free eth_call + signed hash chain; only handover + settle are txs; NO replay. Live: 2 txs, ~0.0035 USDC/match, ~280 games/$1 on testnet (25 Gwei)",
+          "s": "done"
+        },
+        {
+          "t": "(7xiii) Ludo page: tx ids link to the Arc explorer, Foskaay GGI Explorer link, blinking tokens + centre dice, crown only after a real finish, token move",
+          "s": "done"
+        },
+        {
+          "t": "(7xiv) Explorer: single core + Midchain tab (hash-chain verify to the on-chain final hash)",
+          "s": "done"
+        },
+        {
+          "t": "(7xv) Owner creates + approves the PR",
+          "s": "pending"
+        },
+        {
+          "t": "(7xvi) Swap remote to the new standalone repo github.com/SolomonFoskaay/foskaay-ggi (branch osv1Arc kept) and push for the first PR",
+          "s": "done"
+        },
+        {
+          "t": "(7xvii) Owner tests the live Ludo demo on the PR (meter, Foskaay GGI Explorer, Arc explorer links)",
+          "s": "in_progress"
+        },
+        {
+          "t": "(7xviii) SINGLE fee 0.0004 (batched tier removed; batching lowers GAS only). Core upgraded IN PLACE, address unchanged 0x9f07...1D17A85",
+          "s": "done"
+        },
+        {
+          "t": "(7xix) Ludo game now behind a UUPS proxy (upgradeable, permanent address): 0xa5040Ece5945a8551499ad1148fc3cD15b165987",
+          "s": "done"
+        },
+        {
+          "t": "(7xx) HARD RULE added: never build a contract that is not upgradeable unless the owner says so (.opencode/rules/upgradeable-contracts.md, auto-loaded)",
+          "s": "done"
+        },
+        {
+          "t": "(7xxi) Fixed Ludo freeze: auto-settle was skipped because it ran while busy was true, so a finished match never sealed",
+          "s": "done"
+        },
+        {
+          "t": "(7xxii) Crown now shows ranks only for seats actually finished (counts order up to finishCount)",
+          "s": "done"
+        }
+      ]
+    },
     {
       "title": "Foskaay GGI - core, SDK, game demo, cost ladder, storage + event-based Foskaay GGI Midchain + Ludo demo on the Foskaay GGI Midchain (on-chain rules, free moves) + v7 single-core midchain (event-only, $1/1000 target) + moved to its own repo (foskaay-ggi)",
       "updated": "2026-09-25",
@@ -1928,836 +2002,6 @@
         },
         {
           "t": "(6v) Retire the old GFG settlement path (arcv2m17) once GI carries everything",
-          "s": "pending"
-        }
-      ]
-    },
-    {
-      "title": "RETIRED: GFG-focused master list (arcv2m1-arcv2m18, 206 items) - superseded when focus shifted to building Foskaay GGI first",
-      "updated": "2026-09-21",
-      "items": [
-        {
-          "t": "(1) GFG-BS redesign: NO off-chain state",
-          "s": "done"
-        },
-        {
-          "t": "(1i) Delete the file batch store; no Supabase for core logic",
-          "s": "done"
-        },
-        {
-          "t": "(1ii) On-chain leaf add + window finalize, game-agnostic",
-          "s": "done"
-        },
-        {
-          "t": "(1iii) Relayer signs only; window derived from chain, restart-safe",
-          "s": "done"
-        },
-        {
-          "t": "(1iv) Dashboard gas/window read from chain events, not files",
-          "s": "done"
-        },
-        {
-          "t": "(1v) GASLESS COST FIX: per-MATCH settlement + batching",
-          "s": "done"
-        },
-        {
-          "t": "(1v-a) DESIGN LOCKED + recorded in arcv2m17",
-          "s": "done"
-        },
-        {
-          "t": "(1v-b) Lives rule fixed everywhere: charged at start, non-refundable",
-          "s": "done"
-        },
-        {
-          "t": "(1v-c) MatchSettlement contract: commitStart + co-signed settle + dispute + timeout (6/6 tests)",
-          "s": "done"
-        },
-        {
-          "t": "(1v-d) Off-chain match engine: deterministic digest, devices agree, tamper detectable",
-          "s": "done"
-        },
-        {
-          "t": "(1v-e) MEASURED: 60-move match = 2 txs, 0.005949 USDC",
-          "s": "done"
-        },
-        {
-          "t": "(1v-f) GAME-AGNOSTIC settlement rail + free match history + relayer matchHistory",
-          "s": "done"
-        },
-        {
-          "t": "(1v-g) ON-CHAIN MATCH HISTORY on the game page with clickable start/end links (FREE reads)",
-          "s": "done"
-        },
-        {
-          "t": "(1v-h) Ludo wired to the rail: ZERO per-action txs; dice + moves + turns off-chain",
-          "s": "done"
-        },
-        {
-          "t": "(1v-i) BATCHING SPINE: hybrid window (100 or 1h, SKIP EMPTY) + batch starts AND settlements + opportunistic tick after a real settlement (no cron)",
-          "s": "done"
-        },
-        {
-          "t": "(1v-i-1) Spec recorded: window + free dispute + verifiability + per-match timing rules",
-          "s": "done"
-        },
-        {
-          "t": "(1v-i-2) Window manager in the relayer (100 or 1h, never flush empty)",
-          "s": "done"
-        },
-        {
-          "t": "(1v-i-3) Batch start commits + settlements into the window flush (one leaf per MATCH)",
-          "s": "done"
-        },
-        {
-          "t": "(1v-i-4) Match history shows 'pending flush' then the BATCH tx link",
-          "s": "done"
-        },
-        {
-          "t": "(1v-i-5) Cost proof + $/1,000 table (measured 136,598 gas/flush)",
-          "s": "done"
-        },
-        {
-          "t": "(1v-i-6) Cost explanation PERMANENT in staff Test results workspace (tests.json)",
-          "s": "done"
-        },
-        {
-          "t": "(1v-i-7) FIX: start commits + settlements must actually reach the chain (rail scripts loaded before the bridge)",
-          "s": "done"
-        },
-        {
-          "t": "(1v-i-8) FIX matchHistory on the live site: the relay baked fallback was missing matchSettlement, so when the server could not fetch arc-config.json the history read a null address and returned unreadable - fixed + defensive guard",
-          "s": "done"
-        },
-        {
-          "t": "(1v-i-9) FIX duplicate start commit: the 1s tick fired ensureStarted twice while the first commit was still in flight, so a second identical commit reverted on-chain with Exists() (one wasted tx) - single-flight guard added",
-          "s": "done"
-        },
-        {
-          "t": "(1v-i-10) PROVE the batch end to end on the live site (start -> play -> flush -> history shows the batch tx)",
-          "s": "pending"
-        },
-        {
-          "t": "(2) Game core on Arc (arcv2m1, game-agnostic)",
-          "s": "in_progress"
-        },
-        {
-          "t": "(2i) Board moves signed + committed per window (DEPRECATED: replaced by (1v))",
-          "s": "deprecated"
-        },
-        {
-          "t": "(2i-1) commitMove on-chain + relayer + gateway (DEPRECATED for gameplay)",
-          "s": "deprecated"
-        },
-        {
-          "t": "(2i-2) Arc game-flow bridge (openGame/seatUp/beginGame/commitMove per turn) (DEPRECATED when (1v) lands)",
-          "s": "deprecated"
-        },
-        {
-          "t": "(2ii) TURN TIMERS / game clocks enforced ON-CHAIN + permissionless expire",
-          "s": "in_progress"
-        },
-        {
-          "t": "(2ii-1) Contract turn clock + permissionless expireTurn (DEPRECATED: keep the RULE)",
-          "s": "deprecated"
-        },
-        {
-          "t": "(2ii-2) Relayer actions (seatUp/beginGame/commitMove/expireTurn) (DEPRECATED for gameplay)",
-          "s": "deprecated"
-        },
-        {
-          "t": "(2ii-3) Live Arc proof (begin, lapse, permissionless expire, move)",
-          "s": "done"
-        },
-        {
-          "t": "(2ii-4a) Client can reach the on-chain clock (adapter + gateway passthrough)",
-          "s": "done"
-        },
-        {
-          "t": "(2ii-4b) Bridge watches the chain deadline and calls expireTurn as a stall fallback",
-          "s": "done"
-        },
-        {
-          "t": "(2ii-4c) FIX start-commit race (the idle tick re-entered the async start); single-flight guard on ensureStarted",
-          "s": "done"
-        },
-        {
-          "t": "(2iii) Win/finish order + result on-chain",
-          "s": "in_progress"
-        },
-        {
-          "t": "(2iii-1) settleGameOrder + resultOrder on-chain, relayer + gateway, live proof",
-          "s": "done"
-        },
-        {
-          "t": "(2iii-2) Bridge settles the finish order at the ceremony (DEPRECATED: folds into (1v))",
-          "s": "deprecated"
-        },
-        {
-          "t": "(2iii-3) DIAGNOSED the two live start txs (6 Aug window): 0xad..8448 SUCCESS, 0xa0..5ff3 FAILED with Exists() - an identical duplicate, not a settlement failure",
-          "s": "done"
-        },
-        {
-          "t": "(2iv) House/AI rolls derive from the committed Arc seed",
-          "s": "done"
-        },
-        {
-          "t": "(2v) LIVE TEST: owner played a match (works, revealed the cost problem -> (1v))",
-          "s": "done"
-        },
-        {
-          "t": "(2vi) Off-chain match engine: session-key-signed move list + timers off-chain, ZERO txs during play",
-          "s": "done"
-        },
-        {
-          "t": "(2vii) On-chain START COMMIT (players + match id + commitment + clock; life charged here)",
-          "s": "done"
-        },
-        {
-          "t": "(2vii-a) Contract commitStart built + deployed + 6 forge tests",
-          "s": "done"
-        },
-        {
-          "t": "(2vii-b) Wire Ludo via the GAME-AGNOSTIC rail: call start() at match start",
-          "s": "done"
-        },
-        {
-          "t": "(2viii) ONE co-signed per-MATCH settlement",
-          "s": "done"
-        },
-        {
-          "t": "(2viii-a) Contract settle() built + co-signature enforcement proved",
-          "s": "done"
-        },
-        {
-          "t": "(2viii-b) Wire Ludo via the rail: engine.move() per turn + co-sign settle at the ceremony",
-          "s": "done"
-        },
-        {
-          "t": "(2xi) Retire the per-action path from the hot path",
-          "s": "done"
-        },
-        {
-          "t": "(2ix) Commit-reveal dispute + game-agnostic snapshot REPLAY",
-          "s": "in_progress"
-        },
-        {
-          "t": "(2ix-a) Dispute is a FREE off-chain signed event (like a move); no bond, no fee; rides the same batch",
-          "s": "done"
-        },
-        {
-          "t": "(2ix-b) Free off-chain verifier replay (Ludo rule replayer first)",
-          "s": "done"
-        },
-        {
-          "t": "(2ix-c) Replay result batched like any other settlement event",
-          "s": "done"
-        },
-        {
-          "t": "(2x) Timeout claim / expiry (contract done; wire client)",
-          "s": "pending"
-        },
-        {
-          "t": "(2x-b) FIX the logout hole: the single-player board survives sign-out in localStorage, so a started match stays playable with no account (free unlimited play). Needs one-source-of-truth enforcement (see (17)).",
-          "s": "done"
-        },
-        {
-          "t": "(2x-a) Contract guards confirmed on Arc: NoMatch, AlreadySettled, BadSig, NotExpired, NotPlayer, Exists (custom errors, so the UI must decode them)",
-          "s": "done"
-        },
-        {
-          "t": "(2v-b) LIVE TEST #2: play a match, confirm ZERO per-move charges + start/end + history links",
-          "s": "pending"
-        },
-        {
-          "t": "(3) Lives + anti-bypass (chain-enforced)",
-          "s": "in_progress"
-        },
-        {
-          "t": "(3i) Free tier is L0 not L1; tier read from PlayerCore on Arc",
-          "s": "done"
-        },
-        {
-          "t": "(3ii) Daily lives reset TIMER on-chain, 24h GMT+00 from block time",
-          "s": "in_progress"
-        },
-        {
-          "t": "(3ii-1) chargeLife on-chain resets by block-time day (livesDay) + pool by tier",
-          "s": "done"
-        },
-        {
-          "t": "(3ii-2) Lives module reads the on-chain pool/used/day on Arc",
-          "s": "done"
-        },
-        {
-          "t": "(3ii-3) Confirm the daily reset countdown matches the chain day boundary (live check)",
-          "s": "pending"
-        },
-        {
-          "t": "(3iii) Life charged at match START; no separate charge tx; non-refundable",
-          "s": "done"
-        },
-        {
-          "t": "(3v) FIX: lives meter refreshes IMMEDIATELY at game start (game-agnostic)",
-          "s": "done"
-        },
-        {
-          "t": "(3iv) Ladder on-chain L0 5/L1 10/L2 15/L3 20 + upkeep expiry; balances restored",
-          "s": "done"
-        },
-        {
-          "t": "(4) Subscription + premium (DIRECT USDC: no premium-points intermediary)",
-          "s": "in_progress"
-        },
-        {
-          "t": "(4i) L0..L3 ladder on-chain, config-driven; header reads true level",
-          "s": "done"
-        },
-        {
-          "t": "(4i-1) Header reads true level from PlayerCore on Arc",
-          "s": "done"
-        },
-        {
-          "t": "(4i-2) Config-driven plan ladder (levels, USDC prices, multipliers, durations as data) - premium cost is no longer the purchase currency",
-          "s": "done"
-        },
-        {
-          "t": "(4ii) Direct activation L2 2x / L3 3x, 30 days, EXPIRY TIMER on-chain (activation itself works; the payment trigger becomes DIRECT USDC per 4ii-3)",
-          "s": "done"
-        },
-        {
-          "t": "(4ii-1) activate on Arc (relayer admin write) + 30-day window from block time, live proof",
-          "s": "done"
-        },
-        {
-          "t": "(4ii-2) Tier boost at M4 flow-up uses the live level (kind=1 credit) on Arc + spend path; live proof",
-          "s": "done"
-        },
-        {
-          "t": "(4ii-3) FULLY AUTOMATIC payment: player pays DIRECT USDC on Arc, the relayer verifies it, then activates the subscription or in-game asset in the SAME step (no admin action, no premium-points step); hard guard against replay/wrong amount",
-          "s": "in_progress"
-        },
-        {
-          "t": "(4ii-3a) USDC splitter: 20% referrer / 30% escrow / 50% admin, atomic, in the same transaction path as the payment",
-          "s": "pending"
-        },
-        {
-          "t": "(4ii-3b) Escrow contract on Arc holding the 30% competition pool",
-          "s": "pending"
-        },
-        {
-          "t": "(4ii-3c) Relayer payment watcher: verify amount + recipient + replay, then DIRECTLY call activatePlan/activateBooster (no creditPremium)",
-          "s": "pending"
-        },
-        {
-          "t": "(4iii) Unlimited-lives booster: DIRECT USDC purchase + automatic on-chain window (activateBooster) in one step, no premium-points deduction",
-          "s": "pending"
-        },
-        {
-          "t": "(4iii-1) Other in-game assets: DIRECT USDC purchase pattern (no points intermediary)",
-          "s": "pending"
-        },
-        {
-          "t": "(4iv) Daily rewards with 24h reset (fold into (1v): no standalone daily tx)",
-          "s": "pending"
-        },
-        {
-          "t": "(4v) RETIRE the premium-points LEDGER from the purchase flow entirely (owner 2026-09-21): subscription and in-game assets are bought with DIRECT USDC on Arc and activate instantly; premiumLifetime/premiumSpendable are no longer the purchase path",
-          "s": "in_progress"
-        },
-        {
-          "t": "(5) Point sources",
-          "s": "pending"
-        },
-        {
-          "t": "(5i) Signup bonus 500P, on-chain once-per-wallet fence (fold into (1v): no per-award tx)",
-          "s": "pending"
-        },
-        {
-          "t": "(5ii) Affiliate 20% ONCE per referral on their FIRST paid subscription (NOT monthly, NOT 12 months); active-sub gate at that moment; one payout per referral forever",
-          "s": "pending"
-        },
-        {
-          "t": "(5iii) Manual payout only (no cron, no external automation)",
-          "s": "pending"
-        },
-        {
-          "t": "(6) Competitions (arcv2m7)",
-          "s": "pending"
-        },
-        {
-          "t": "(6i) Config-driven on-chain instances (tiers multi, games multi, entry, window+duration, pool, shares)",
-          "s": "pending"
-        },
-        {
-          "t": "(6ii) Final-points x LIVE tier boost (L3 1.5x); downgrade hides instantly; L0 at freeze gets no position",
-          "s": "pending"
-        },
-        {
-          "t": "(6iii) Window start/end/duration enforced on-chain (use the (1v) clock + settlement, no per-tick txs)",
-          "s": "pending"
-        },
-        {
-          "t": "(6iv) On-chain winners + paid status; public past-winners",
-          "s": "pending"
-        },
-        {
-          "t": "(7) Multiplayer (arcv2m12)",
-          "s": "pending"
-        },
-        {
-          "t": "(7i) Match codes/join, seat ownership",
-          "s": "pending"
-        },
-        {
-          "t": "(7ii) Turn clocks + permissionless forfeit (use the (1v) clock; forfeit only at settlement/dispute)",
-          "s": "pending"
-        },
-        {
-          "t": "(7iii) Finish -> seam, one entry one result (emit into the (1v) per-match settlement)",
-          "s": "pending"
-        },
-        {
-          "t": "(8) Other games",
-          "s": "pending"
-        },
-        {
-          "t": "(8i) Chess on Arc (must use the (1v) rail: zero per-move txs; needs its own on-chain replayer)",
-          "s": "pending"
-        },
-        {
-          "t": "(8ii) Ayo Olopon + future games drop-in (same rail; replayer added when it carries money)",
-          "s": "pending"
-        },
-        {
-          "t": "(9) AGM (arcv2m14)",
-          "s": "pending"
-        },
-        {
-          "t": "(9i) Player-created challenges, maker-to-taker matching",
-          "s": "pending"
-        },
-        {
-          "t": "(9ii) Escrow in supported tokens, atomic settle (money moves on-chain; play rides (1v); needs an on-chain replayer)",
-          "s": "pending"
-        },
-        {
-          "t": "(9iii) Attaches to the same windows",
-          "s": "pending"
-        },
-        {
-          "t": "(10) Scale proof for 50-100+ games",
-          "s": "pending"
-        },
-        {
-          "t": "(10i) One leaf type + per-game tag; adding a game is data, not a contract",
-          "s": "done"
-        },
-        {
-          "t": "(10ii) Cost model at 100 games and high volume (batched, ~0.0006/day at launch; $0.027/1,000 at N=100)",
-          "s": "done"
-        },
-        {
-          "t": "(10iii) No new account per game or feature",
-          "s": "pending"
-        },
-        {
-          "t": "(11) Verification protocol (no false done)",
-          "s": "pending"
-        },
-        {
-          "t": "(11i) Every item proven with an Arc explorer link",
-          "s": "pending"
-        },
-        {
-          "t": "(11ii) Confirm Solana is not powering the feature (no runtime call)",
-          "s": "pending"
-        },
-        {
-          "t": "(11iii) Confirm nothing off-chain as core truth AND nothing charges per action",
-          "s": "pending"
-        },
-        {
-          "t": "(12) Silence Solana",
-          "s": "pending"
-        },
-        {
-          "t": "(12i) Remove runtime Solana calls from the Arc path",
-          "s": "pending"
-        },
-        {
-          "t": "(12i-1) FIX dice still on Solana: on Arc the user seat fell through to the Solana SDK inside dice.js; routed to the gasless committed-seed branch (already used by the computer seat). The last per-roll Solana write is retired.",
-          "s": "done"
-        },
-        {
-          "t": "(12i-2) CONFIRMED the multiplayer rail (public/universal/multiplayer/multiplayer.js) still runs on Solana via src/magicblock-er-vrf.js (joinBoardMatch/commitMove/finishBoardMatch) - it must move to Arc or be retired before Solana is silenced",
-          "s": "pending"
-        },
-        {
-          "t": "(12ii) No page/module/fallback can touch Solana while on Arc",
-          "s": "pending"
-        },
-        {
-          "t": "(13) Dashboard: batch flush timer state (read-only, free)",
-          "s": "done"
-        },
-        {
-          "t": "(14) FIXES FOUND IN LIVE TEST (owner 2026-09-20)",
-          "s": "done"
-        },
-        {
-          "t": "(14i) FIX contract gameId encoding: numeric matchRef became a UTF-8 digit dump instead of 32-byte hex, so the start commit could not be read back or settled. Fixed in api_handlers/arc-relay.mjs + normalizeGameId() in src/chain/arc.js. Needs merge to main.",
-          "s": "done"
-        },
-        {
-          "t": "(14ii) FIX tx/history not displayed in the frontend: after 14i, re-verify the start tx + history row appear",
-          "s": "done"
-        },
-        {
-          "t": "(14iii) CONTRACT ADDRESS SYNC RULE + archive: rule .opencode/rules/contract-addresses.md + dashboard Contract archive (all addresses, active + superseded) + Contracts card showing ONLY active contracts",
-          "s": "done"
-        },
-        {
-          "t": "(14iv) STALE ADDRESS SWEEP: evm/README.md updated to the active set (old GameRegistry/PlayerCore kept as superseded); scripts/arc-relayer.mjs CORE updated to active PlayerCore 0x892C...",
-          "s": "done"
-        },
-        {
-          "t": "(14v) Dashboard Contracts card: MatchSettlement added as the match contract, GameRegistry relabelled 'window/flush only'",
-          "s": "done"
-        },
-        {
-          "t": "(15) Admin todo ledger (this list lives in the dashboard)",
-          "s": "done"
-        },
-        {
-          "t": "(15i) public/changelog/todo.json: current + history (max 3 snapshots)",
-          "s": "done"
-        },
-        {
-          "t": "(15ii) /dashboard/todo.html + renderer + dashboard nav + Vite input",
-          "s": "done"
-        },
-        {
-          "t": "(15iii) .opencode/rules/todo-admin.md + opencode.json instruction so the agent always refreshes it",
-          "s": "done"
-        },
-        {
-          "t": "(15iv) Seed current with the owner's live todo list",
-          "s": "done"
-        },
-        {
-          "t": "(16) DICE MODEL on Arc (owner question 2026-09-21: why is dice not free inside the batch)",
-          "s": "in_progress"
-        },
-        {
-          "t": "(16i) Measured fact: the Arc dice derivation is ALREADY gasless and off-chain - the relayer derives the roll from the committed seed (rollDice) at ZERO gas and ZERO tx; it is NOT a Solana write once the page bug above is fixed",
-          "s": "done"
-        },
-        {
-          "t": "(16iii) DECISION (owner 2026-09-21): derive dice from the BATCHED WINDOW root at flush time - no relayer seed secret, no separate on-chain commit, zero extra cost, rolls stay free derivations like moves",
-          "s": "in_progress"
-        },
-        {
-          "t": "(16iv) Prove-ability trade-off accepted: a roll is verifiable when the window flushes (usually within the hour), not instantly, because the window root is the seal",
-          "s": "pending"
-        },
-        {
-          "t": "(16v) Build the batched-window dice derivation (remove GFG_Arc_Dice_Seed), then prove one real roll recomputable from the on-chain window root",
-          "s": "pending"
-        },
-        {
-          "t": "(16ii) DECISION NEEDED from the owner: the seed is currently a relayer env secret committed, not yet revealed/finalised in the window; nothing stores the per-roll dice on-chain, so proof needs the seed reveal + window Merkle proof - confirm this model or ask for dice randomness derived fully from the batched window (no env secret)",
-          "s": "pending"
-        },
-        {
-          "t": "(17) SINGLE-PLAYER BOARD: one source of truth (no localStorage, survives reload + logout)",
-          "s": "in_progress"
-        },
-        {
-          "t": "(17v) OWNER CLARIFICATION (2026-09-21): \"onchain\" means the GFG-BS model - everything in between (dice, moves, points) is signed, sealed in the window Merkle tree, and provable via the start+end commit. It does NOT mean a tx per move, and it does NOT mean frontend/Vercel/Supabase/localStorage as truth.",
-          "s": "done"
-        },
-        {
-          "t": "(17vi) REQUIRED BEHAVIOUR: a player can sign out, sign back in on ANY device, and continue the same match - unless it was flushed by the standard window (then it is final). While NOT flushed it resumes; once logged out it must NEVER be playable offline. No localStorage, because a stale local copy can conflict with the window Merkle tree and replay stale actions.",
-          "s": "pending"
-        },
-        {
-          "t": "(17vii) SIGNED RESUME (owner decisions 2026-09-21): the relayer stores the SIGNED match log, content-addressed by its digest (tamper-evident); any device fetches the same signed bytes and replays the board. Frontend only renders. Lifetime: until the window flushes (then final). Build AFTER GFG-BS is proven (see 17ix).",
-          "s": "in_progress"
-        },
-        {
-          "t": "(17viii) DONE: the localStorage board snapshot is removed from the resume path (no board in localStorage; only an in-memory session snapshot). Legacy keys purged on clear.",
-          "s": "done"
-        },
-        {
-          "t": "(17ix) BUILD (owner-approved 2026-09-21): relayer-side SIGNED match-log store, keyed by the match digest; a getter so any device can fetch + replay it; list unfinished matches under the Ludo board with a Resume button; auto-final once the window flushes. Does NOT add per-move on-chain tx (stays 2 txs + 1 flush).",
-          "s": "pending"
-        },
-        {
-          "t": "(17x) CONFIRMED DESIGN FACT: the Solana multiplayer board (MatchBoard, gfgboard2) stores players/turn/timers + ONLY the LAST 32-byte move hash (each move overwrites it) - NOT the full board. Both devices replay their own local move list against that hash. GFG-BS is stronger: the WHOLE match folds into ONE co-signed digest sealed in the window Merkle tree, so full reconstruction is provable from signed data + the window seal.",
-          "s": "done"
-        },
-        {
-          "t": "(17xi) FIXED THE REAL GAP (owner 2026-09-21): the computer seat and the HUMAN seat moves were NOT in the signed match log - only dice was Arc-derived and only turn handovers were logged, so the digest did not reflect real moves for either seat. Now EVERY real move (human + computer, via processTokenMovementExecution, the single point both use) is recorded into the GFG-BS signed log (gfgSettlement.recordMove) and sealed in the window. ZERO per-move txs still.",
-          "s": "done"
-        },
-        {
-          "t": "(17xii) FIXED: match-engine open() now carries seatColors so a move recorded by COLOUR maps to its seat index in the deterministic digest; recordMove added to the settlement rail (game-agnostic).",
-          "s": "done"
-        },
-        {
-          "t": "(17xiii) NOTE (honest): the computer is still an OFF-CHAIN opponent (ai.js picks the move, the local board applies it). It is now SIGNED and sealed like the human seat, so the match is provable - but the AI decision itself is not a chain event, and does not need to be (same as Solana MP, where only the last move hash is on-chain).",
-          "s": "done"
-        },
-        {
-          "t": "(17i) FIX the save-on-signout hole: discard the local match on gfg:auth-changed (logout) so a started game cannot continue with no account; the life stays spent (non-refundable)",
-          "s": "done"
-        },
-        {
-          "t": "(17ii) FIX reload: rebuild the live board from the signed off-chain move log held in memory for the match window, or drop it - never resume from editable localStorage",
-          "s": "done"
-        },
-        {
-          "t": "(17iii) Confirmed design: keep moves off-chain inside the signed window (2 txs + 1 flush per match); do NOT add a tx per move, which would break the GFG-BS cost model",
-          "s": "done"
-        },
-        {
-          "t": "(17iv) Analyse and report whether this fully closes the logout/double-tx loophole, then implement",
-          "s": "done"
-        },
-        {
-          "t": "(18) PUBLIC explorer readability: verify the contracts so the official Arc explorer decodes our function + event names instead of \"contract call\"",
-          "s": "pending"
-        },
-        {
-          "t": "(18i) Confirmed: this is Circle ArcScan \"Verify & Publish\"; the same flow carries to Arc mainnet unchanged (ERC-20/contract verification is standard)",
-          "s": "done"
-        },
-        {
-          "t": "(18ii) Verify MatchSettlement, PlayerCore, GameRegistry, Randomness on ArcScan (needs the explorer verification flow / an owner API key)",
-          "s": "pending"
-        },
-        {
-          "t": "(18iii) After verifying, confirm a live tx shows MatchStarted / MatchSettled by name",
-          "s": "pending"
-        },
-        {
-          "t": "(19) FULL PROJECT RESCAN (owner 2026-09-21): Arc blockers found auditing every todo item 1..end",
-          "s": "in_progress"
-        },
-        {
-          "t": "(19i) FIXED ROOT BLOCKER: window.GFG_CHAIN was only set on /games/ludo-lab (main-lab.js); every other page loaded src/main.js which never set it, so chain-gateway fell back to svm and all isArc() guards took the Solana branch on an Arc build. Now set in src/main.js too.",
-          "s": "done"
-        },
-        {
-          "t": "(19ii) FIXED Solana write on Arc: win-detection.js called window.magicblockDice.recordResult directly instead of the chain gateway (which routes to Arc). Now goes through window.gfgChain.recordResult.",
-          "s": "done"
-        },
-        {
-          "t": "(19iii) FIXED BLOCKER: local-points.js read path now routes through window.gfgChain.fetchLedger on Arc (was an unconditional Solana fetchPointsPdaFor/fetchPointsPda on every page). Solana path unchanged when chain!=evm.",
-          "s": "done"
-        },
-        {
-          "t": "(19iv) BLOCKER: public/universal/ledgers/global-ledger.js has NO isArc() guard on its READ path - same Solana fetchGlobalPointsPdaFor/fetchGlobalPointsPda calls unconditionally. Must route through the gateway/Arc adapter.",
-          "s": "pending"
-        },
-        {
-          "t": "(19v) FIXED BLOCKER: local-points.spend now uses window.gfgChain.spendLocal (routes to the Arc adapter on Arc) instead of magicblockDice.spendLocal directly.",
-          "s": "done"
-        },
-        {
-          "t": "(19vi) BLOCKER: premium-ledger read falls through to the Solana fetch when arcReadLedger() returns null (no early return). Must return an honest empty/error instead of hitting Solana.",
-          "s": "pending"
-        },
-        {
-          "t": "(19vii) BLOCKER: public/profile-core.js fetchPointsPda/fetchGlobalPointsPda/fetchPremiumPointsPdaFor (3 reads) and profile/upgrade.html (2 reads) call the Solana SDK directly; no isArc() guard.",
-          "s": "pending"
-        },
-        {
-          "t": "(19viii) BLOCKER: the whole competitions path (universal/competitions/competition-engine.js + /api/competitions + scripts/competitions-relay.mjs) is Solana-only but runs on every page (refresh at module load). Must move to Arc or be disabled on Arc until (6) is built.",
-          "s": "pending"
-        },
-        {
-          "t": "(19ix) BLOCKER: profile/upgrade.html and payment/index.html: payment/index.html unconditionally imports src/gfg-pay.js which imports @solana/web3.js + @solana/spl-token and builds Solana USDC transactions; upgrade.html reads premium via the Solana SDK. Payment on Arc must be direct USDC (see (4)).",
-          "s": "pending"
-        },
-        {
-          "t": "(19x) BLOCKER: games/chess/index.html is entirely Solana (md().read/ai/move/create/start/join/resign/offerDraw) with no isArc() guard. Chess on Arc is item (8i).",
-          "s": "pending"
-        },
-        {
-          "t": "(19xi) FIXED BLOCKER: the ludo multiplayer lives gate (window.mpCheckLives) now reads via window.gfgChain.readLives() on Arc (was md.readLivesFor with an EVM address = a Solana read on Arc). Gateway readLives() added.",
-          "s": "done"
-        },
-        {
-          "t": "(19xii) FIXED LOADER: on the Arc rail the Solana SDK is loaded but NEVER configured - configure() is blocked and returns inert, so isConfigured()/available() are false and no Solana RPC can be armed on Arc. main.js + main-lab.js both guarded.",
-          "s": "done"
-        },
-        {
-          "t": "(19xiii) FIXED WRONG-CHAIN MATH: matchRefFromSignature/boostRefFromSignature now prefer the gateway; the Arc ref is a STABLE deterministic hash of the hex proof token (was Date.now(), which changed per call and broke retry idempotency). local-points, global-ledger, premium-ledger all route via the gateway.",
-          "s": "done"
-        },
-        {
-          "t": "(19xiv) SERVER: several /api/* handlers the client calls on Arc are Solana relays (/api/multiplayer, /api/competitions, /api/agm, /api/affiliate, /api/signup, /api/chess). Confirm which must become Arc or be blocked when on Arc.",
-          "s": "pending"
-        },
-        {
-          "t": "(19xv) STANDALONE TOOLS: verify/verify.js, dashboard/recovery.html, dashboard/premium.html, dashboard/premium-subscribers.html, public/dash-core.js, dashboard/ops.html still probe/read/write Solana. Decide keep-as-Solana-tooling vs migrate before declaring Solana silenced.",
-          "s": "pending"
-        },
-        {
-          "t": "(19xvi) CONFIRMED-CLEAN: src/chain/svm.js is only imported when CHAIN!=evm (dead on Arc); api_handlers/arc-relay.mjs has no Solana imports; settlement/lives/premium-activate/match-history ARE properly isArc()-guarded.",
-          "s": "done"
-        },
-        {
-          "t": "(19xvii) Re-run this full audit AFTER (19iii)-(19xv) are fixed, and only then mark (11)/(12) Verification + Silence Solana done.",
-          "s": "pending"
-        },
-        {
-          "t": "(20) DIRECT USDC PAYMENTS on Arc (owner 2026-09-21): no premium-points intermediary - the architecture ALREADY specifies this",
-          "s": "in_progress"
-        },
-        {
-          "t": "(20i) Confirmed decision: the player pays USDC on Arc; the relayer verifies the payment and activates the subscription OR the in-game asset (booster) in the same flow - no manual admin crediting, no premium-points step",
-          "s": "done"
-        },
-        {
-          "t": "(20ii) ARCHITECTURE CHECK (owner 2026-09-21): NO architecture change needed. The v2 file already has arcv2m5 [18] DIRECT ACTIVATION (premium points REMOVED from the purchase flow) and [21] DIRECT ACTIVATION IMPLEMENTED, plus arcv2m15 automatic USDC payment-triggered activation with NO human step. arcv2m1-arcv2m17 are CHAIN-SHARED modules (one list, rails svm+evm); only Arc-rail code changes, Solana modules are never touched.",
-          "s": "done"
-        },
-        {
-          "t": "(20iii) Relayer: watch Arc for the confirmed USDC payment (amount + recipient + replay guard), then call activatePlan(level,30d) or activateBooster(hours) directly",
-          "s": "pending"
-        },
-        {
-          "t": "(20iv) Update (4ii-3)/(4iii) UI copy + flow so \"buy\" goes straight to a USDC payment and instant activation, and remove the premium-points credit step from every page",
-          "s": "pending"
-        },
-        {
-          "t": "(20v) Prove live: one real USDC payment activates a subscription; one activates a booster; both visible on the Arc explorer as a single activation",
-          "s": "pending"
-        },
-        {
-          "t": "(20vi) NOTE: the SERVER-SIDE direct-USDC activation ALREADY EXISTS on the SOLANA rail (api_handlers/verify-and-credit.mjs -> handleAdminActivatePremium/Booster, replay-guarded by the payment tx ref). It is NOT built on Arc: the Arc relayer has raw activatePlan/activateBooster admin writes but NO payment watcher to trigger them. Build the Arc equivalent.",
-          "s": "pending"
-        },
-        {
-          "t": "(20vii) BUILD on Arc (mirrors the Solana verify-and-credit logic): relayer watches Arc for the confirmed USDC transfer, verifies amount + recipient + not-replayed (payment_ref = the tx hash), then calls activatePlan(level,30) or activateBooster(hours) in ONE step - player taps once, unlocked instantly, no admin",
-          "s": "pending"
-        },
-        {
-          "t": "(20viii) Confirm the Arc activation writes the payment_ref on-chain as a receipt (PlayerCore has no payment_ref field on activatePlan/activateBooster yet - decide receipt field vs tx hash as the receipt)",
-          "s": "pending"
-        },
-        {
-          "t": "(21) Foskaay GGI - STANDALONE SESSION RAIL (owner-approved 2026-09-21; spec docs/foskaay-ggi-spec.md)",
-          "s": "in_progress"
-        },
-        {
-          "t": "(21i) DESIGN APPROVED: game-type-agnostic room (board, idle, MMORPG all equal); rail never learns a game concept",
-          "s": "done"
-        },
-        {
-          "t": "(21ii) DESIGN APPROVED: session-key signing, NO co-signing (matches MagicBlock); AI/house seat = relayer authority",
-          "s": "done"
-        },
-        {
-          "t": "(21iii) DESIGN APPROVED: 1..N participants; randomness = one committed seed stored as a LIST for future streams",
-          "s": "done"
-        },
-        {
-          "t": "(21iv) DESIGN APPROVED: Ludo verifier ships in v1 (the referee; proves the tamper-proof claim end-to-end)",
-          "s": "done"
-        },
-        {
-          "t": "(21v) DESIGN APPROVED: fees on session open + settle, charged on DEVNET TOO to the owner wallet; GlobalFolkGames PAYS like any user; owner takes 100% first",
-          "s": "done"
-        },
-        {
-          "t": "(21vi) DESIGN APPROVED: ONE participant account per player platform-wide, append-only value slots (the Solana PlayerCore lesson as law)",
-          "s": "done"
-        },
-        {
-          "t": "(21vii) DESIGN APPROVED: ships as packages (@foskaay/ggi-sdk + ggi-contracts); integrating = install + small adapter + 4 calls, never fork",
-          "s": "done"
-        },
-        {
-          "t": "(21viii) NAMING: full brand everywhere public (Foskaay GGI); short GFG-BS internal only",
-          "s": "done"
-        },
-        {
-          "t": "(21ix) Architecture recorded: NEW module arcv2m18 added (additive, 38 insertions / 0 deletions); arcv2m17 kept as the in-app settlement module; implementationOrder[0] points at the standalone build first",
-          "s": "done"
-        },
-        {
-          "t": "(21x) STEP 1 DONE: empty foskaay-ggi/ skeleton + README + foundry.toml + placeholders (no logic); main build unaffected",
-          "s": "done"
-        },
-        {
-          "t": "(21xi) STEP 2: SessionRegistry + SessionState + session keys; test open/act/settle with a fake game",
-          "s": "pending"
-        },
-        {
-          "t": "(21xii) STEP 3: Randomness (commit-reveal, N streams) + BatchWindow (Merkle flush); test",
-          "s": "pending"
-        },
-        {
-          "t": "(21xiii) STEP 4: ParticipantAccount (one per player, append-only slots) + FeeVault; test",
-          "s": "pending"
-        },
-        {
-          "t": "(21xiv) STEP 5: plug Ludo in as the first game (single-player first, then multiplayer)",
-          "s": "pending"
-        },
-        {
-          "t": "(21xv) STEP 6: then points, lives, premium as event/slot types; later competitions, AGM, ERC-20",
-          "s": "pending"
-        },
-        {
-          "t": "(21xvi) Each step ends with a LIVE Arc testnet proof before the next step starts",
-          "s": "pending"
-        },
-        {
-          "t": "(21xvii) DEMO CATALOGUE: foskaay-ggi/demos/README.md created - genre popularity table from the live DappRadar top 50 (RPG/idle/PvP/casual lead; board games rare, which is the differentiation). Demos planned: idle-farm, endless-runner, arena-1v1, tiny-mmo, land-grid. Ludo stays the GFG flagship, not the demo.",
-          "s": "done"
-        },
-        {
-          "t": "(21xviii) CORRECTION RECORDED: the endless-runner is a GRAPHICS SOURCE only (owner forked a web2/iOS Subway-Surfers-style clone); we port the art to a web canvas, not its architecture. It is NOT a genre choice.",
-          "s": "done"
-        },
-        {
-          "t": "(21xix) DEMOS SERVED FROM A PATH on the existing domain for now (no DNS/subdomain work while solo); a subdomain only when Foskaay GGI becomes its own repo.",
-          "s": "done"
-        },
-        {
-          "t": "(21xx) SPEC RENAMED: docs/gfg-bs-spec.md -> docs/foskaay-ggi-spec.md; npm scope fixed to @globalfolkgames (never @gfg); all stale references updated.",
-          "s": "done"
-        },
-        {
-          "t": "(21xxi) DEMOS REORGANISED BY GENRE (owner 2026-09-21): demos/<genre>/ folders so a dev opens their own genre. Folders: idle, casual, pvp, mmorpg, metaverse, board. The runner is CASUAL/hyper-casual (its art comes from the owner forked web2 clone; not a genre choice). Each genre folder has its own README (who it is for, why the rail fits, what it must prove, adapter surface).",
-          "s": "done"
-        },
-        {
-          "t": "(21xxii) DEMO PAGE WIRED (owner 2026-09-21): /foskaay-ggi/demos/ page created (ggi-demos/index.html), registered as a Vite input, added to the header drawer under Discover as BS Demos. Reuses the GFG Dynamic-powered header + footer; mobile-first modern game look; lists all SIX genre sections, Live demos are playable links and Coming soon are non-tappable cards. Page and genre folders verified in sync. Adding a demo = drop the build in demos/<genre>/ + add one entry to the DEMOS array.",
-          "s": "done"
-        },
-        {
-          "t": "(21xxiii) RENAMED (owner 2026-09-21): product is now Foskaay Gasless Games Infrastructure (sells the BENEFIT, not the mechanism). \"Batched Settlement\" demoted to ONE OPTIONAL PATTERN; \"Session Rails\" retired; never call it an ER. npm: @foskaay/ggi-sdk + gi-contracts.",
-          "s": "done"
-        },
-        {
-          "t": "(21xxiv) CORE vs OPTIONAL RULE (owner 2026-09-21): CORE = 4 unopinionated contracts (SessionRegistry, SessionState, Randomness, FeeVault). OPTIONAL patterns = Batched Settlement, Managed Accounts (PlayerCore-style), Verifiers, House-as-participant. The rail must NOT force GFG opinion; a dev wanting an account per feature + a commit per turn must be able to do it and pay more. Make the FLOOR ridiculously cheap, never dictate usage.",
-          "s": "done"
-        },
-        {
-          "t": "(21xxv) SPEC HOME FIXED (owner 2026-09-21): the authoritative spec now lives in architecture.json module arcv2m18 (staff Architecture V2 page). docs/foskaay-ggi-spec.md is the long-form working note only, repo/staff, NOT served and NOT the source of truth (architecture.json wins on disagreement).",
-          "s": "done"
-        },
-        {
-          "t": "(21xxvi) ADDED to arcv2m18: the \"what is the fast layer\" explanation (how MagicBlock ER works vs how Foskaay GGI does the same EFFECT on Arc with no ER), the honest limits (signed state not a live VM; relayer trusted for timing not truth; we ship our own session reader/explorer), and why a dev might pick GI over ER.",
-          "s": "done"
-        },
-        {
-          "t": "(21xxvii) STEP 3 (code) remains PENDED at the owner's instruction. Next when unpended: SessionRegistry + SessionState + session keys, tested with a fake game. Build CORE only.",
           "s": "pending"
         }
       ]

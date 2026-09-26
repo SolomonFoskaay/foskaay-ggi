@@ -5,7 +5,7 @@
 //
 // The core has no per-session storage beyond the commitment, so a session is
 // proven by its EVENTS: Handover (connect) and Settled (result), on the single
-// SessionRegistry, plus the midchain move log (signed, hash-chained) when the
+// FoskaayGGI, plus the midchain move log (signed, hash-chained) when the
 // game publishes it. This file reads those with eth_getLogs and the relay.
 (function () {
     'use strict';
@@ -18,7 +18,9 @@
         usdc: '0x3600000000000000000000000000000000000000',
         relay: '/api/foskaay-ggi-sponsor',
         contracts: {
-            SessionRegistry: '0x9f078527082b3bCc7c00e27f7C53D31CF1D17A85',
+            FoskaayGGI: '0x793785CE66992211B7c60dFCf0318869678D33a4',
+            FoskaayGGIGames: '0x24e38ac2e80958782a8Bc5CD479bbe2e5D81EcDF',
+            FoskaayGGIPlayers: '0x1614ebc72eA1cB3D31975b3976B5B474FAcE3b3C',
             FoskaayGGILudo: '0xa5040Ece5945a8551499ad1148fc3cD15b165987'
         }
     };
@@ -116,11 +118,11 @@
         var C = NET.contracts;
         var idArg = sessionId.replace(/^0x/, '');
         return Promise.all([
-            getLogs(C.SessionRegistry, TOPIC.Handover, sessionId).catch(function () { return []; }),
-            getLogs(C.SessionRegistry, TOPIC.Settled, sessionId).catch(function () { return []; }),
-            callView(C.SessionRegistry, 'isPaid(bytes32)', idArg).catch(function () { return '0x'; }),
-            callView(C.SessionRegistry, 'fee()').catch(function () { return '0x'; }),
-            callView(C.SessionRegistry, 'destination()').catch(function () { return '0x'; })
+            getLogs(C.FoskaayGGI, TOPIC.Handover, sessionId).catch(function () { return []; }),
+            getLogs(C.FoskaayGGI, TOPIC.Settled, sessionId).catch(function () { return []; }),
+            callView(C.FoskaayGGI, 'isPaid(bytes32)', idArg).catch(function () { return '0x'; }),
+            callView(C.FoskaayGGI, 'fee()').catch(function () { return '0x'; }),
+            callView(C.FoskaayGGI, 'destination()').catch(function () { return '0x'; })
         ]).then(function (r) {
             var hLog = r[0][0], sLog = r[1][0];
             var handover = null, settled = null;
@@ -198,7 +200,7 @@
     // The exact digest the players sign. Pure read; costs nothing.
     function midchainDigest(sessionId, finalHash) {
         var args = sessionId.replace(/^0x/, '') + finalHash.replace(/^0x/, '');
-        return callView(NET.contracts.SessionRegistry, 'midchainDigest(bytes32,bytes32)', args);
+        return callView(NET.contracts.FoskaayGGI, 'midchainDigest(bytes32,bytes32)', args);
     }
 
     window.GGExplorer = {
