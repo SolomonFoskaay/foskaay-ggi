@@ -1,24 +1,31 @@
 import { defineConfig } from 'vite';
 
 // Foskaay GGI site (this repo's ROOT). GFG lives under gfg/ for reference only.
-// The site is simplified: home (pitch), docs, explorer, and the Ludo demo.
+// Developer-facing: home (pitch), demos, docs, explorer, about, contact, hire.
 //
-// The web JS (Dynamic auth + chain helpers) is under web/ and emitted at the
-// stable path /web/main.js, which public/global_header.js injects. The Solidity
-// contracts live under src/ (Foundry), so the web JS uses web/ to avoid the clash.
+// The web JS (Dynamic auth) is under web/ and emitted at the stable path
+// /web/main.js, which public/global_header.js injects. The Dynamic environment
+// id is non-secret and comes from the build env (DYNAMIC_ENV_ID); the API token
+// is NEVER exposed to the browser.
 export default defineConfig({
   root: '.',
   publicDir: 'public',
+  define: {
+    __DYNAMIC_ENV_ID__: JSON.stringify(process.env.DYNAMIC_ENV_ID || ''),
+  },
   build: {
     outDir: 'dist',
     emptyOutDir: true,
     rollupOptions: {
       input: {
         main: 'index.html',
-        docs: 'docs/index.html',
-        explorer: 'explorer/index.html',
         demos: 'demos/index.html',
         'demos-board-ludo': 'demos/board/ludo/index.html',
+        docs: 'docs/index.html',
+        explorer: 'explorer/index.html',
+        about: 'about/index.html',
+        contact: 'contact/index.html',
+        hire: 'hire/index.html',
         'web/main.js': 'web/main.js'
       },
       output: {

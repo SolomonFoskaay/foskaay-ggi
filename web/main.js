@@ -15,7 +15,11 @@ import { addEvmExtension } from '@dynamic-labs-sdk/evm';
 import { createWaasWalletAccounts, getChainsMissingWaasWalletAccounts } from '@dynamic-labs-sdk/client/waas';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 
-const ENVIRONMENT_ID = '0fd49c9c-1b54-4dc5-88a0-924dd3607bf3';
+// Non-secret Dynamic environment id, injected at build time from the
+// DYNAMIC_ENV_ID env var (vite define). The API token is server-side only and is
+// never sent to the browser.
+const ENVIRONMENT_ID = (typeof __DYNAMIC_ENV_ID__ !== 'undefined' && __DYNAMIC_ENV_ID__)
+  || '0fd49c9c-1b54-4dc5-88a0-924dd3607bf3';
 
 const dynamicClient = createDynamicClient({
   environmentId: ENVIRONMENT_ID,
