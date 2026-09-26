@@ -123,7 +123,7 @@
 
     function beginTurn() {
         if (!VIEW) return;
-        if (VIEW.matchOver) { settle(); return; }
+        if (VIEW.matchOver) { setTimeout(settle, 0); return; } // after the current call's finally clears busy
         window.setupConfigurationLocked = true;
         window.isDiceRolled = false;
         window.currentTurnMoves = [];

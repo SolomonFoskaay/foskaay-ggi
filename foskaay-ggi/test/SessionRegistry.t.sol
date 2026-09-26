@@ -20,7 +20,6 @@ contract SessionRegistryTest {
     Vm constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
 
     uint256 constant FEE = 4e14; // 0.0004 native USDC (18 decimals)
-    uint256 constant FEE_BATCH = 2e14; // 0.0002
     uint256 constant PK0 = 0xA11CE;
     uint256 constant PK1 = 0xB0B;
     address constant DEST = address(0xBEEF);
@@ -33,7 +32,6 @@ contract SessionRegistryTest {
 
     function setUp() public {
         reg = Deploy.registry(address(this), DEST, FEE);
-        reg.setFeeBatch(FEE_BATCH);
         vm.deal(address(this), 100 ether);
         p0 = vm.addr(PK0);
         p1 = vm.addr(PK1);
@@ -158,8 +156,8 @@ contract SessionRegistryTest {
             keys[i] = _keys();
         }
         uint256 before = DEST.balance;
-        reg.handoverMany{value: FEE_BATCH * 2}(ids, address(0x1234), startHashes, commits, players, keys, 2);
-        require(DEST.balance == before + FEE_BATCH * 2, "batched fee forwarded");
+        reg.handoverMany{value: FEE * 2}(ids, address(0x1234), startHashes, commits, players, keys, 2);
+        require(DEST.balance == before + FEE * 2, "batched fee forwarded");
 
         bytes32[] memory finals = new bytes32[](2);
         bytes32[] memory reveals = new bytes32[](2);
@@ -190,8 +188,6 @@ contract SessionRegistryTest {
         reg.setFee(1);
         reg.setFee(123);
         require(reg.fee() == 123, "fee set");
-        reg.setFeeBatch(45);
-        require(reg.feeBatch() == 45, "batch fee set");
         reg.setDestination(address(0xCAFE));
         require(reg.destination() == address(0xCAFE), "destination set");
     }

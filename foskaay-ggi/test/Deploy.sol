@@ -17,8 +17,11 @@ library Deploy {
         return SessionRegistry(address(new ERC1967Proxy(address(impl), init)));
     }
 
-    /// The Ludo game: pure, no proxy needed (it has no state to upgrade).
-    function ludo() internal returns (FoskaayGGILudo) {
-        return new FoskaayGGILudo();
+    /// The Ludo game BEHIND a UUPS proxy: its address is permanent and its logic
+    /// is upgradeable, like every contract we ship.
+    function ludo(address owner) internal returns (FoskaayGGILudo) {
+        FoskaayGGILudo impl = new FoskaayGGILudo();
+        bytes memory init = abi.encodeCall(FoskaayGGILudo.initialize, (owner));
+        return FoskaayGGILudo(address(new ERC1967Proxy(address(impl), init)));
     }
 }

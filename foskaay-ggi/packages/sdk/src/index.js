@@ -40,7 +40,6 @@ const registryAbi = parseAbi([
   'function random(bytes32 seed, uint256 counter) pure returns (bytes32)',
   'function randomN(bytes32 seed, uint256 counter, uint256 count) pure returns (bytes32[])',
   'function fee() view returns (uint256)',
-  'function feeBatch() view returns (uint256)',
   'function destination() view returns (address)',
   'function isPaid(bytes32 sessionId) view returns (bool)',
 ]);
