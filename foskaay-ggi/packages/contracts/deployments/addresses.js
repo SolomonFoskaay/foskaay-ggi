@@ -18,13 +18,13 @@ export const addresses = {
     usdcDecimalsNative: 18,
     usdcDecimalsErc20: 6,
     contracts: {
-      SessionRegistry: '0xb0A5A2D316bEEd2f75786cb60bfa2256C52281eE',
-      FeeVault: '0x9EE0b4c1622C5f2B7710b1fe4Ec2Be86833aDe39',
+      SessionRegistry: '0x9f078527082b3bCc7c00e27f7C53D31CF1D17A85',
+      FoskaayGGILudo: '0xc3Dd1243B74373Bc015Fd305727E729785B41C08',
     },
-    feeNative: '1000000000000000',
+    feeNative: '400000000000000',
     upgradeable: true,
     pattern: 'UUPS proxies (ERC1967). These addresses are permanent: an upgrade swaps the logic behind them and never moves the address or strands data.',
-    deployedAt: '2026-09-23',
+    deployedAt: '2026-09-25',
   },
   mainnet: {
     name: 'Arc Mainnet',
@@ -36,7 +36,6 @@ export const addresses = {
     usdcDecimalsErc20: 6,
     contracts: {
       SessionRegistry: null,
-      FeeVault: null,
     },
     deployedAt: null,
     note: 'Not deployed yet. Testnet first. Addresses appear here in the same format once deployed.',

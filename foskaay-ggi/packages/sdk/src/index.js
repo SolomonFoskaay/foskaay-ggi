@@ -34,20 +34,15 @@ import ggiContracts from '@foskaay/ggi-contracts-sdk';
 const registryAbi = parseAbi([
   'function handover(bytes32 sessionId, address gameLogic, bytes32 startHash, bytes32 seedCommit, address[] players, address[] sessionKeys, uint16 randomCount) payable',
   'function handoverMany(bytes32[] sessionIds, address gameLogic, bytes32[] startHashes, bytes32[] seedCommits, address[][] players, address[][] sessionKeys, uint16 randomCount) payable',
-  'function settle(bytes32 sessionId, bytes32 finalHash, bytes32 seedReveal, bytes[] sigs, address[] signers)',
-  'function settleMany(bytes32[] sessionIds, bytes32[] finalHashes, bytes32[] seedReveals, bytes[][] sigs, address[][] signers)',
+  'function settle(bytes32 sessionId, bytes32 finalHash, bytes32 seedReveal, address[] players, address[] sessionKeys, bytes[] sigs, address[] signers)',
+  'function settleMany(bytes32[] sessionIds, bytes32[] finalHashes, bytes32[] seedReveals, address[][] players, address[][] sessionKeys, bytes[][] sigs, address[][] signers)',
   'function midchainDigest(bytes32 sessionId, bytes32 finalHash) view returns (bytes32)',
   'function random(bytes32 seed, uint256 counter) pure returns (bytes32)',
   'function randomN(bytes32 seed, uint256 counter, uint256 count) pure returns (bytes32[])',
-  'function feeVault() view returns (address)',
-]);
-
-const vaultAbi = parseAbi([
   'function fee() view returns (uint256)',
-  'function paid(bytes32 sessionId) view returns (bool)',
-  'function paymentOf(bytes32 sessionId) view returns (bool)',
+  'function feeBatch() view returns (uint256)',
   'function destination() view returns (address)',
-  'function collected() view returns (uint256)',
+  'function isPaid(bytes32 sessionId) view returns (bool)',
 ]);
 
 // ---------------------------------------------------------------- helpers
@@ -75,9 +70,9 @@ export class GgiClient {
     this.chain = makeChain(net);
     this.addresses = {
       SessionRegistry: net.contracts.SessionRegistry,
-      FeeVault: net.contracts.FeeVault,
+      Ludo: net.contracts.FoskaayGGILudo,
     };
-    this.deployed = Boolean(this.addresses.SessionRegistry && this.addresses.FeeVault);
+    this.deployed = Boolean(this.addresses.SessionRegistry);
     this.publicClient = opts.publicClient || createPublicClient({ chain: this.chain, transport: http(net.rpc) });
     this.walletClient = opts.walletClient || null;
   }
@@ -92,8 +87,8 @@ export class GgiClient {
 
   /// The current per-session fee, in native USDC base units (18 decimals on Arc).
   async fee() {
-    if (!this.addresses.FeeVault) return 0n;
-    return this.publicClient.readContract({ address: this.addresses.FeeVault, abi: vaultAbi, functionName: 'fee' });
+    if (!this.addresses.SessionRegistry) return 0n;
+    return this.publicClient.readContract({ address: this.addresses.SessionRegistry, abi: registryAbi, functionName: 'fee' });
   }
 
   /// CONNECT one session and pay the fee in the same transaction. `cfg` =
@@ -141,15 +136,16 @@ export class GgiClient {
     });
   }
 
-  /// SETTLE one session. `cfg` = { sessionId, finalHash, seedReveal, sigs[],
-  /// signers[] }. `finalHash` may be one game's final hash or a session root.
+  /// SETTLE one session. `cfg` = { sessionId, finalHash, seedReveal, players[],
+  /// sessionKeys[], sigs[], signers[] }. `finalHash` may be one game's final hash
+  /// or a session root. The players/sessionKeys must match the connect.
   async settle(cfg = {}) {
     this.requireWallet();
     return this.walletClient.writeContract({
       address: this.addresses.SessionRegistry,
       abi: registryAbi,
       functionName: 'settle',
-      args: [cfg.sessionId, cfg.finalHash, cfg.seedReveal || ('0x' + '00'.repeat(32)), cfg.sigs, cfg.signers],
+      args: [cfg.sessionId, cfg.finalHash, cfg.seedReveal || ('0x' + '00'.repeat(32)), cfg.players, cfg.sessionKeys, cfg.sigs, cfg.signers],
       account: this.walletClient.account,
     });
   }
@@ -165,6 +161,8 @@ export class GgiClient {
         cfg.sessionIds,
         cfg.finalHashes,
         cfg.seedReveals || cfg.sessionIds.map(() => '0x' + '00'.repeat(32)),
+        cfg.players,
+        cfg.sessionKeys,
         cfg.sigs,
         cfg.signers,
       ],
@@ -229,7 +227,7 @@ export class GgiClient {
   /// Whether a session was paid at connect (the registry checks this to settle).
   async isPaid(sessionId) {
     return this.publicClient.readContract({
-      address: this.addresses.FeeVault, abi: vaultAbi, functionName: 'paid', args: [sessionId],
+      address: this.addresses.SessionRegistry, abi: registryAbi, functionName: 'isPaid', args: [sessionId],
     });
   }
 }

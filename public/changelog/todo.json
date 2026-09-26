@@ -8,7 +8,7 @@
     "DEPRECATED": "Removed or replaced, kept for the record, do not build"
   },
   "current": {
-    "title": "Foskaay GGI - core, SDK, game demo, cost ladder, storage + event-based Foskaay GGI Midchain + Ludo demo on the Foskaay GGI Midchain (on-chain rules, free moves) + v7 single-core midchain (event-only, $1/1000 target)",
+    "title": "Foskaay GGI - core, SDK, game demo, cost ladder, storage + event-based Foskaay GGI Midchain + Ludo demo on the Foskaay GGI Midchain (on-chain rules, free moves) + v7 single-core midchain (event-only, $1/1000 target) + moved to its own repo (foskaay-ggi)",
     "updated": "2026-09-25",
     "items": [
       {
@@ -248,12 +248,266 @@
         "s": "done"
       },
       {
-        "t": "(7xv) Owner tests live on the osv1Arc PR",
+        "t": "(7xv) Owner creates + approves the PR",
+        "s": "pending"
+      },
+      {
+        "t": "(7xvi) Swap remote to the new standalone repo github.com/SolomonFoskaay/foskaay-ggi (branch osv1Arc kept) and push for the first PR",
+        "s": "done"
+      },
+      {
+        "t": "(7xvii) Owner tests the live Ludo demo on the PR (meter, Foskaay GGI Explorer, Arc explorer links)",
         "s": "in_progress"
       }
     ]
   },
   "history": [
+    {
+      "title": "Foskaay GGI - core, SDK, game demo, cost ladder, storage + event-based Foskaay GGI Midchain + Ludo demo on the Foskaay GGI Midchain (on-chain rules, free moves) + v7 single-core midchain (event-only, $1/1000 target)",
+      "updated": "2026-09-25",
+      "items": [
+        {
+          "t": "(1) Foskaay GGI CORE - 4 unopinionated contracts (the rail)",
+          "s": "done"
+        },
+        {
+          "t": "(1i) SessionRegistry DONE - open/close sessions, participant authorities, session keys scope+expiry, 1..N participants, un-front-runnable ids, capped TTL; 35/35 tests",
+          "s": "done"
+        },
+        {
+          "t": "(1ii) SessionState DONE - signed events with strictly-increasing sequence (no replay/reorder), opaque payloads, off-chain digest commit + final seal, bounded storage; 28/28 tests",
+          "s": "done"
+        },
+        {
+          "t": "(1iii) Session keys - silent signer + on-chain scope/expiry token, so players never see a popup",
+          "s": "done"
+        },
+        {
+          "t": "(1iv) Randomness - commit-reveal seed(s), stored as a LIST for future extra streams; hash(seed, counter)",
+          "s": "done"
+        },
+        {
+          "t": "(1v) FeeVault - per-session fee on open and settle; destination = owner wallet; charged on devnet too",
+          "s": "done"
+        },
+        {
+          "t": "(1vi) Foundry tests for each core contract (local, no chain, no cost)",
+          "s": "done"
+        },
+        {
+          "t": "(1vii) Live Arc testnet proof: one real session opened, acted on, settled, and verified on-chain",
+          "s": "done"
+        },
+        {
+          "t": "(1viii) RENAME DONE - GlobalFolkGames Gasless Infrastructure -> Foskaay Gasless Games Infrastructure (short: Foskaay GGI). Folder foskaay-ggi/, URL /foskaay-ggi/demos/, npm @foskaay/ggi-*. arcv2m17 (GFG-BS) left untouched. 4 core contracts redeployed to Arc testnet; live proof PASS.",
+          "s": "done"
+        },
+        {
+          "t": "(2) Foskaay GGI SDK - the one-line integration",
+          "s": "done"
+        },
+        {
+          "t": "(2i) @foskaay/ggi-contracts-sdk - Solidity interfaces + deployed addresses per network",
+          "s": "done"
+        },
+        {
+          "t": "(2ii) @foskaay/ggi-sdk - open/act/dispute/settle wrappers + session-key signing + read helpers",
+          "s": "done"
+        },
+        {
+          "t": "(2iii) A README a stranger can follow: install, adapter, four calls, measured cost",
+          "s": "done"
+        },
+        {
+          "t": "(3) FIRST DEMO - prove Foskaay GGI works for a real game",
+          "s": "done"
+        },
+        {
+          "t": "(3i) Choose the first demo genre (owner pick: idle or casual). Decide before building.",
+          "s": "done"
+        },
+        {
+          "t": "(3ii) Build the demo 50-line adapter (the only game-specific code)",
+          "s": "done"
+        },
+        {
+          "t": "(3iii) Wire the demo to the SDK and prove it plays gasless end to end",
+          "s": "done"
+        },
+        {
+          "t": "(3iv) Ship the demo live and playable from /foskaay-ggi/demos/ on a phone",
+          "s": "done"
+        },
+        {
+          "t": "(3v) Ported MagicBlock on-chain Generals to Arc as the first real demo: GeneralsGame.sol keeps the board and rules on-chain, every move gated by canSign; 138/138 forge tests",
+          "s": "done"
+        },
+        {
+          "t": "(3vi) GeneralsGame deployed to Arc testnet 0xD674eD1f118855868b4B002F4A167C953Cc549ca; playable PvP page at /foskaay-ggi/demos/pvp/generals/ with MagicBlock graphics, moves relayed by the sponsor",
+          "s": "done"
+        },
+        {
+          "t": "(3vii) Agent findings recorded: the missing Foskaay GGI Midchain + the EVM tools Arc inherits we had not used (eth_call free execution, EIP-712, hash chain, EIP-7702, EIP-1153); written into the v5 build guide, the Research library (ggi-Foskaay GGI Midchain), and arcv2m18",
+          "s": "done"
+        },
+        {
+          "t": "(3viii) Foskaay GGI Midchain prototype built and proven on Arc testnet: GeneralsMidchain pure rules engine + EIP-712 signed hash-chained moves via eth_call, verifier replay PASS; no core change (4 core + 1 optional stands)",
+          "s": "done"
+        },
+        {
+          "t": "(3ix) PvP demo card links to the live page and carries a plain-language note on what is gasless and how cost works",
+          "s": "done"
+        },
+        {
+          "t": "(4) Cost proof (the number that sells Foskaay GGI)",
+          "s": "done"
+        },
+        {
+          "t": "(4i) Measure the real per-session sponsor cost on Arc and publish it vs MagicBlock ER",
+          "s": "done"
+        },
+        {
+          "t": "(4ii) Prove the floor: heavy play costs the same as light play inside a session",
+          "s": "done"
+        },
+        {
+          "t": "(4iii) Live measured cost per match on Arc testnet, unbatched vs batched, recorded in foskaay-ggi/deployments/generals-cost.json",
+          "s": "done"
+        },
+        {
+          "t": "(4iv) Foskaay GGI Midchain cost measured on Arc testnet: port 0.098172/match (about 10 games/1 USD), Foskaay GGI Midchain unbatched 0.012206 (about 81), batched 0.009788 (about 102); recorded in foskaay-ggi/deployments/midchain-cost*.json",
+          "s": "done"
+        },
+        {
+          "t": "(5) OPTIONAL patterns - offered, never enforced (build only when a game asks)",
+          "s": "in_progress"
+        },
+        {
+          "t": "(5i) Batched Settlement - Merkle window flush, cadence chosen by the dev (never forced to 100/1h)",
+          "s": "done"
+        },
+        {
+          "t": "(5ii) Managed Accounts - PlayerCore-style single account per player with slots (a cost optimisation)",
+          "s": "pending"
+        },
+        {
+          "t": "(5iii) Verifiers - per-game referee for disputes (Ludo first, when it matters)",
+          "s": "pending"
+        },
+        {
+          "t": "(5iv) Session reader/explorer - so sessions and receipts are visible (MagicBlock needed one too)",
+          "s": "done"
+        },
+        {
+          "t": "(5v) Event-only handover/settle in core (no SSTORE on the happy path, events for eth_getLogs) so the Foskaay GGI Midchain can approach the v5 target of about 1000 games/1 USD; the remaining cost is core storage writes, not moves",
+          "s": "pending"
+        },
+        {
+          "t": "(5vi) Event-only handover/settle prototype tested on Arc testnet: EventOnlyCore emits logs (no SSTORE) and verifies player signatures; 0.001709 USDC/match = about 585 games/1 USD (vs 81 for the core Foskaay GGI Midchain, 10 for the board port); 4 tests pass",
+          "s": "done"
+        },
+        {
+          "t": "(5vii) Event-based Foskaay GGI Midchain batched test done on Arc testnet: handoverMany/settleMany put many games in one tx; per game 0.001098 (3), 0.000939 (5), 0.000820 (10), 0.000713 (100) USDC = about 910/1064/1219/1403 games per 1 USD; crosses the v5 $1/1000 target at 5 games per batch; link is inside the Handover event so 2 txs not 3",
+          "s": "done"
+        },
+        {
+          "t": "(5viii) PENDING owner decision: build the event-based Foskaay GGI Midchain into CORE (UUPS logic upgrade, same address, append-only, + nullifier) and SDKs (handover/settle/signMove/verifyMidchain); batching stays optional; needs architecture.json update first",
+          "s": "pending"
+        },
+        {
+          "t": "(5vii) PENDING owner decision: test the BATCHED event-only variant (many sessions per tx) to reach the v5 target of about 1000 games/1 USD, then decide what event-only capability (if any) goes into core + SDKs (needs replay protection/nullifier)",
+          "s": "done"
+        },
+        {
+          "t": "(6) GFG itself migrates onto Foskaay GGI (later - after GI is proven)",
+          "s": "pending"
+        },
+        {
+          "t": "(6i) Decide how GFG maximises GI (owner call: account layout, cadence, patterns)",
+          "s": "pending"
+        },
+        {
+          "t": "(6ii) Ludo becomes the first real GFG game on GI",
+          "s": "pending"
+        },
+        {
+          "t": "(6iii) Then points, lives, premium as event/slot types",
+          "s": "pending"
+        },
+        {
+          "t": "(6iv) Then multiplayer, competitions, AGM, ERC-20 rewards",
+          "s": "pending"
+        },
+        {
+          "t": "(6v) Retire the old GFG settlement path (arcv2m17) once GI carries everything",
+          "s": "pending"
+        },
+        {
+          "t": "(7) Ludo demo on the Foskaay GGI Midchain (Arc): on-chain rules, free moves, gasless",
+          "s": "done"
+        },
+        {
+          "t": "(7i) Port the real ludo-lab mechanics into the demo contracts (two dice, double-six bonus, capture \"pe\", 45s timer, position scoring 4P 100/50/25/0, 2P 100/0)",
+          "s": "done"
+        },
+        {
+          "t": "(7ii) Relay is stateless: rolls, moves, passes and board reads are FREE; only connect + settle are transactions",
+          "s": "done"
+        },
+        {
+          "t": "(7iii) Contract is the ONLY rules engine: added previewLog view, relay replays the move log through the contract (no server truth, no localStorage)",
+          "s": "done"
+        },
+        {
+          "t": "(7iv) Tests 34/34 including previewLog == settle parity and tamper rejection",
+          "s": "done"
+        },
+        {
+          "t": "(7v) Upgraded the demo contracts IN PLACE (previewLog added): addresses unchanged, data preserved, cost printed",
+          "s": "done"
+        },
+        {
+          "t": "(7vi) Frontend: ludo-lab board + 3D dice skin driven by the contract board (no localStorage)",
+          "s": "done"
+        },
+        {
+          "t": "(7vii) Live proof on Arc testnet: 2 transactions (connect 0.0125 + settle 0.0119 USDC), 119 free midchain calls, tampered log rejected",
+          "s": "done"
+        },
+        {
+          "t": "(7viii) Owner tests the demo on a real phone",
+          "s": "in_progress"
+        },
+        {
+          "t": "(7ix) v7 core: SINGLE SessionRegistry (FeeVault merged in, direct transfer to destination, fee 0.0004 unbatched / 0.0002 batched, one SSTORE = paid flag + seed/participant commitment), UUPS/OZ; 22/22 tests",
+          "s": "done"
+        },
+        {
+          "t": "(7x) Pure Ludo game (FoskaayGGILudo): getInitialState/applyMove/isTerminal, board as bytes, points INSIDE the midchain state, no per-move SSTORE, capture \"pe\" matches ludo-lab; tests",
+          "s": "done"
+        },
+        {
+          "t": "(7xi) Deployed to Arc testnet: core 0x9f078527082b3bCc7c00e27f7C53D31CF1D17A85, Ludo 0xc3Dd1243B74373Bc015Fd305727E729785B41C08 (0.0717 USDC)",
+          "s": "done"
+        },
+        {
+          "t": "(7xii) Midchain relay: every move is a free eth_call + signed hash chain; only handover + settle are txs; NO replay. Live: 2 txs, ~0.0035 USDC/match, ~280 games/$1 on testnet (25 Gwei)",
+          "s": "done"
+        },
+        {
+          "t": "(7xiii) Ludo page: tx ids link to the Arc explorer, Foskaay GGI Explorer link, blinking tokens + centre dice, crown only after a real finish, token move",
+          "s": "done"
+        },
+        {
+          "t": "(7xiv) Explorer: single core + Midchain tab (hash-chain verify to the on-chain final hash)",
+          "s": "done"
+        },
+        {
+          "t": "(7xv) Owner tests live on the osv1Arc PR",
+          "s": "in_progress"
+        }
+      ]
+    },
     {
       "title": "Foskaay GGI - core, SDK, game demo, cost ladder, storage + event-based Foskaay GGI Midchain + Ludo demo on the Foskaay GGI Midchain (on-chain rules, free moves)",
       "updated": "2026-09-25",
