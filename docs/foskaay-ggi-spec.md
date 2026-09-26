@@ -6,6 +6,14 @@
 > If the two ever disagree, **architecture.json wins**. This file exists for the extra prose and
 > reasoning that is too long for a module entry.
 
+> **SUPERSEDED IN PART (2026-09-26).** The body below describes the earlier 4-contract core
+> (`SessionRegistry`, `SessionState`, `Randomness`, `FeeVault`). The built reality is now ONE core,
+> `FoskaayGGI`, plus the game contract `FoskaayGGIGames` and the player account `FoskaayGGIPlayers`
+> (all UUPS on Arc testnet). The fee is 0.0004 base + 0.0004 per lifted account + 0.0002 per game,
+> charged once at connect. Names are locked. Current addresses and the authoritative spec live in
+> `public/changelog/architecture.json` module `arcv2m18`; use this file only for the original
+> reasoning, never for the current design or address list.
+
 **Status:** approved in principle by the owner (2026-09-21). NOT built. No code until Step 3 is
 explicitly started.
 **Owner:** Solomon Foskaay
