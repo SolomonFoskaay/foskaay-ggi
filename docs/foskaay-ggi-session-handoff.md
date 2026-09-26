@@ -1,5 +1,11 @@
 # FOSKAAY GGI — SESSION HANDOFF (copy this whole file into a new session)
 
+> **SUPERSEDED IN PART (2026-09-26).** This handoff describes the earlier 4-contract core. The built
+> reality is ONE core `FoskaayGGI` plus the game `FoskaayGGIGames` and the player account
+> `FoskaayGGIPlayers` (all UUPS on Arc testnet), wired and deployed. Names are locked. For current
+> addresses and the authoritative spec read `public/changelog/architecture.json` module `arcv2m18`
+> and `AGENTS.md`; treat the address list and contract split below as historical.
+
 You are continuing work on **Foskaay GGI** inside the `globalfolkgames` repo.
 Read this file first, then `AGENTS.md`, then `public/changelog/architecture.json`
 module `arcv2m18`. Do not assume; verify with `git status` and

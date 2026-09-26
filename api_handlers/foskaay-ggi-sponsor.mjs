@@ -43,7 +43,8 @@ const ADDR = {
   FoskaayGGILudo: '0xa5040Ece5945a8551499ad1148fc3cD15b165987',
 };
 
-const ludoAbi = parseAbi([
+// The pure Ludo rules, now on FoskaayGGIGames.
+const gamesRulesAbi = parseAbi([
   'function getInitialState(uint8 seatCount, uint8 userSeat) pure returns (bytes)',
   'function applyMove(bytes state, uint8 kind, uint8 seat, uint8 tokenIndex, uint8 value, bytes32[] seeds) pure returns (bytes)',
   'function hashState(bytes state) pure returns (bytes32)',
@@ -53,14 +54,27 @@ const ludoAbi = parseAbi([
 
 const coreAbi = parseAbi([
   'function handover(bytes32 sessionId, address gameLogic, bytes32 startHash, bytes32 seedCommit, address[] players, address[] sessionKeys, uint16 randomCount) payable',
+  'function handoverWithAccounts(bytes32 sessionId, address gameLogic, bytes32 startHash, bytes32 seedCommit, address[] players, address[] sessionKeys, uint16 randomCount, address[] accounts, uint16 games) payable',
   'function handoverMany(bytes32[] sessionIds, address gameLogic, bytes32[] startHashes, bytes32[] seedCommits, address[][] players, address[][] sessionKeys, uint16 randomCount) payable',
   'function settle(bytes32 sessionId, bytes32 finalHash, bytes32 seedReveal, address[] players, address[] sessionKeys, bytes[] sigs, address[] signers)',
   'function settleMany(bytes32[] sessionIds, bytes32[] finalHashes, bytes32[] seedReveals, address[][] players, address[][] sessionKeys, bytes[][] sigs, address[][] signers)',
   'function randomN(bytes32 seed, uint256 counter, uint256 count) pure returns (bytes32[])',
   'function midchainDigest(bytes32 sessionId, bytes32 finalHash) view returns (bytes32)',
   'function fee() view returns (uint256)',
+  'function feeBase() view returns (uint256)',
+  'function feePerAccount() view returns (uint256)',
+  'function feePerGame() view returns (uint256)',
   'function isPaid(bytes32 sessionId) view returns (bool)',
 ]);
+
+// Phase 2 game contract: settle writes N games in one tx and credits the player.
+const gamesAbi = parseAbi([
+  'function settle(bytes32 sessionId, (uint8 turn, uint8 seats, uint32 step, bytes board, bytes32 boardHash, bool over)[] list, address[] seatPlayers, bytes32 gameTag) returns (uint256)',
+  'function gameCount(bytes32 sessionId) view returns (uint256)',
+]);
+
+// The demo's game tag (the same bucket the player points are stored under).
+const GAME_TAG = keccak256(toBytes('ludo'));
 
 const chain = defineChain({
   id: CHAIN_ID,
@@ -102,7 +116,7 @@ async function send(wallet, pub, req) {
 
 // ---------------------------------------------------------------- Ludo demo
 //
-// THE FOSKAAY GGI MIDCHAIN. The game contract is PURE (FoskaayGGILudo), so every
+// THE FOSKAAY GGI MIDCHAIN. The rules are pure (on FoskaayGGIGames), so every
 // roll and every move runs via eth_call for FREE (player AND sponsor). The relay
 // hash-chains each move and signs each new hash with the session key. Only TWO
 // things are transactions: the handover (connect + fee) and the settle. There is
@@ -139,8 +153,10 @@ function viewOf(sess) {
   };
 }
 
-async function ludoRead(pub, fn, args) {
-  return await pub.readContract({ address: ADDR.FoskaayGGILudo, abi: ludoAbi, functionName: fn, args });
+/// The pure rules now live on FoskaayGGIGames, so all rule calls are eth_call
+/// reads against the game contract (still free, player and sponsor).
+async function gameRead(pub, fn, args) {
+  return await pub.readContract({ address: ADDR.FoskaayGGIGames, abi: gamesRulesAbi, functionName: fn, args });
 }
 
 function needSession(body) {
@@ -153,9 +169,9 @@ function needSession(body) {
 /// sign the hash with the session key. Returns the new view. NO transaction.
 async function step(sess, kind, seat, tokenIndex, value, seeds) {
   const { account, pub } = clients();
-  const newState = await ludoRead(pub, 'applyMove', [sess.state, kind, seat, tokenIndex, value, seeds || []]);
+  const newState = await gameRead(pub, 'applyMove', [sess.state, kind, seat, tokenIndex, value, seeds || []]);
   const prevHash = sess.state === sess.startState ? sess.startHash : sess.lastHash;
-  const newHash = await ludoRead(pub, 'hashState', [newState]);
+  const newHash = await gameRead(pub, 'hashState', [newState]);
   const digest = await pub.readContract({ address: ADDR.FoskaayGGI, abi: coreAbi, functionName: 'midchainDigest', args: [sess.sessionId, newHash] });
   const sig = await account.sign({ hash: digest });
   sess.state = newState;
@@ -178,23 +194,32 @@ async function doDemoCreate(body) {
   const seed = keccak256(toBytes('foskaay-ggi-ludo-' + sessionId + '-' + Date.now()));
   const seedCommit = keccak256(seed);
 
-  const state0 = await ludoRead(pub, 'getInitialState', [seatCount, userSeat]);
-  const startHash = await ludoRead(pub, 'hashState', [state0]);
+  const state0 = await gameRead(pub, 'getInitialState', [seatCount, userSeat]);
+  const startHash = await gameRead(pub, 'hashState', [state0]);
 
   const players = new Array(seatCount).fill(account.address);
   players[userSeat] = user;
   const sessionKeys = new Array(seatCount).fill(account.address);
 
-  const fee = await pub.readContract({ address: ADDR.FoskaayGGI, abi: coreAbi, functionName: 'fee' });
+  // Phase 3: the dev-declared accounts are the two real contracts, lifted once for
+  // the whole session. fee = base + perAccount*accounts + perGame*games.
+  const accounts = [ADDR.FoskaayGGIGames, ADDR.FoskaayGGIPlayers];
+  const games = Number(body.games || 1);
+  const [feeBase, feePerAccount, feePerGame] = await Promise.all([
+    pub.readContract({ address: ADDR.FoskaayGGI, abi: coreAbi, functionName: 'feeBase' }),
+    pub.readContract({ address: ADDR.FoskaayGGI, abi: coreAbi, functionName: 'feePerAccount' }),
+    pub.readContract({ address: ADDR.FoskaayGGI, abi: coreAbi, functionName: 'feePerGame' }),
+  ]);
+  const fee = feeBase + feePerAccount * BigInt(accounts.length) + feePerGame * BigInt(games);
   const r = await send(wallet, pub, {
-    address: ADDR.FoskaayGGI, abi: coreAbi, functionName: 'handover',
-    args: [sessionId, ADDR.FoskaayGGILudo, startHash, seedCommit, players, sessionKeys, 2],
+    address: ADDR.FoskaayGGI, abi: coreAbi, functionName: 'handoverWithAccounts',
+    args: [sessionId, ADDR.FoskaayGGIGames, startHash, seedCommit, players, sessionKeys, 2, accounts, games],
     value: fee, account,
   });
-  const sess = { sessionId, matchRef, seed, seedCommit, state: state0, startState: state0, startHash, lastHash: startHash, players, sessionKeys, seatCount, userSeat, moves: [] };
+  const sess = { sessionId, matchRef, seed, seedCommit, state: state0, startState: state0, startHash, lastHash: startHash, players, sessionKeys, accounts, games, seatCount, userSeat, moves: [] };
   sessions.set(sessionId, sess);
   const total = BigInt(r.costUsdc6) + (fee / 1_000_000_000_000n);
-  return { sessionId, matchRef, userSeat, seatCount, connectTx: r.hash, costUsdc6: total.toString(), fee: fee.toString(), view: viewOf(sess) };
+  return { sessionId, matchRef, userSeat, seatCount, connectTx: r.hash, costUsdc6: total.toString(), fee: fee.toString(), accounts, games, view: viewOf(sess) };
 }
 
 /// ROLL: free. Dice come from the core's randomN (pure); applyMove is pure.
@@ -236,21 +261,40 @@ async function doDemoBoard(body) {
 async function doDemoMoves(body) {
   const sess = sessions.get(String(body.sessionId));
   if (!sess) return { found: false, sessionId: body.sessionId };
-  return { found: true, sessionId: sess.sessionId, gameLogic: ADDR.FoskaayGGILudo, startHash: sess.startHash, finalHash: sess.lastHash, moves: sess.moves };
+  return { found: true, sessionId: sess.sessionId, gameLogic: ADDR.FoskaayGGIGames, startHash: sess.startHash, finalHash: sess.lastHash, moves: sess.moves };
 }
 
-/// SETTLE: the SECOND and LAST transaction. No replay: the final hash already
-/// commits to the board and the points, so this is O(1) no matter the match.
+/// SETTLE: the LAST transactions. First FoskaayGGIGames.settle writes the match
+/// on-chain and credits FoskaayGGIPlayers in the same step; then the core settle
+/// verifies the players' signatures and closes the session. No replay: the final
+/// hash already commits to the board and the points, so this is O(1).
 async function doDemoSettle(body) {
   const { account, pub, wallet } = clients();
   const sess = needSession(body);
-  const finalHash = await ludoRead(pub, 'hashState', [sess.state]);
-  const r = await send(wallet, pub, {
-    address: ADDR.FoskaayGGI, abi: coreAbi, functionName: 'settle',
-    args: [sess.sessionId, finalHash, sess.seed, sess.players, sess.sessionKeys, [await account.sign({ hash: await pub.readContract({ address: ADDR.FoskaayGGI, abi: coreAbi, functionName: 'midchainDigest', args: [sess.sessionId, finalHash] }) })], [account.address]],
+  const finalHash = await gameRead(pub, 'hashState', [sess.state]);
+  const d = decodeState(sess.state);
+  const need = d.seatCount === 2 ? 1 : 3;
+  const game = {
+    turn: d.turn,
+    seats: d.seatCount,
+    step: sess.moves.length,
+    board: sess.state,
+    boardHash: finalHash,
+    over: d.finishCount >= need,
+  };
+  const rGame = await send(wallet, pub, {
+    address: ADDR.FoskaayGGIGames, abi: gamesAbi, functionName: 'settle',
+    args: [sess.sessionId, [game], sess.players, GAME_TAG],
     account,
   });
-  return { tx: r.hash, finalHash, costUsdc6: r.costUsdc6.toString() };
+  const digest = await pub.readContract({ address: ADDR.FoskaayGGI, abi: coreAbi, functionName: 'midchainDigest', args: [sess.sessionId, finalHash] });
+  const sig = await account.sign({ hash: digest });
+  const rCore = await send(wallet, pub, {
+    address: ADDR.FoskaayGGI, abi: coreAbi, functionName: 'settle',
+    args: [sess.sessionId, finalHash, sess.seed, sess.players, sess.sessionKeys, [sig], [account.address]],
+    account,
+  });
+  return { tx: rGame.hash, coreTx: rCore.hash, finalHash, costUsdc6: (BigInt(rGame.costUsdc6) + BigInt(rCore.costUsdc6)).toString() };
 }
 
 export default async function handler(req, res) {
@@ -273,6 +317,8 @@ export default async function handler(req, res) {
         out = {
           address: account.address,
           sessionRegistry: ADDR.FoskaayGGI,
+          games: ADDR.FoskaayGGIGames,
+          players: ADDR.FoskaayGGIPlayers,
           ludo: ADDR.FoskaayGGILudo,
         };
         break;
