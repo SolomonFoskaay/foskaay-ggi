@@ -6,8 +6,15 @@ dist
 # EXCEPTION: the GGI SDK browser bundle is a SHIPPED package asset (it is what a
 # plain HTML page loads from the npm CDN), so it must be committed. Everything
 # else under a dist/ folder stays ignored.
-!foskaay-ggi/packages/sdk/dist/
-!foskaay-ggi/packages/sdk/dist/ggi-sdk.browser.js
+!packages/sdk/dist/
+!packages/sdk/dist/ggi-sdk.browser.js
+
+# Foundry build artifacts and npm pack output (Foskaay GGI contracts).
+cache/
+out/
+broadcast/
+*.tgz
+.npm/
 
 # Logs
 logs
@@ -26,12 +33,12 @@ pnpm-debug.log*
 
 # Sponsor spend ledger (relay state, machine-local)
 .gfg-spend-ledger.json
-scripts/gfg-referrals.json
-scripts/gfg-handles.json
-scripts/gfg-signups.json
-scripts/gfg-comp-wins.json
-scripts/gfg-comp-entries.json
-scripts/.gfg-agm-registry.json
+**/scripts/gfg-referrals.json
+**/scripts/gfg-handles.json
+**/scripts/gfg-signups.json
+**/scripts/gfg-comp-wins.json
+**/scripts/gfg-comp-entries.json
+**/scripts/.gfg-agm-registry.json
 
 # Server-side probe log (dashboard leak/ops observations; machine-local)
 .gfg-probe-log.jsonl
@@ -48,7 +55,7 @@ scripts/.gfg-agm-registry.json
 *-keypair.json
 id.json
 ~/.config/solana/
-scripts/.gfg-agm-ids.json
+**/scripts/.gfg-agm-ids.json
 .gfg-mp-lobby.json
 .gfg-arc-spend.json
 .gfg-arc-batch.json

@@ -1,0 +1,72 @@
+{
+  "version": "arcv1",
+  "note": "ARCV1 RECORD ONLY - FROZEN, NEVER EDITED. The original closed-source Ludo-era architecture (arcv1m1..arcv1m11). It had a SPONSOR ESCROW (arcv1m8) and NO AGM (the Automated Game Matcher is a v2 invention, arcv2m14). All current work happens on arcv2; this file exists only so references stay unambiguous.",
+  "modules": [
+    {
+      "id": "arcv1m1",
+      "title": "Game core + proof of play",
+      "status": "shipped",
+      "summary": "arcv1 record (frozen). Superseded by arcv2m1."
+    },
+    {
+      "id": "arcv1m2",
+      "title": "Universal result seam (the plug-and-play contract bus)",
+      "status": "shipped",
+      "summary": "arcv1 record (frozen). Superseded by arcv2m2."
+    },
+    {
+      "id": "arcv1m3",
+      "title": "Local points (per game, PURE + SPENDABLE, on-chain via ER)",
+      "status": "shipped",
+      "summary": "arcv1 record (frozen). Superseded by arcv2m3."
+    },
+    {
+      "id": "arcv1m4",
+      "title": "Global points (3 ledgers) + on-chain inventory wallet (site-wide, decoupled from gameplay)",
+      "status": "shipped",
+      "summary": "arcv1 record (frozen). Superseded by arcv2m4."
+    },
+    {
+      "id": "arcv1m5",
+      "title": "Subscription + Premium points (the money + launch engine)",
+      "status": "shipped",
+      "summary": "arcv1 record (frozen). Superseded by arcv2m5."
+    },
+    {
+      "id": "arcv1m6",
+      "title": "Point-source modules (signup bonus + 12-month affiliate launch marketing; giveaway/social deferred)",
+      "status": "shipped",
+      "summary": "arcv1 record (frozen). Superseded by arcv2m6."
+    },
+    {
+      "id": "arcv1m7",
+      "title": "Competitions (on-chain, config-driven framework + admin creator; launch = Daily Ludo Earn)",
+      "status": "shipped",
+      "summary": "arcv1 record (frozen). Superseded by arcv2m7."
+    },
+    {
+      "id": "arcv1m8",
+      "title": "Sponsor escrow (optional plugin, separate from arcv2m7)",
+      "status": "shipped",
+      "summary": "arcv1 sponsor escrow only (brand events). There was NO AGM in arcv1; AGM is arcv2m14."
+    },
+    {
+      "id": "arcv1m9",
+      "title": "Player inventory",
+      "status": "shipped",
+      "summary": "arcv1 record (frozen). Superseded by arcv2m9."
+    },
+    {
+      "id": "arcv1m10",
+      "title": "Lives + daily rewards (subscription-boosted, ships with arcv2m5)",
+      "status": "shipped",
+      "summary": "arcv1 record (frozen). Superseded by arcv2m10."
+    },
+    {
+      "id": "arcv1m11",
+      "title": "Community (on-chain forum, UGC)",
+      "status": "shipped",
+      "summary": "arcv1 record (frozen). Superseded by arcv2m11."
+    }
+  ]
+}

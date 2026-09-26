@@ -1,0 +1,720 @@
+{
+  "updated": "2026-09-22",
+  "note": "Staff-only research library. These are PRE-architecture explorations: things being researched BEFORE they become modules in architecture.json. Read on mobile, re-check later, and use as guidance when adopting a direction (for example the Arc migration). Adding a new research entry is a decision: the agent asks first. Before a new module is added to (or an existing one is updated in) architecture.json, check here for pending research that is relevant. This file is client-served for the staff page; it holds business research, never secrets or unfixed security detail.",
+  "statusLegend": {
+    "researching": "Open research, not yet decided",
+    "parked": "Owner will read then decide (decision parked)",
+    "adopted": "Turned into a module/roadmap item; keep for reference",
+    "closed": "Not pursued; kept for the record"
+  },
+  "items": [
+    {
+      "id": "arc",
+      "title": "Arc mainnet migration (Solana cost vs Circle Arc)",
+      "status": "parked",
+      "updated": "2026-09-18",
+      "summary": "Solana mainnet would cost about 1,010 USD upfront (program rent) plus about 1.05 USD per player forever, and all of it moves with the SOL price. Circle's Arc (an EVM L1 where USDC is the gas token, mainnet live 2026-09-16) would cost a few dollars to deploy and cents per player, with the same gasless player experience via ERC-4337 paymasters. The catch is a full Solidity rewrite and a paid randomness source, since Arc has no on-chain randomness.",
+      "decision": "PARKED. The owner will read this later and decide. No work starts until then.",
+      "sections": [
+        {
+          "heading": "1. What Solana mainnet costs today (SOL = 104.10 USD, live)",
+          "paragraphs": [
+            "Program deploy is a one-time RENT DEPOSIT, not a fee. The program account is 1,392,816 bytes and Solana rent is (bytes + 128) x 6960 lamports = 9,694,890,240 lamports = 9.695 SOL, about 1,009 USD. That SOL is locked (you get it back only if you close the program) and you need roughly 2x it free during the deploy for the temporary buffer.",
+            "Per player is the part that scales. Measured onboarding is 0.010048 SOL, about 1.05 USD per player, and it is not refunded while the player's accounts live (dice account + Player Core rent + delegation records)."
+          ],
+          "table": {
+            "headers": [
+              "Players",
+              "Program (once)",
+              "Player onboarding",
+              "Total"
+            ],
+            "rows": [
+              [
+                "100",
+                "1,009 USD",
+                "105 USD",
+                "about 1,114 USD"
+              ],
+              [
+                "1,000",
+                "1,009 USD",
+                "1,046 USD",
+                "about 2,055 USD"
+              ],
+              [
+                "10,000",
+                "1,009 USD",
+                "10,460 USD",
+                "about 11,469 USD"
+              ]
+            ]
+          },
+          "bullets": [
+            "Two extra Solana risks: the free ER VRF queue is a devnet perk (mainnet pricing unconfirmed), and every cost moves with the SOL price.",
+            "The app pays all of this (sponsor model), so it scales directly with free players."
+          ]
+        },
+        {
+          "heading": "2. Arc at a glance (verified from live sources 2026-09-18)",
+          "bullets": [
+            "Circle's Arc mainnet went live 2026-09-16. It is an EVM-compatible L1 (Osaka baseline), chain ID 5042, RPC https://rpc.mainnet.arc.io",
+            "USDC is the native gas token, so fees are dollar-denominated. EIP-1559 + EWMA, min base fee 20 Gwei, design target about 0.001 USD per ERC-20 transfer.",
+            "Sub-second deterministic finality (Malachite consensus). Founding validators include BlackRock, Visa, Mastercard, Circle.",
+            "There is an ARC coordination asset (10B mint) that is not yet a tradable token.",
+            "Arc lists ERC-4337 account abstraction providers: Alchemy (Bundler + Gas Manager), Biconomy, Pimlico, ZeroDev, Thirdweb, Circle Wallets, Dynamic (native ERC-4337), Privy, Crossmint, Turnkey, Blockradar.",
+            "Node providers: Alchemy, Blockdaemon, dRPC, QuickNode, plus public RPC.",
+            "Oracles: Chainlink, Pyth, RedStone, Chronicle, Stork. IMPORTANT: PREVRANDAO always returns 0, so there is NO on-chain randomness on Arc."
+          ]
+        },
+        {
+          "heading": "3. Deploy cost: Arc wins by roughly 100x",
+          "table": {
+            "headers": [
+              "",
+              "Solana mainnet",
+              "Arc mainnet"
+            ],
+            "rows": [
+              [
+                "Program/contract deploy",
+                "about 1,009 USD locked rent",
+                "gas only, about 0.10 to 0.65 USD per contract (est.)"
+              ],
+              [
+                "Contract size cap",
+                "large (.so, 1.39 MB)",
+                "24 KB (EIP-170), so split into many contracts"
+              ],
+              [
+                "Player onboarding",
+                "about 1.05 USD each (rent)",
+                "storage gas, about 0.002 USD each (est., sponsored)"
+              ],
+              [
+                "A game action",
+                "gasless on ER (devnet free)",
+                "about 0.003 to 0.01 USD gas (est.), sponsored"
+              ],
+              [
+                "Fee currency",
+                "SOL (volatile)",
+                "USDC (stable)"
+              ]
+            ]
+          },
+          "paragraphs": [
+            "The big win is that EVM has no rent deposit. You pay gas to deploy and gas to write state, nothing is locked, and the cost is in dollars. Estimated launch cost on Arc is single-digit to low-tens of dollars, plus cents per player."
+          ]
+        },
+        {
+          "heading": "4. Can gasless stay gasless on Arc? Yes, but not with MagicBlock",
+          "bullets": [
+            "MagicBlock is SVM-only (Ephemeral Rollups). It does not run on Arc, so the gasless ER model does not port.",
+            "Arc's replacement is ERC-4337: a smart account plus a paymaster (gas sponsor). Same player experience (email sign-in, no popups, player never holds gas), and the app pays cents instead of 1.05 USD per player.",
+            "The real gap is randomness. Arc has no on-chain randomness, so the provably-fair dice needs a VRF: Chainlink VRF (paid in LINK) or Pyth Entropy (cheaper). The per-roll cost must be quoted BEFORE committing: this one number decides whether the free-dice model survives on Arc."
+          ]
+        },
+        {
+          "heading": "5. Current stack vs Arc",
+          "table": {
+            "headers": [
+              "Tech we use",
+              "Ports to Arc?",
+              "Notes / alternative"
+            ],
+            "rows": [
+              [
+                "Anchor/Rust programs (gfg-dice, points, comps, chess, escrow)",
+                "No, full rewrite",
+                "Solidity (Foundry/Hardhat supported). 24 KB cap means splitting 1.39 MB into about 10 to 20 contracts; the module layout helps"
+              ],
+              [
+                "Alchemy RPC",
+                "Yes",
+                "Alchemy has a full Arc page: RPC, WebSockets, Token/Transfers/NFT APIs, Webhooks, Bundler, Gas Manager"
+              ],
+              [
+                "Dynamic (email OTP wallet)",
+                "Yes",
+                "Dynamic is listed in Arc's AA providers with native ERC-4337 support. Alternatives: Privy, Crossmint, Para, MetaMask Embedded Wallets, Circle Wallets"
+              ],
+              [
+                "MagicBlock ER (gasless + ER VRF)",
+                "No",
+                "Gasless becomes a paymaster; ER VRF becomes Chainlink VRF or Pyth Entropy"
+              ],
+              [
+                "Vercel + Node + HTML/Vite frontend",
+                "Yes, unchanged",
+                "Only the chain client changes (web3.js/Anchor to viem/ethers + ABIs)"
+              ],
+              [
+                "Supabase (backup/audit)",
+                "Yes, unchanged",
+                "No change"
+              ],
+              [
+                "USDC payments",
+                "Better fit",
+                "Arc is USDC-native; Circle App Kit adds onramp, bridge and unified balance"
+              ],
+              [
+                "USDC bridging/liquidity",
+                "Yes",
+                "CCTP and Arc's bridge; institutional validators"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "6. Grants and the recommended path",
+          "bullets": [
+            "Arc Microgrants (live now): 20 grants of 500 USDC (10,000 USDC pool) for proofs of concept and prototypes RUNNING ON ARC MAINNET. Submissions close 2026-10-14, reviewed as they come in (DoraHacks, community.arc.io). A working folk-games port is a strong fit.",
+            "Circle Developer Grants Program (relaunched 2026): production-grade teams where Arc is central to value/liquidity/settlement and Circle products are core (circle.questbook.app).",
+            "Arc House / Architects Program (75,000+ members) for early builder visibility.",
+            "Recommended: do not fund Solana mainnet yet. Build a small Arc mainnet proof of concept (dice with a VRF, a Dynamic smart wallet, an Alchemy Gas Manager sponsorship, minimal Ludo), enter Arc Microgrants before 2026-10-14, then apply to Circle Developer Grants with the demo.",
+            "Price the VRF per roll first. If it is cents, Arc is clearly the better home for this project."
+          ]
+        },
+        {
+          "heading": "7. MagicBlock ER + ER VRF REAL costs on mainnet (verified from docs, source checked 2026-08-20)",
+          "paragraphs": [
+            "IMPORTANT correction to the earlier worry: on Solana the gasless layer is NOT the expensive part. MagicBlock mainnet pricing is: ER transaction base fee 0 SOL (current release, public nodes), and ER VRF (under 50ms) is FREE per randomness request. Only delegation/commits cost, and the real drag is account RENT."
+          ],
+          "table": {
+            "headers": [
+              "What",
+              "Cost",
+              "When"
+            ],
+            "rows": [
+              [
+                "ER transaction (every roll, move, point write)",
+                "0 SOL",
+                "now, public nodes"
+              ],
+              [
+                "ER VRF (under 50ms)",
+                "FREE per request",
+                "now"
+              ],
+              [
+                "Delegation session",
+                "0.0003 SOL (about 0.03 USD)",
+                "at undelegate, from the deposit"
+              ],
+              [
+                "Commit after the first",
+                "0.0001 SOL each (about 0.01 USD)",
+                "at undelegate"
+              ],
+              [
+                "Live commit from number 26",
+                "0.0001 SOL per account",
+                "from a delegated fee payer"
+              ],
+              [
+                "Solana base-layer VRF (fallback)",
+                "0.0005 to 0.0008 SOL per roll",
+                "only when not on the ER"
+              ]
+            ]
+          },
+          "bullets": [
+            "What the measured 0.010048 SOL per player is made of: about 0.0054 SOL (about 0.56 USD) is PERMANENT rent (dice account plus Player Core), and about 0.0046 SOL (about 0.48 USD) is the delegation DEPOSIT (record plus metadata), which is REFUNDED at undelegate minus the 0.0003 session fee and 0.0001 per commit.",
+            "The 1,009 USD program cost is also rent and is refundable if the program is ever closed.",
+            "So Solana is: about 1,009 USD refundable upfront, about 0.56 USD spent per player, about 0.48 USD refundable per player, and 0 forever after with free randomness.",
+            "Conclusion: the Solana problem is the UPFRONT RENT, not per-game cost. On the ER, per-roll and per-move cost is genuinely zero."
+          ]
+        },
+        {
+          "heading": "8. The two EVM cost centers: dice rolls AND player moves (the design goal)",
+          "paragraphs": [
+            "On an EVM chain every dice roll and every player move is a transaction, and each one costs gas. In Ludo there are roughly two moves for every roll; chess has no dice but many moves; across 50+ games the move count dominates everything. Paying even a fraction of a cent per action is not sustainable and it destroys the web2 \"never think about fees\" flow.",
+            "So the design goal is exactly this: PAY ONCE per game (or per session), then ALL dice rolls, ALL moves and ALL point writes inside the game are FREE, then settle or commit back to the base chain when the game ends."
+          ]
+        },
+        {
+          "heading": "9. The combined design: a Game Session Channel (open once, free inside, settle at the end)",
+          "paragraphs": [
+            "This is the EVM equivalent of what MagicBlock ER does for Solana, built WITHOUT running any RPC or validator of our own. It is the classic state-channel pattern applied per match, and it is well documented on ethereum.org: only two on-chain interactions per channel lifecycle, everything else is free off-chain signed messages.",
+            "How a match runs: (1) OPEN, one on-chain transaction that starts the game session and commits a randomness seed hash. (2) PLAY, every dice roll and every move is a signed off-chain message between the players and the app, free and instant, with dice derived deterministically from the committed seed. (3) SETTLE, one on-chain transaction at game end that reveals the seed, submits the final signed state, writes points and rewards, and recommits the result to the base chain."
+          ],
+          "bullets": [
+            "Cost per match: 2 transactions, roughly 0.01 USD total on Arc, instead of one transaction per move.",
+            "Batch settlement: one settle transaction can finalise MANY matches at once using a Merkle root of results, which drops the cost to about 0.0001 USD per match. This is how it stays effectively free at scale.",
+            "No infrastructure to run: no RPC provider, no validator, no rollup node. The existing app server (Vercel functions) can act as the optional matchmaking hub, and the public Arc RPC is free.",
+            "Fairness is preserved: the seed is committed before play and revealed after, so the app cannot change rolls after seeing moves; players cosign the final state so a dishonest player cannot rewrite it; a short on-chain dispute window lets either player submit a newer signed state.",
+            "Build size: a GameSession contract (open, join, signed-state submit, settle, dispute) plus a commit-reveal randomness module, roughly 500 to 1,500 lines of Solidity. The off-chain game logic already exists in the repo (Ludo, chess) and is reused with signed-state serialization."
+          ]
+        },
+        {
+          "heading": "10. Custom randomness (the mini-VRF): four ways to make rolls free",
+          "paragraphs": [
+            "Arc has NO on-chain randomness (PREVRANDAO always returns 0), so randomness must be provided. But it does not have to cost per roll."
+          ],
+          "bullets": [
+            "1. BATCH ONE SEED PER MATCH (recommended, cheapest): request or commit ONE verifiable seed per match, then derive every in-match roll on-chain from it with a hash chain, hash(seed, counter). This removes per-roll cost entirely and is 50 to 100 times cheaper than per-roll randomness.",
+            "2. COMMIT-REVEAL with no provider: the app commits hash(secret) at open, the player adds entropy, the app reveals at settle, both combine. Cost is gas only, and the commit binds the app so it cannot adapt after seeing the player input. Downside: the app could stall by not revealing.",
+            "3. BLS BEACON VERIFIER (drand style): verify a threshold signature from a public randomness beacon on-chain. Cost is verification gas only, no per-request fee, and it is trustless. Requires building and auditing a verifier.",
+            "4. PROVIDER (Pyth Entropy or Chainlink VRF): easiest, but a recurring per-request fee. Entropy fees are dynamic and paid in the native gas token; Chainlink VRF is paid in LINK. Use only as a fallback or for high-value matches."
+          ]
+        },
+        {
+          "heading": "11. Other EVM venues surveyed (Ethereum, BNB, L2s)",
+          "table": {
+            "headers": [
+              "Venue",
+              "Fee character",
+              "Fit for this project"
+            ],
+            "rows": [
+              [
+                "Ethereum L1",
+                "High per tx (dollars)",
+                "No, per-move impossible"
+              ],
+              [
+                "BNB Smart Chain",
+                "Among the lowest EVM L1 fees; 2026 roadmap targets about 0.001 USD and 20k TPS; also runs a 0 Fee Carnival for plain stablecoin transfers",
+                "Cheap, but gas token is BNB not USDC, and no first-class Circle USDC stack"
+              ],
+              [
+                "opBNB (OP Stack L2)",
+                "Very low L2 fees",
+                "Cheap, but again BNB gas and another ecosystem"
+              ],
+              [
+                "Base / Arbitrum / Polygon",
+                "Low L2 fees",
+                "Cheap, but ETH or POL gas, not USDC"
+              ],
+              [
+                "Arc (Circle)",
+                "USDC gas, sub-second finality, EIP-1559 with EWMA, min 20 Gwei, target about 0.001 USD per transfer",
+                "Best fit: stable fees, Circle ecosystem, USDC-native, mainnet live"
+              ]
+            ]
+          },
+          "bullets": [
+            "zkVM option (strongest guarantee): RISC Zero, SP1 or OpenVM prove the whole match off-chain and verify one proof on-chain. Provider proof cost in 2026 runs from about 0.02 USD (SP1 Hypercube class) to about 0.4 USD (ZkCloud), plus verification gas on Arc. That is cents per MATCH, not per move, and it removes trust in both players and the app. Good later upgrade, not required at launch."
+          ]
+        },
+        {
+          "heading": "12. Cost crossover and recommendation",
+          "table": {
+            "headers": [
+              "Model",
+              "Per player",
+              "Per match",
+              "Per move / roll"
+            ],
+            "rows": [
+              [
+                "Solana mainnet (MagicBlock ER)",
+                "about 0.56 USD permanent (half refundable deposit)",
+                "0 (2 free txs)",
+                "0"
+              ],
+              [
+                "Arc + Game Session Channel",
+                "about 0.002 USD",
+                "about 0.01 USD, or about 0.0001 batched",
+                "0"
+              ],
+              [
+                "Arc + naive one tx per action",
+                "about 0.002 USD",
+                "about 0.003 to 0.01 USD per action",
+                "not sustainable"
+              ]
+            ]
+          },
+          "bullets": [
+            "Recommendation: build the Game Session Channel with batched per-match randomness (option 1 in section 10) and batched settlement. That gives \"pay a fraction of a cent once per game, everything inside free, settle at the end\" with no infrastructure to run and no per-action cost, which is exactly the MagicBlock ER feel.",
+            "This design is chain-agnostic, so it works on Arc today and could later be exposed as an open RPC service for other builders, which is the future opportunity the owner flagged.",
+            "ZK-proving is the trustless upgrade later; it costs cents per match and needs no per-move fee, so the architecture above will not have to be thrown away."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cards",
+      "title": "Earned trading cards (Pokemon-style, never sold)",
+      "status": "researching",
+      "updated": "2026-09-18",
+      "summary": "Trading cards are a 30 billion USD market that drove 67 percent of all US toy industry growth in 2025, with a 200 million USD counterfeit problem. The platform rule is earn, never sell (no token, no NFT sales), which turns that gap into the angle: cards players EARN by playing folk games, provably fair via the VRF, impossible to fake because they are on-chain, and tradeable between players without the platform ever selling one.",
+      "decision": "OPEN research. Owner will decide. Proposed home is arcv2m9 (Player inventory).",
+      "sections": [
+        {
+          "heading": "1. What a trading card actually is (beginner)",
+          "paragraphs": [
+            "A trading card is a small piece of printed card, about 6.3 cm by 8.8 cm (the size of a normal playing card). One side has a picture of a character or a real athlete, plus a few numbers and a rarity mark.",
+            "Think of a childhood football sticker album, but where some stickers become worth real money because everyone agrees they are scarce and wanted.",
+            "Two big families: game cards (Pokemon, Magic: The Gathering, Yu-Gi-Oh, playable) and sports cards (photos of real players, where a rookie card is the prize piece).",
+            "Only four things decide the price: how few exist, condition (a grading company scores it 1 to 10, and a 10 can be 100x a 9), nostalgia, and the drive to complete a set."
+          ]
+        },
+        {
+          "heading": "2. How big it is (live 2026 numbers)",
+          "bullets": [
+            "Whole trading-card market: about 30 billion USD in 2025, about 32 billion USD in 2026, heading to about 54 billion USD by 2033 (Grand View Research).",
+            "Pokemon alone: about 2.7 billion USD a year, with about 10 billion cards printed in the last year and 85 billion+ ever.",
+            "In 2025, trading cards drove 67 percent of all growth in the entire US toy industry (Circana).",
+            "Record sale: a PSA 10 Pikachu Illustrator sold for 16,492,000 USD in February 2026 (Guinness verified).",
+            "Counterfeits: PSA intercepted over 200 million USD in fake and altered cards in 2025. This is the expensive problem on-chain provenance solves."
+          ]
+        },
+        {
+          "heading": "3. Top 10 card types, plainly named",
+          "table": {
+            "headers": [
+              "#",
+              "Card / collection",
+              "Why it matters"
+            ],
+            "rows": [
+              [
+                "1",
+                "1999 Pokemon Base Set Charizard",
+                "The most famous card on earth; mint graded copies are six figures and up"
+              ],
+              [
+                "2",
+                "Pikachu Illustrator (1998 promo)",
+                "The record holder at 16.49 million USD"
+              ],
+              [
+                "3",
+                "Other 1st Edition / Shadowless Pokemon sets",
+                "Old, rare, heavily collected"
+              ],
+              [
+                "4",
+                "Modern Pokemon chase cards (for example Moonbreon)",
+                "New art cards collectors hunt"
+              ],
+              [
+                "5",
+                "Yu-Gi-Oh first prints (Blue-Eyes White Dragon)",
+                "Same idea, different fandom"
+              ],
+              [
+                "6",
+                "Magic: The Gathering Power Nine (Black Lotus)",
+                "Oldest and priciest game cards"
+              ],
+              [
+                "7",
+                "Sports rookie cards (Jordan, LeBron, Messi, newest NBA rookies)",
+                "Condition decides everything"
+              ],
+              [
+                "8",
+                "Graded slabs in general (PSA/BGS/SGC)",
+                "The plastic case and the number ARE the value"
+              ],
+              [
+                "9",
+                "Digital card games (Pokemon TCG Pocket, Marvel Snap, Hearthstone)",
+                "Free cards inside an app, not tradeable for cash"
+              ],
+              [
+                "10",
+                "On-chain collectibles (NBA Top Shot, Sorare, Gods Unchained)",
+                "Digital cards you truly own and can trade"
+              ]
+            ]
+          },
+          "paragraphs": [
+            "Notice the split: 1 to 8 are physical with a fake problem, half of 9 is trapped in an app, and 10 is the only one that is provably real and tradeable. That gap is the opportunity."
+          ]
+        },
+        {
+          "heading": "4. The opportunity for GlobalFolkGames",
+          "paragraphs": [
+            "The platform rules already say: never launch a token, never sell NFTs, rewards are earned and randomly discovered. That is not a limitation here, it is the whole angle. Everyone else makes you BUY packs (effectively gambling). We make cards something you EARN by being good at folk games."
+          ],
+          "bullets": [
+            "Core idea: earned folk-game cards, never sold. Win matches, keep streaks, place in tournaments, and randomly DISCOVER a card, decided by the same provably-fair VRF used for dice. Nobody can claim the pull was rigged, because the roll is on-chain.",
+            "Each card is folk-game culture: a Ludo six, an Ayo Olopon elder, a regional folk hero or board mascot. Rarity follows difficulty (win a tournament, not just play a game).",
+            "On-chain means: cannot be faked (the 200 million USD problem), scarcity is provable, and cards can be traded or gifted between players.",
+            "It is a second earning layer beside points and reinforces the story: gamers earn the way creators do.",
+            "Trading is player-to-player value, not the platform selling NFTs, so it stays consistent with the no-sale rule.",
+            "Module home: arcv2m9 (Player inventory), with pull fairness from the VRF (arcv2m1 tooling), points influence from arcv2m3/arcv2m4, and tournament cards from arcv2m7."
+          ]
+        },
+        {
+          "heading": "5. Build order and risks",
+          "bullets": [
+            "Step 1: catalog and artwork only. Cards earned from match wins, NOT tradeable yet (gift-only later). Prove the pull is fun and fair.",
+            "Step 2: add a gift/trade rail between players. No platform sales, ever.",
+            "Step 3: collections and completion perks (bonus points, skins, ad-free days).",
+            "Step 4: only much later, and only with an explicit owner decision, consider a secondary market with anti-fraud rules.",
+            "Risks to avoid: do not add buy-a-pack (gambling plus paid NFTs, kills the positioning); do not let cards become a speculative casino; plan for trade fraud and wash trading before opening any trade rail."
+          ],
+          "paragraphs": [
+            "One-line pitch it unlocks: Pokemon cards, except you cannot buy them, you have to beat people at real games to earn them, and they can never be faked."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ggi-Foskaay GGI Midchain",
+      "title": "Foskaay GGI Midchain: free play with no per-move transaction (the missing EVM layer)",
+      "status": "researching",
+      "updated": "2026-09-22",
+      "summary": "The Generals port proved the rail works but exposed a gap: every move was its own Arc transaction, so a match cost about 10 games per 1 USD instead of the promised about 1000. The v5 build guide already names the fix: a Foskaay GGI Midchain where moves are signed and hash-chained off-chain and executed by eth_call for free, with only two real transactions per match (handover and settle). This entry records the finding, the EVM tools Arc gives us that we have not used yet, and the three-layer model (on-chain truth, Foskaay GGI Midchain free play, off-chain render only).",
+      "decision": "ADOPTED for the arcv2m18 build (owner approved 2026-09-22). Build a Foskaay GGI Midchain prototype on the Generals demo, measure the real cost, then wire the SDK and frontend. No core contract change needed for the prototype: the existing 4 core + 1 optional contracts already cover the on-chain endpoints.",
+      "sections": [
+        {
+          "heading": "1. The missing link, in one sentence",
+          "paragraphs": [
+            "The v5 build guide already describes a Foskaay GGI Midchain where moves are signed and hash-chained off-chain and executed by eth_call for free, with only two real transactions per match (handover and settle). The current Foskaay GGI cores have the session and the settlement, but not this free Foskaay GGI Midchain. So the Generals port fell back to writing every move as its own Arc transaction, which is why it cost about 10 games per 1 USD instead of the promised about 1000.",
+            "Arc's own docs confirm what we get to use: Arc targets the Osaka hard fork, so EIP-7702, EIP-1153 and deterministic instant finality are all available. EIP-4844 blobs are NOT supported (type-3 transactions are rejected). That shapes the design below."
+          ]
+        },
+        {
+          "heading": "2. The EVM tools Arc gives us that we have not used yet",
+          "table": {
+            "headers": [
+              "Tech",
+              "What it is (plain)",
+              "Used now?",
+              "What it unlocks"
+            ],
+            "rows": [
+              [
+                "eth_call free execution",
+                "Ask a contract to run a function without sending a transaction. Costs nothing.",
+                "Only for reads",
+                "The Foskaay GGI Midchain: run the game's applyMove rules for free, no tx per move"
+              ],
+              [
+                "EIP-712 typed signatures",
+                "A wallet signs structured data; the contract recovers who signed",
+                "Partly (session keys)",
+                "One popup to authorise a session key, then silent move signatures"
+              ],
+              [
+                "keccak256 hash chain",
+                "Each move's hash includes the previous hash",
+                "No",
+                "Tamper-evident move history, one final hash to settle"
+              ],
+              [
+                "Events over storage + eth_getLogs",
+                "Emit logs instead of writing storage slots",
+                "Partly",
+                "Cheap on-chain handover/settle, the about 1 USD per 1000 target"
+              ],
+              [
+                "EIP-1153 transient storage",
+                "Cheap scratch memory that clears after the tx",
+                "No",
+                "Cheaper settle verification"
+              ],
+              [
+                "EIP-7702 set-code",
+                "An ordinary wallet can act as a smart account",
+                "No",
+                "Session-key accounts and sponsored ops, no new wallet for the player"
+              ],
+              [
+                "ERC-4337 paymaster",
+                "A contract pays the user's gas",
+                "No",
+                "Sponsor pays user ops (moot once moves are free)"
+              ],
+              [
+                "Deterministic instant finality",
+                "A transaction is final the moment it is included",
+                "No",
+                "Settle is instant, one confirmation"
+              ],
+              [
+                "EIP-4844 blobs",
+                "Cheap bulk data",
+                "N/A",
+                "Not available on Arc, so not part of the plan"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "3. Comparison: MagicBlock ER vs current Foskaay GGI vs Foskaay GGI + Foskaay GGI Midchain",
+          "table": {
+            "headers": [
+              "Question",
+              "MagicBlock ER (Solana)",
+              "Current Foskaay GGI (built)",
+              "Foskaay GGI + Foskaay GGI Midchain"
+            ],
+            "rows": [
+              [
+                "Where a move runs",
+                "Inside MagicBlock's ER validator",
+                "On Arc, as its own transaction",
+                "In the Foskaay GGI Midchain: eth_call runs the game's pure rules, free"
+              ],
+              [
+                "Player pays per move",
+                "Nothing",
+                "Nothing",
+                "Nothing"
+              ],
+              [
+                "Sponsor pays per move",
+                "Nothing",
+                "about 0.0021 USDC",
+                "Nothing"
+              ],
+              [
+                "Sponsor pays per match",
+                "delegate + undelegate",
+                "every move + settle",
+                "2 transactions only: handover + settle"
+              ],
+              [
+                "On-chain footprint",
+                "base account + ER state",
+                "every move",
+                "start hash, final hash, session, 2 events"
+              ],
+              [
+                "What a public explorer sees",
+                "base txs only (ER invisible)",
+                "every move",
+                "2 txs only (Foskaay GGI Midchain invisible)"
+              ],
+              [
+                "Tamper protection",
+                "validator executes, base verifies on commit",
+                "the chain runs the rules",
+                "EIP-712 signatures + hash chain, chain verifies on settle/dispute"
+              ],
+              [
+                "Infrastructure to run",
+                "a validator network",
+                "only a sponsor key",
+                "only a sponsor key + an untrusted cache"
+              ],
+              [
+                "Source of truth",
+                "Solana base + ER proof",
+                "the game contract",
+                "on-chain start/final + the verifiable signed move chain"
+              ],
+              [
+                "Rough games per 1 USD",
+                "their own pricing",
+                "about 10",
+                "target about 1000"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "4. What this achieves (the three layers)",
+          "bullets": [
+            "On-chain (truth): the contract stores the session, the start hash and the final hash, and settles. Nothing can settle unless the signatures and the hash chain are valid. This is the MagicBlock base-chain role.",
+            "Foskaay GGI Midchain (free play): every move is a signed, hash-chained message run through the game's pure rules via eth_call. Free for the player AND free for the sponsor, exactly like the ER's free execution. All the game concepts survive because the payload is opaque: players, seats, moves, rewards, lives, timer, points are just data the game's rules read and write.",
+            "Off-chain (render only): the frontend draws the board; Vercel holds the sponsor key and submits only the handover and settle transactions. Neither owns the truth."
+          ]
+        },
+        {
+          "heading": "5. Honest limits (so we do not overpromise)",
+          "bullets": [
+            "The chain does not see moves live, only the two endpoints. A third party can still verify by replaying the signed moves. Mid-session reads come from the relay cache, which is untrusted.",
+            "Settle needs the players' final signatures. If a player vanishes, we need a timeout or forfeit rule (MagicBlock has turn clocks; we would need the same).",
+            "The game's rules must be expressible as a deterministic pure function for the dispute path (no external calls).",
+            "PREVRANDAO is always 0 on Arc, so randomness must come from the commit-reveal seed plus the hash chain, never the block."
+          ]
+        },
+        {
+          "heading": "6. Conclusion and next step",
+          "paragraphs": [
+            "This is not a new module. architecture.json module arcv2m18 already promises free work inside a session: nothing is written to the chain during play, cost appears on OPEN and SETTLE only. The cores simply do not deliver that yet. The port exposed the gap; the Foskaay GGI Midchain is how we close it.",
+            "Next step: build the Foskaay GGI Midchain as a prototype on the Generals demo. Keep the board on-chain as the source of truth, move gameplay into signed eth_call moves with one handover and one settle, then measure the real cost against the current about 10 games per 1 USD. No core contract change is needed for the prototype: SessionRegistry (open/close/session keys), SessionState (commitDigest/sealFinal) and FeeVault already cover the on-chain endpoints. The Foskaay GGI Midchain lives in the game's own contract (pure rules) plus the client/SDK (signing and hash chain), so we keep the 4 core + 1 optional structure."
+          ]
+        },
+        {
+          "heading": "7. Measured result (Arc testnet, 2026-09-22)",
+          "paragraphs": [
+            "The Foskaay GGI Midchain prototype is built and measured. GeneralsMidchain is a pure rules engine (no storage); the client runs applyMove via eth_call and hash-chains the states; only session open, the game-state link and settle touch the chain. Every move is free for the player AND the sponsor, and the verifier replay PASSED (the signed move log replays to the same final hash)."
+          ],
+          "table": {
+            "headers": [
+              "Mode",
+              "On-chain txs per match",
+              "Cost per match",
+              "Games per 1 USD"
+            ],
+            "rows": [
+              ["On-chain board port (before)", "about 15", "0.098172 USDC", "about 10"],
+              ["Foskaay GGI Midchain unbatched", "3 (open, setGameState, settle)", "0.012206 USDC", "about 81"],
+              ["Foskaay GGI Midchain batched (3 matches per window)", "opens + 1 window flush", "0.009788 USDC", "about 102"]
+            ]
+          },
+          "bullets": [
+            "The Foskaay GGI Midchain removes the per-move cost completely (the big win): the on-chain-board port spent most of its 0.098 on per-move command, tick and generate transactions, and all of that is now free eth_call plus a signature.",
+            "The remaining cost is the CORE's storage writes at open and settle, not the moves. The v5 target of about 1000 games per 1 USD needs an event-only handover/settle in the core (no SSTORE on the happy path) and/or larger batches. That is a future core change, kept separate so the 4 core + 1 optional stays stable for now.",
+            "GeneralsMidchain deployed on Arc testnet: 0x67E2508459Ef1d786C93b30Df7FC922198b0D0b2. Files: foskaay-ggi/demos/pvp/generals/GeneralsMidchain.sol, test/GeneralsMidchain.t.sol, scripts/foskaay-ggi-midchain-match.mjs, deployments/midchain-cost.json and midchain-cost-batched.json."
+          ]
+        },
+        {
+          "heading": "8. The event-based Foskaay GGI Midchain, batched (owner-approved test, 2026-09-23)",
+          "paragraphs": [
+            "This is still the Foskaay GGI Midchain. Foskaay GGI Midchain means anything that is neither fully on the base chain nor offchain: play happens off the base chain but is cryptographically tied to it. The event-based form uses an EVENT instead of STORAGE (the storage-based form is the current core). The earlier EventOnlyCore prototype was renamed EventMidchainCore so the name matches the idea.",
+            "The link is solved naturally. In the storage-based core a session lives in SessionRegistry storage, so tying the game's board to it needed setGameState as a THIRD transaction. The event-based Foskaay GGI Midchain puts the link INSIDE the Handover event (sessionId, gameLogic, startHash, players, sessionKeys), so the session and the game are bound in the same event and the same transaction: 2 transactions per game, not 3. The Foskaay GGI explorer reads Handover and Settled with eth_getLogs and can index by gameLogic or sessionId directly. The start and final hashes are on-chain, the final hash is signed by the players and checked on-chain with ecrecover, and the move log replays through the game's pure rules to that final hash. So it is tamper-proof, tied to the on-chain, and provable by anyone."
+          ],
+          "table": {
+            "headers": ["Approach", "What happens", "Txs per game", "Cost per game", "Games per 1 USD"],
+            "rows": [
+              ["Direct to on-chain, no Foskaay GGI", "Every move is its own transaction (most games run 60 to 100+ moves)", "about 100", "about 0.2444 USDC", "about 4"],
+              ["Foskaay GGI storage Foskaay GGI Midchain, unbatched", "open + link + settle per game", "3", "0.012206 USDC", "about 81"],
+              ["Foskaay GGI storage Foskaay GGI Midchain, batched 3", "3 games, one window flush", "3 + flush/3", "0.009788 USDC", "about 102"],
+              ["Foskaay GGI storage Foskaay GGI Midchain, batched 5", "5 games, one window flush", "3 + flush/5", "0.009328 USDC", "about 107"],
+              ["Foskaay GGI storage Foskaay GGI Midchain, batched 10", "10 games, one window flush", "3 + flush/10", "0.008981 USDC", "about 111"],
+              ["Foskaay GGI storage Foskaay GGI Midchain, batched 100 (extrapolated)", "per-game open still dominates", "3 + flush/100", "about 0.0088 USDC", "about 113"],
+              ["Foskaay GGI event Foskaay GGI Midchain, unbatched", "handover + settle per game (link in the event)", "2", "0.001712 USDC", "about 584"],
+              ["Foskaay GGI event Foskaay GGI Midchain, batched 3", "one handoverMany + one settleMany", "2/3", "0.001098 USDC", "about 910"],
+              ["Foskaay GGI event Foskaay GGI Midchain, batched 5", "one handoverMany + one settleMany", "2/5", "0.000939 USDC", "about 1,064"],
+              ["Foskaay GGI event Foskaay GGI Midchain, batched 10", "one handoverMany + one settleMany", "2/10", "0.000820 USDC", "about 1,219"],
+              ["Foskaay GGI event Foskaay GGI Midchain, batched 100", "one handoverMany + one settleMany", "2/100", "0.000713 USDC", "about 1,403"]
+            ]
+          },
+          "bullets": [
+            "The storage-based Foskaay GGI Midchain cannot escape the per-game open cost (SSTORE), so batching it barely helps (102 to 113 games per 1 USD). The event-based Foskaay GGI Midchain removes that wall, so batching helps a lot: it crosses the v5 target of 1 USD per 1,000 games at just 5 games per batch, and reaches about 1,400 games per 1 USD at 100 per batch.",
+            "UNBATCHED means each game's handover and settle go to Arc as they happen (2 transactions), so the result is on-chain immediately. BATCHED means many games share ONE transaction (one handoverMany carries many handovers, one settleMany carries many settlements), which is cheaper because the 21k base fee is shared. The trade-off is that a game's on-chain event lands when the batch transaction lands, so the DEV picks the cadence. It is not a gameplay delay: moves are already signed and free, and the Foskaay GGI explorer can show the game from the signed move log immediately.",
+            "In a batched session each game still emits its OWN Handover and Settled event inside the batch transaction, so the explorer can show every game individually. A user does not have to trust that it will go onchain: the events are on-chain and the proof is the replay. The only thing they wait for is the batch transaction.",
+            "What has to change: CORE (no new address) add event-based handover/handoverMany/settle/settleMany to the existing core via a UUPS logic upgrade (same proxy, append-only storage) plus a nullifier mapping (sessionId => settled) to stop double settlement; storage-based sessions stay as they are, nothing merged, no data moved. SDK (republish, no chain change) add handover/handoverMany/settle/settleMany/signMove/verifyMidchain helpers. BATCHING STAYS OPTIONAL: the dev chooses unbatched or batched.",
+            "EventMidchainCore deployed on Arc testnet: 0x197DE9813bd8cF668C8C26455329C629EE9Fc63e. Files: foskaay-ggi/prototypes/EventMidchainCore.sol, test/EventMidchainCore.t.sol, scripts/foskaay-ggi-deploy-eventmidchain.mjs, foskaay-ggi-eventmidchain-match.mjs, foskaay-ggi-eventmidchain-batch.mjs, deployments/eventmidchain-cost.json and eventmidchain-batch-cost.json."
+          ]
+        },
+        {
+          "heading": "9. PER-SESSION anchoring measured (Tier 3, the ridiculously cheap one)",
+          "paragraphs": [
+            "The section 8 test anchored PER GAME (N handovers + N settles + 2N signatures), so it floors at about 1,400 games per 1 USD. This section measures the other design: anchor the SESSION, not each game. ONE handover for the whole session, play N games for free on the Foskaay GGI Midchain, then ONE settle carrying a single Merkle root over all N final hashes and just 2 signatures. On-chain work is O(1), so per game = cost / N and keeps dropping."
+          ],
+          "table": {
+            "headers": ["Games in one session", "Handover", "Settle", "Total", "Per game", "Games per 1 USD"],
+            "rows": [
+              ["3", "0.000782", "0.000929", "0.001711", "0.000570", "1,753"],
+              ["5", "0.000782", "0.000930", "0.001712", "0.000342", "2,920"],
+              ["10", "0.000782", "0.000930", "0.001712", "0.000171", "5,841"],
+              ["100", "0.000782", "0.000930", "0.001712", "0.000017", "58,411"]
+            ]
+          },
+          "bullets": [
+            "The handover and the settle stay FLAT no matter how many games are inside. Arc only sees two transactions and the games share them, so the more games per session the cheaper per game, without limit. This is exactly the v5 'open once, free inside, settle once' model.",
+            "Why per-game batching floors but per-session does not: per-game anchoring puts each game's payload and its 2 signatures on-chain (measured about 28,000 gas per game, irreducible), so it converges to about 0.0007 USDC per game. Per-session anchoring puts ONE root on-chain, so it converges to zero per game.",
+            "All three tiers are optional: (1) per-game on-chain board about 10 games/$1; (2) per-game event Foskaay GGI Midchain about 1,400 games/$1; (3) per-session Foskaay GGI Midchain 58,000+ games/$1. Tier 3 is the headline.",
+            "BUILT INTO CORE (owner-approved 2026-09-23): event-based handover/handoverMany/settle/settleMany/midchainDigest added to the EXISTING SessionRegistry proxy by a UUPS logic upgrade (same address 0x5165809149Be8A72c72EedBa6a13d57014Ba1bE5, new implementation 0x05D492C0Cc4e890131c163b302Ab20B56542D2B2). Additive only: no storage change, no migration; data verified identical after. No nullifier (owner decision). SDK helpers added, versions bumped to 0.1.5. 155/155 forge tests pass."
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "schema": 1,
+  "note": "Staff roles are keyed to Solana wallet addresses so they survive Supabase outages and, on mainnet, derive purely from on-chain identity. Edit here or (future) from the on-chain role registry.",
+  "admin": [
+    "5ec9bYwVJVSfM3xnrzpg9jkoepX58pY1tWoGDsMdhdTQ",
+    "42Xs2owrBnKsZXDfVbzxEGG3b2b3QDm3WD4uHujgSjew"
+  ],
+  "moderator": []
+}

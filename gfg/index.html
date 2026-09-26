@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GlobalFolkGames – Preserving Native Games On-Chain</title>
+    <meta property="og:title" content="GlobalFolkGames – Preserving Native Games On-Chain">
+    <meta property="og:description" content="Play classic folk games on-chain with a web2 feel: sign in with email, no wallet popups, no gas, provably fair. Live at globalfolkgames.fun.">
+    <meta property="og:image" content="https://globalfolkgames.fun/media/GlobalFolkGames_banner_001.jpeg">
+    <meta property="og:url" content="https://globalfolkgames.fun/">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="GlobalFolkGames – Preserving Native Games On-Chain">
+    <meta name="twitter:description" content="Play classic folk games on-chain with a web2 feel: sign in with email, no wallet popups, no gas, provably fair. Live at globalfolkgames.fun.">
+    <meta name="twitter:image" content="https://globalfolkgames.fun/media/GlobalFolkGames_banner_001.jpeg">
+    <meta name="description" content="Classic folk games from across the world, played on-chain so every result can be verified and your record lives forever. Start with native games, 50+ on the way.">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Shared Global Header (injected by header.js) -->
+    <!-- Will appear here automatically -->
+
+    <main class="mobile-container">
+
+        <!-- HIGH CONVERTING BILLBOARD (original, restored) -->
+        <section class="onboarding-billboard">
+            <h2>Preserving Global Native Games On-Chain</h2>
+            <p>Play traditional local games from across the world, accumulate lifetime milestone points, and join a monthly Member Cup to share membership fees for real wins.</p>
+            <p style="margin-top:12px; font-size:0.85rem; color:#ddd;"><b class="gfg-stats-count" id="home-gamer-count">—</b> gamers LIVE now on the platform. Join now and be one of them next to play a native game.</p>
+        </section>
+
+        <!-- PLATFORM TABS: Games / Countries / Earn as Gamer (inline previews) -->
+        <nav class="level-tabs-scroll" id="home-tabs" style="justify-content:center; margin-top:16px;">
+            <button class="tab-btn active" data-panel="games">Games</button>
+            <button class="tab-btn" data-panel="countries">Countries</button>
+            <button class="tab-btn" data-panel="competitions">Earn as Gamer</button>
+        </nav>
+        <p class="swipe-hint" style="font-size:0.7rem; color:#666; text-align:center; margin:6px 0 0;">Swipe left or right to move between them.</p>
+
+        <div id="home-panels">
+            <div class="game-card home-panel" data-show="games">
+                <h3>🎮 Native games from around the world</h3>
+                <p style="color:var(--muted); font-size:0.9rem; line-height:1.7; margin:6px 0 0;">How good are you at your native games? Step up to the games your parents and grandparents played, prove your skills on a verifiable board, and compete with the world.</p>
+                <div id="home-game-icons" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(84px,1fr)); gap:8px; margin-top:12px;"></div>
+                <p style="margin-top:12px; text-align:center;"><a href="/games/" style="color:#f87818; font-weight:700;">Explore and play all native games globally</a></p>
+            </div>
+            <div class="game-card home-panel" data-show="countries" style="display:none;">
+                <h3>🌍 Games by country</h3>
+                <p style="color:var(--muted); font-size:0.9rem; line-height:1.7; margin:6px 0 0;">Every country has games worth keeping. We start with the nations whose native games are already loved by digital players.</p>
+                <div id="home-country-flags" style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:12px;"></div>
+                <p style="margin-top:12px; text-align:center;"><a href="/countries/" style="color:#f87818; font-weight:700;">See all games by country</a></p>
+            </div>
+            <div class="game-card home-panel" data-show="competitions" style="display:none;">
+                <h3>🏆 Earn as a gamer, not a streamer</h3>
+                <p style="color:var(--muted); font-size:0.9rem; line-height:1.7; margin:6px 0 0;">Creators earn on social media for making the content they love. So why can&rsquo;t gamers earn for playing the games they love, without turning into a content creator first? That is the idea. GlobalFolkGames wants to make it possible: play native games from across the world, and each month share a slice of that month&rsquo;s membership money with the players who actually played and won.</p>
+                <p style="color:var(--muted); font-size:0.9rem; line-height:1.7; margin:8px 0 0;">You can also earn by referring other players to the platform. When someone you referred upgrades to a paid plan, you get 20% of their first upgrade. On-chain dice. On-chain result.</p>
+                <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
+                    <a href="/competitions/" class="launch-btn onchain" style="text-align:center; text-decoration:none; flex:1; min-width:180px;">Earn as a gamer</a>
+                    <a href="/profile/affiliate.html" class="launch-btn" style="text-align:center; text-decoration:none; flex:1; min-width:180px; background:#1a1a24; border:1px solid #333; color:#bbb;">Earn by referring</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== THE ORIGINAL TOP ENDS HERE; EXPANSION BELOW ===== -->
+
+        <!-- ABOUT / USP -->
+        <section class="game-card" style="margin-top:16px;">
+            <h3>What GlobalFolkGames is</h3>
+            <p style="color:var(--muted); font-size:0.86rem; line-height:1.7; margin:0;">GlobalFolkGames is a growing library of the world's traditional and folk games - board games, dice games, word games, strategy games and family favourites from every continent. Each game is played true to its origins, and every match you finish is recorded on-chain, so results are verifiable and your playing record lives forever.</p>
+            <p style="color:var(--muted); font-size:0.86rem; line-height:1.7; margin:10px 0 0;">The games themselves are the point: the heritage, the strategy, the fun. The on-chain layer simply protects that experience with a permanent, checkable record and keeps your earned points safely in your own ledger. We are preserving native games for the world, one match at a time.</p>
+        </section>
+
+        <!-- WHY ON-CHAIN -->
+        <section class="game-card" style="margin-top:16px;">
+            <h3>The record you can trust</h3>
+            <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;">
+                <span style="border:1px solid #2a2a36; border-radius:999px; padding:6px 12px; font-size:0.78rem; color:#ddd;">✓ Every finished match is recorded on-chain</span>
+                <span style="border:1px solid #2a2a36; border-radius:999px; padding:6px 12px; font-size:0.78rem; color:#ddd;">✓ Result signatures you can re-check yourself</span>
+                <span style="border:1px solid #2a2a36; border-radius:999px; padding:6px 12px; font-size:0.78rem; color:#ddd;">✓ Points sit in your own on-chain ledger</span>
+                <span style="border:1px solid #2a2a36; border-radius:999px; padding:6px 12px; font-size:0.78rem; color:#ddd;">✓ Fair randomness for dice games</span>
+                <span style="border:1px solid #2a2a36; border-radius:999px; padding:6px 12px; font-size:0.78rem; color:#ddd;">✓ Works on any phone</span>
+            </div>
+            <ol style="color:var(--muted); font-size:0.86rem; line-height:1.8; margin:12px 0 0; padding-left:18px;">
+                <li><b style="color:#fff;">Sign in with your email</b> - one tap, nothing complicated to set up.</li>
+                <li><b style="color:#fff;">Choose a folk game</b> - start with Ludo today (India&rsquo;s Pachisi), with more native and folk games from around the world on the way.</li>
+                <li><b style="color:#fff;">Play and finish a match</b> - your result gets a permanent on-chain signature you can open and verify any time.</li>
+                <li><b style="color:#fff;">Keep your points</b> - earned points are written to your own ledger and never expire.</li>
+            </ol>
+        </section>
+
+        <!-- COMPETITIONS (optional, side feature) -->
+        <section class="game-card" style="border:1px solid rgba(155,89,182,0.4); margin-top:16px;">
+            <h3>Competitions are optional</h3>
+            <p style="color:var(--muted); font-size:0.84rem; line-height:1.7; margin:0;">Alongside free play, a monthly Member Cup with real reward pools appears each month. Joining the cup is completely optional and only the members who qualify share that month's membership fees. Playing, recording and collecting points is always open to everyone; the cup just adds a bit of friendly rivalry for those who want it.</p>
+        </section>
+
+        <!-- FAQ -->
+        <section class="game-card" style="margin-top:16px;">
+            <h3>Common questions</h3>
+            <details style="margin-top:10px;"><summary style="cursor:pointer; color:#f87818; font-weight:700;">Is this hard to set up or play?</summary><p style="color:var(--muted); font-size:0.84rem; line-height:1.6; margin-top:6px;">No. Sign in with your email, pick a game and play. The technical side runs in the background - you just enjoy the games.</p></details>
+            <details style="margin-top:10px;"><summary style="cursor:pointer; color:#f87818; font-weight:700;">How is my result verified?</summary><p style="color:var(--muted); font-size:0.84rem; line-height:1.6; margin-top:6px;">Every finished match keeps a permanent on-chain signature. On the receipt explorer you can open any finished match and confirm the result yourself. For dice games the dice themselves are provably random.</p></details>
+            <details style="margin-top:10px;"><summary style="cursor:pointer; color:#f87818; font-weight:700;">What are Level 1 and Level 2?</summary><p style="color:var(--muted); font-size:0.84rem; line-height:1.6; margin-top:6px;">Level 1 is the free way in: play, record your results and collect points at the base rate. Level 2 is an optional monthly plan that doubles your win points, lifts your daily reward to 200 points and gives you more lives each day. You can play at any level and switch any time.</p></details>
+            <details style="margin-top:10px;"><summary style="cursor:pointer; color:#f87818; font-weight:700;">What happens to my points?</summary><p style="color:var(--muted); font-size:0.84rem; line-height:1.6; margin-top:6px;">Lifetime points stay on your ledger and never expire. Spendable points are what you use to enter optional competitions and buy boosts. Every entry and payout is recorded on-chain, so totals can always be checked.</p></details>
+            <details style="margin-top:10px;"><summary style="cursor:pointer; color:#f87818; font-weight:700;">How do competition windows work?</summary><p style="color:var(--muted); font-size:0.84rem; line-height:1.6; margin-top:6px;">Each window has a set pool. Only results made while it is live count toward its leaderboard. When the window closes, the players at the top of the final board share the pool. Winners are recorded on-chain and paid by the platform, and each completed window stays listed with its winners and paid status as proof.</p></details>
+            <div style="margin-top:16px; text-align:center; background:#1a1a24; border:1px solid #2a2a36; border-radius:12px; padding:16px 12px;">
+                <h3 style="margin:0 0 6px;">Start with native games</h3>
+                <p style="color:var(--muted); font-size:0.84rem; line-height:1.6; margin:0 0 12px;">Sign in with your email and play folk games from around the world, with every match recorded and safe.</p>
+                <a href="/games/" class="launch-btn onchain" style="text-align:center; text-decoration:none; display:inline-block;">Play Native Games</a>
+            </div>
+            <p style="margin-top:14px;"><a href="/about/" style="color:#f87818; font-size:0.86rem;">Learn more about the project</a></p>
+        </section>
+
+    </main>
+
+    <!-- Scripts – order is important -->
+    <script src="/global_header.js"></script>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var tabs = document.querySelectorAll('#home-tabs .tab-btn');
+            var tabNames = Array.from(tabs).map(function (b) { return b.getAttribute('data-panel'); });
+            var active = 'games';
+            function show(name) {
+                active = name;
+                document.querySelectorAll('.home-panel').forEach(function (p) { p.style.display = (p.getAttribute('data-show') === name) ? '' : 'none'; });
+                tabs.forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-panel') === name); });
+            }
+            tabs.forEach(function (b) { b.addEventListener('click', function () { show(b.getAttribute('data-panel')); }); });
+            // Swipe the three home tabs left/right like the Earn page (whole panel area).
+            (function () {
+                var cont = document.getElementById('home-panels');
+                if (!cont) return;
+                var sx = 0, dx = 0, sy = 0, tracking = false;
+                cont.addEventListener('touchstart', function (e) { var t = e.touches[0]; sx = t.clientX; sy = t.clientY; dx = 0; tracking = true; }, { passive: true });
+                cont.addEventListener('touchmove', function (e) { if (!tracking) return; var t = e.touches[0]; dx = t.clientX - sx; }, { passive: true });
+                cont.addEventListener('touchend', function () {
+                    if (!tracking) return; tracking = false;
+                    if (Math.abs(dx) < 50) return;
+                    var i = tabNames.indexOf(active);
+                    var j = Math.min(tabNames.length - 1, Math.max(0, i + (dx < 0 ? 1 : -1)));
+                    if (j !== i) show(tabNames[j]);
+                }, { passive: true });
+                var tb = document.getElementById('home-tabs');
+                tb.addEventListener('touchstart', function (e) { var t = e.touches[0]; sx = t.clientX; sy = t.clientY; dx = 0; tracking = true; }, { passive: true });
+                tb.addEventListener('touchmove', function (e) { if (!tracking) return; var t = e.touches[0]; dx = t.clientX - sx; }, { passive: true });
+                tb.addEventListener('touchend', function () {
+                    if (!tracking) return; tracking = false;
+                    if (Math.abs(dx) < 50) return;
+                    var i = tabNames.indexOf(active);
+                    var j = Math.min(tabNames.length - 1, Math.max(0, i + (dx < 0 ? 1 : -1)));
+                    if (j !== i) show(tabNames[j]);
+                }, { passive: true });
+            })();
+            // Fill the Games icons + Country flags from the shared catalog.
+            (function () {
+                var icons = document.getElementById('home-game-icons');
+                var flags = document.getElementById('home-country-flags');
+                fetch('/games/data.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
+                    var gs = (j.games || []).slice(0, 12);
+                    if (icons) icons.innerHTML = gs.map(function (g) {
+                        return '<a href="/games/" style="text-decoration:none; display:block; text-align:center; background:#1a1a24; border:1px solid #2a2a36; border-radius:10px; padding:8px 4px;">' +
+                            '<div style="font-size:1.4rem;">' + g.emoji + '</div><div style="font-size:0.66rem; color:#bbb; margin-top:4px;">' + g.name + '</div></a>';
+                    }).join('');
+                    if (flags) flags.innerHTML = [['🇨🇳','China'],['🇮🇳','India'],['🇺🇸','United States'],['🇧🇷','Brazil'],['🇮🇩','Indonesia'],['🇯🇵','Japan'],['🇩🇪','Germany'],['🇰🇷','South Korea'],['🇬🇧','United Kingdom'],['🇫🇷','France'],['🇳🇬','Nigeria'],['🇪🇬','Egypt'],['🇿🇦','South Africa']].map(function (f) {
+                        return '<a href="/countries/" style="text-decoration:none; text-align:center; color:inherit;">' +
+                            '<div style="font-size:1.9rem;">' + f[0] + '</div><div style="font-size:0.66rem; color:#bbb; margin-top:2px; max-width:76px;">' + f[1] + '</div></a>';
+                    }).join('');
+                }).catch(function () { if (icons) icons.innerHTML = '<p class="hidden-note">Load the games catalog to see icons.</p>'; });
+            })();
+            // Fill the community gamer count on the hero (via the sitewide feed).
+            (function () {
+                var el = document.getElementById('home-gamer-count');
+                if (!el) return;
+                var doFill = function () {
+                    try {
+                        if (window.gfgCommunityCount && typeof window.gfgCommunityCount === 'function') {
+                            window.gfgCommunityCount().then(function (n) { if (n) el.textContent = Number(n).toLocaleString(); }).catch(function () { el.textContent = '—'; });
+                        } else {
+                            el.textContent = '—';
+                        }
+                    } catch (e) { el.textContent = '—'; }
+                };
+                setTimeout(doFill, 1500);
+                setInterval(doFill, 60000);
+            })();
+            show('games');
+        });
+    </script>
+
+</body>
+</html>

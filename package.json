@@ -1,28 +1,17 @@
 {
-  "name": "globalfolkgames",
+  "name": "foskaay-ggi-site",
   "private": true,
-  "version": "0.8.2",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "node scripts/dev.mjs",
-    "dev:tunnel": "node scripts/dev-tunnel.mjs",
+    "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview",
-    "relay": "node scripts/relay-server.mjs",
-    "evm:build": "cd evm && forge build",
-    "evm:test": "cd evm && forge test",
-    "arc:wallet": "node scripts/arc-wallet.mjs",
-    "arc:wallet:mainnet": "node scripts/arc-wallet.mjs mainnet",
-    "arc:sponsor:new": "node scripts/arc-sponsor-wallet.mjs"
+    "preview": "vite preview"
   },
   "dependencies": {
-    "@anchor-lang/core": "^1.1.2",
     "@dynamic-labs-sdk/client": "^1.26.0",
     "@dynamic-labs-sdk/evm": "^1.26.0",
     "@dynamic-labs-sdk/solana": "^1.26.0",
-    "@solana/spl-token": "^0.4.15",
-    "@solana/web3.js": "^1.99.0",
-    "bs58": "^5.0.0",
     "viem": "^2.56.8"
   },
   "engines": {

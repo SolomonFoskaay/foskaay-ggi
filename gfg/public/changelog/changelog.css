@@ -1,0 +1,520 @@
+/* public/changelog/changelog.css — shared styles for /changelog/ pages */
+
+.changelog-page {
+    max-width: 720px;
+    margin: 56px auto 80px;
+    padding: 0 16px;
+    font-family: inherit;
+    color: #eee;
+}
+
+.changelog-page.admin {
+    border-left: 3px solid #f87818;
+    padding-left: 13px;
+    padding-right: 16px;
+}
+
+.changelog-head {
+    margin-bottom: 28px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #2a2a2a;
+}
+
+.changelog-back {
+    display: inline-block;
+    color: #f87818;
+    text-decoration: none;
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+}
+
+.changelog-back:hover { text-decoration: underline; }
+
+.changelog-head h2 {
+    margin: 0 0 6px;
+    font-size: 1.6rem;
+}
+
+.changelog-sub {
+    margin: 0 0 12px;
+    color: #aaa;
+    font-size: 0.95rem;
+}
+
+.changelog-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    align-items: center;
+    font-size: 0.85rem;
+}
+
+.changelog-current b { color: #fff; }
+.changelog-meta .changelog-role { color: #f87818; }
+.changelog-meta .changelog-admin-link { color: #2ecc71; text-decoration: none; }
+.changelog-meta .changelog-admin-link:hover { text-decoration: underline; }
+
+/* ----- Always-on intro banner (user view, before the tabs) ----- */
+.changelog-intro {
+    margin: 0 0 24px;
+    padding: 16px 18px;
+    background: #171717;
+    border: 1px solid var(--border, #333);
+    border-left: 3px solid var(--accent, #f87818);
+    border-radius: 10px;
+}
+
+.changelog-intro h3 {
+    margin: 0 0 6px;
+    font-size: 1rem;
+    color: #fff;
+}
+
+.changelog-intro p {
+    margin: 0;
+    color: #ccc;
+    font-size: 0.92rem;
+    line-height: 1.55;
+}
+
+.changelog-entries { display: flex; flex-direction: column; gap: 18px; }
+
+/* ----- New-update pill (auto-detected, click to refresh) ----- */
+.changelog-update-pill {
+    display: none;
+    position: sticky;
+    top: 66px;
+    z-index: 60;
+    align-self: flex-start;
+    margin-bottom: 2px;
+    padding: 8px 16px;
+    background: var(--accent, #f87818);
+    color: #1a1a1a;
+    border: none;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+}
+
+.changelog-update-pill.show { display: inline-block; }
+.changelog-update-pill:hover { filter: brightness(1.1); }
+
+/* ----- Status tabs (Planned / In progress / Shipped) ----- */
+.changelog-tabs {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+    margin-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+}
+
+.changelog-tabs::-webkit-scrollbar { display: none; }
+
+.changelog-tab {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    padding: 9px 18px;
+    background: #252535;
+    border: 1px solid var(--border, #333);
+    color: var(--muted, #aaa);
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.changelog-tab:hover { color: #fff; }
+
+.changelog-tab.active {
+    background: var(--accent, #f87818);
+    border-color: var(--accent, #f87818);
+    color: #1a1a1a;
+}
+
+/* ----- Pagination ----- */
+.changelog-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+    padding-top: 16px;
+    border-top: 1px solid #2a2a2a;
+}
+
+.page-btn {
+    min-width: 36px;
+    height: 36px;
+    padding: 0 12px;
+    background: #252535;
+    border: 1px solid var(--border, #333);
+    color: var(--muted, #aaa);
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.88rem;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.page-btn:hover:not(:disabled):not(.active) { color: #fff; }
+
+.page-btn.active {
+    background: var(--accent, #f87818);
+    border-color: var(--accent, #f87818);
+    color: #1a1a1a;
+}
+
+.page-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* ----- Admin-only numbered dev plan ----- */
+.dev-plan-list {
+    margin: 0;
+    padding-left: 22px;
+}
+
+.dev-plan-list li {
+    color: #bbb;
+    font-size: 0.85rem;
+    line-height: 1.55;
+    list-style: decimal;
+}
+
+/* ----- Roadmap items (Planned / In progress) ----- */
+.roadmap-entry {
+    border-style: dashed;
+    /* Planned items feel 'draft' vs shipped solid cards */
+}
+
+.roadmap-entry.entry-in-progress {
+    border-style: solid;
+    border-color: #2ecc71;
+}
+
+.b-status {
+    background: #444;
+    color: #ddd;
+}
+
+.b-status.in-progress {
+    background: #2ecc71;
+    color: #1a1a1a;
+}
+
+.b-status.pending {
+    background: #8e44ad;
+    color: #fff;
+}
+
+.entry {
+    background: #171717;
+    border: 1px solid #2a2a2a;
+    border-radius: 10px;
+    padding: 16px 18px;
+}
+
+.entry.entry-major { border-color: #f87818; }
+
+.entry-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+}
+
+.entry-version { font-weight: 700; color: #fff; }
+
+.badge {
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.b-major { background: #f87818; color: #1a1a1a; }
+.b-minor { background: #2ecc71; color: #1a1a1a; }
+.b-patch { background: #3498db; color: #fff; }
+
+.entry-date { color: #888; font-size: 0.82rem; margin-left: auto; }
+
+.entry h3 { margin: 0 0 6px; font-size: 1.05rem; }
+
+.entry-summary { margin: 0; color: #ccc; font-size: 0.92rem; line-height: 1.5; }
+
+/* Admin-only details */
+.entry-details {
+    margin-top: 12px;
+    padding: 12px 14px;
+    background: #101010;
+    border: 1px solid #333;
+    border-radius: 8px;
+}
+
+.entry-details h4 {
+    margin: 0 0 8px;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #f87818;
+}
+
+.entry-details ul { margin: 0; padding-left: 18px; }
+.entry-details li { color: #bbb; font-size: 0.85rem; line-height: 1.55; }
+
+.entry-git { margin-top: 10px; color: #555; font-size: 0.78rem; font-family: monospace; }
+
+.admin-note {
+    margin: 0 0 4px;
+    color: #f87818;
+    font-size: 0.82rem;
+    border: 1px dashed #f87818;
+    border-radius: 8px;
+    padding: 8px 12px;
+}
+
+.empty { color: #888; }
+
+/* ----- Game Economics workspace (admin-only) ----- */
+.econ-updated { color: #666; font-size: 0.8rem; margin: 2px 0 14px; }
+
+.econ-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.econ-tag {
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 20px;
+    background: #29294a;
+    color: #7838f8;
+}
+.econ-entry { border-left: 3px solid #7838f8; }
+
+/* Architecture (Modules) workspace */
+.arch-block {
+    margin-top: 18px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.arch-block-title {
+    margin: 0 0 10px;
+    font-size: 0.95rem;
+    color: #f87818;
+}
+.arch-block ul, .arch-block ol {
+    margin: 0;
+    padding-left: 20px;
+}
+.arch-block li {
+    color: #bbb;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    margin-bottom: 6px;
+}
+.arch-divider {
+    border: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    margin: 18px 0;
+}
+
+/* ----- Module Input/Output contract sections ----- */
+.arch-contract {
+    margin: 0 0 16px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.arch-contract:has(.arch-contract-title) { border-left: 3px solid; }
+.arch-contract:first-child { border-left-color: #e74c3c; }
+.arch-contract:nth-child(2) { border-left-color: #2ecc71; }
+.arch-contract-title {
+    margin: 0 0 8px;
+    font-size: 0.95rem;
+    color: #f87818;
+}
+.arch-contract-summary {
+    margin: 0 0 10px;
+    font-size: 0.82rem;
+    color: #aaa;
+    line-height: 1.5;
+    font-style: italic;
+}
+.arch-contract-list {
+    margin: 0;
+    padding-left: 20px;
+    list-style: disc;
+}
+.arch-contract-list li {
+    color: #bbb;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    margin-bottom: 6px;
+}
+
+/* ----- M1 per-game sub-module picker (searchable dropdown) ----- */
+.game-picker {
+    position: relative;
+    max-width: 480px;
+    margin-bottom: 14px;
+}
+.game-search {
+    width: 100%;
+    padding: 10px 14px;
+    background: #101014;
+    border: 1px solid #2a2a2a;
+    border-radius: 10px;
+    color: #fff;
+    font-size: 0.9rem;
+}
+.game-search:focus { outline: none; border-color: #f87818; }
+.game-options {
+    display: none;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 100%;
+    margin-top: 4px;
+    background: #16161c;
+    border: 1px solid #333;
+    border-radius: 10px;
+    overflow: hidden;
+    z-index: 30;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+.game-options.open { display: block; }
+.game-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 14px;
+    background: none;
+    border: none;
+    border-bottom: 1px solid #23232b;
+    color: #eee;
+    font-size: 0.9rem;
+    cursor: pointer;
+    text-align: left;
+}
+.game-option:last-child { border-bottom: none; }
+.game-option:hover, .game-option.active { background: rgba(243, 156, 18, 0.12); }
+.game-option-empty { color: #888; cursor: default; }
+.game-option-empty:hover { background: none; }
+.game-option-title { font-weight: 600; }
+.game-spec .entry { margin-bottom: 14px; }
+.game-spec .entry-major { border-color: #f87818; }
+
+/* Left-rail module navigation on architecture pages */
+.arch-module-link { text-decoration: none; }
+.arch-module-link:hover { text-decoration: underline; }
+
+/* ----- Architecture overview / Summary tab ----- */
+.ov-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+}
+.ov-card {
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: rgba(15, 15, 19, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.ov-card-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+.ov-card-title {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #eee;
+}
+.ov-card-body {
+    margin: 0;
+    font-size: 0.82rem;
+    color: #aaa;
+    line-height: 1.55;
+}
+.ov-arrows {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.ov-arrow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.82rem;
+}
+.ov-arrow-from, .ov-arrow-to {
+    font-weight: 700;
+    color: #f87818;
+    white-space: nowrap;
+    min-width: 30px;
+}
+.ov-arrow-label {
+    color: #bbb;
+}
+.ov-flow-diagram {
+    margin-bottom: 10px;
+}
+.ov-flow-label {
+    color: #888;
+    font-size: 0.82rem;
+    margin: 0 0 4px;
+}
+.ov-flow-path {
+    color: #ccc;
+    font-size: 0.85rem;
+    font-weight: 600;
+    line-height: 1.5;
+    word-break: break-word;
+}
+.ov-uf-path {
+    margin: 0 0 10px;
+    font-size: 0.85rem;
+    color: #f87818;
+}
+.ov-uf-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+}
+.ov-uf-table th {
+    text-align: left;
+    color: #f87818;
+    font-weight: 600;
+    padding: 6px 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.ov-uf-table td {
+    padding: 6px 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    color: #bbb;
+    vertical-align: top;
+}
+.ov-uf-table code {
+    color: #7838f8;
+    font-size: 0.82rem;
+}
+.ov-uf-planned td { opacity: 0.5; }
+
+/* Research-style tables, reused by the architecture module pages so a module
+   can carry the same mobile-scrollable tables as the Research library. */
+.research-table-wrap { width: 100%; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 10px 0; border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; }
+.research-table { border-collapse: collapse; width: 100%; min-width: 520px; font-size: 0.8rem; }
+.research-table th, .research-table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,0.08); vertical-align: top; }
+.research-table th { color: #f87818; font-weight: 800; white-space: nowrap; }
+.research-table tr:last-child td { border-bottom: none; }

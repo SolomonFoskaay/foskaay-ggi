@@ -1,0 +1,906 @@
+/* =============================================
+   GLOBALFOLKGAMES - Brand: Orange + Purple
+   Mobile-first, never breaks on small screens
+   ============================================= */
+
+:root {
+    --bg-dark: #0f0f13;
+    --card-bg: #1a1a24;
+    --accent: #f87818;          /* Orange */
+    --accent-purple: #7838f8;   /* Purple */
+    --text: #ffffff;
+    --muted: #a0a0b0;
+    --border: #2c2c3a;
+    --success: #27ae60;
+    --danger: #e74c3c;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg-dark);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* ===== SHARED HEADER (used on every page) ===== */
+.gfg-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: var(--card-bg);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.gfg-header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    flex-wrap: wrap;
+    row-gap: 4px;
+}
+
+.gfg-brand {
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--accent);
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.gfg-game-tag {
+    font-size: 0.75rem;
+    background: var(--accent-purple);
+    color: white;
+    padding: 3px 8px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+
+/* ===== EARLY BACKER BANNER (sitewide, under the header) =====
+   High-converting strip linking to /backers/ on every page so beta players
+   discover the Early Backer mint as they explore the site. */
+.gfg-backer-banner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: linear-gradient(90deg, rgba(155,89,182,0.22), rgba(243,156,18,0.16), rgba(155,89,182,0.22));
+    border-bottom: 1px solid rgba(243,156,18,0.35);
+    color: #fff;
+    text-decoration: none;
+    font-size: 0.8rem;
+    min-height: 34px;
+    box-sizing: border-box;
+}
+.gfg-backer-banner .b-emoji { font-size: 1rem; flex-shrink: 0; }
+.gfg-backer-banner .b-text { flex: 1; color: #eee; line-height: 1.4; }
+.gfg-backer-banner .b-text b { color: #f87818; }
+.gfg-backer-banner .b-cta { color: #f87818; font-weight: 800; white-space: nowrap; flex-shrink: 0; }
+.gfg-backer-banner:hover .b-cta { text-decoration: underline; }
+
+/* ===== EARLY BACKER BOTTOM STICKY BANNER (sitewide, owner 2026-08-31) =====
+   Duplicate of the top banner, fixed at the bottom of the viewport, cycling
+   show -> hold -> hide -> pause -> reappear forever. Never cancellable by the
+   user (it disappears on its own) and re-captures attention on any page when
+   it comes back, so the Early Backer mint stays visible as it is important to
+   the project. */
+.gfg-backer-banner-bottom {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9960;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: linear-gradient(90deg, rgba(155,89,182,0.92), rgba(15,15,19,0.96), rgba(243,156,18,0.90));
+    border-top: 1px solid rgba(243,156,18,0.45);
+    color: #fff;
+    text-decoration: none;
+    font-size: 0.82rem;
+    min-height: 42px;
+    box-sizing: border-box;
+    box-shadow: 0 -4px 16px rgba(0,0,0,0.45);
+    opacity: 0;
+    transform: translateY(100%);
+    transition: opacity .4s ease, transform .4s ease;
+    pointer-events: none;
+}
+.gfg-backer-banner-bottom.show {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+.gfg-backer-banner-bottom .b-emoji { font-size: 1.05rem; flex-shrink: 0; }
+.gfg-backer-banner-bottom .b-text { flex: 1; color: #fff; line-height: 1.4; }
+.gfg-backer-banner-bottom .b-text b { color: #ffe1a1; }
+.gfg-backer-banner-bottom .b-cta { color: #ffe1a1; font-weight: 800; white-space: nowrap; flex-shrink: 0; }
+.gfg-backer-banner-bottom:hover .b-cta { text-decoration: underline; }
+/* Keep the back-to-top button above the bottom banner so it stays usable. */
+#gfg-backtop { bottom: 56px; }
+
+.gfg-header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.gfg-local-pts {
+    font-size: 0.8rem;
+    color: var(--accent-purple);
+    font-weight: 600;
+}
+
+.gfg-changelog-link {
+    font-size: 0.8rem;
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.gfg-changelog-link:hover {
+    text-decoration: underline;
+}
+
+.gfg-user-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #252535;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+}
+
+/* Hamburger menu button (opens the slide-in drawer) */
+.gfg-menu-btn {
+    background: #252535;
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 10px;
+    width: 38px;
+    height: 38px;
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.gfg-menu-btn:hover { border-color: var(--accent); }
+
+/* ===== SLIDE-IN NAV DRAWER (transparent, NO blur — page below stays crisp) ===== */
+.gfg-drawer-scrim {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.18);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.25s ease;
+    z-index: 900;
+}
+.gfg-drawer-scrim.show { opacity: 1; visibility: visible; }
+
+.gfg-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100vh;
+    height: 100dvh;
+    width: min(320px, 86vw);
+    z-index: 901;
+    transform: translateX(100%);
+    transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+    display: flex;
+    flex-direction: column;
+    /* Transparent: the page below is fully visible and NEVER blurred.
+       Readability comes from each item's own solid card, not background blur. */
+    background: transparent;
+    border-left: none;
+    box-shadow: none;
+    overflow-y: auto;
+}
+.gfg-drawer.open { transform: translateX(0); }
+
+.gfg-drawer-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px 12px;
+}
+
+.gfg-drawer-close {
+    background: rgba(0, 0, 0, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: #fff;
+    border-radius: 50%;
+    width: 34px;
+    height: 34px;
+    font-size: 1.3rem;
+    line-height: 1;
+    cursor: pointer;
+}
+.gfg-drawer-close:hover { border-color: #f87818; }
+
+.gfg-drawer-nav { padding: 4px 12px 24px; }
+
+.gfg-drawer-section { margin-bottom: 16px; }
+.gfg-drawer-section.hidden { display: none; }
+
+.gfg-drawer-heading {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #f87818;
+    margin-bottom: 4px;
+    padding-left: 8px;
+}
+
+.gfg-drawer-section ul { list-style: none; }
+.gfg-drawer-section li { margin: 3px 0; }
+.gfg-drawer-section a {
+    display: block;
+    padding: 10px 12px;
+    border-radius: 10px;
+    color: #fff;
+    text-decoration: none;
+    font-size: 0.95rem;
+    font-weight: 600;
+    /* Each menu item is its own solid dark card: clearly readable, no blur
+       needed, and only the item's tile sits over the page (never a panel). */
+    background: rgba(15, 15, 19, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.gfg-drawer-section a:hover {
+    background: rgba(243, 156, 18, 0.35);
+    border-color: rgba(243, 156, 18, 0.7);
+    color: #f87818;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+
+.auth-btn-small {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 12px;
+    padding: 4px 10px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.auth-user {
+    color: var(--muted);
+    font-size: 0.8rem;
+}
+
+/* Active Tier badge in the header pill (S1) */
+.tier-badge {
+    background: var(--accent-purple);
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 10px;
+    white-space: nowrap;
+    line-height: 1.5;
+}
+
+/* ===== LANDING PAGE LAYOUT ===== */
+.mobile-container {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 640px;
+    margin: 0 auto;
+}
+
+/* High-converting Billboard */
+.onboarding-billboard {
+    background: linear-gradient(135deg, #1a1a24 0%, #2a1a3a 100%);
+    border: 1px solid var(--accent-purple);
+    border-radius: 16px;
+    padding: 22px 18px;
+    text-align: center;
+}
+
+.onboarding-billboard h2 {
+    font-size: 1.25rem;
+    color: var(--accent);
+    margin-bottom: 8px;
+    line-height: 1.3;
+}
+
+.onboarding-billboard p {
+    font-size: 0.9rem;
+    color: var(--muted);
+    line-height: 1.5;
+}
+
+/* Level Tabs - horizontal scroll, never wraps */
+.level-tabs-scroll {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+}
+.level-tabs-scroll::-webkit-scrollbar { display: none; }
+
+.tab-btn {
+    flex-shrink: 0;
+    padding: 10px 16px;
+    background: #252535;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.tab-btn.active {
+    background: var(--accent);
+    color: #000;
+    border-color: var(--accent);
+}
+
+/* Campaign status tabs */
+.campaign-status-tabs {
+    display: flex;
+    gap: 6px;
+}
+
+.sub-tab-btn {
+    flex: 1;
+    padding: 9px 6px;
+    background: #252535;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.sub-tab-btn.active {
+    background: var(--accent-purple);
+    color: white;
+    border-color: var(--accent-purple);
+}
+
+/* Game cards */
+.content-viewport {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.game-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px;
+    text-align: center;
+}
+
+.game-card h3 {
+    color: var(--accent);
+    margin-bottom: 8px;
+    font-size: 1.1rem;
+}
+
+.game-card p {
+    color: var(--muted);
+    font-size: 0.88rem;
+    margin-bottom: 14px;
+    line-height: 1.4;
+}
+
+.launch-btn {
+    width: 100%;
+    padding: 13px;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+}
+
+/* On-chain arena variant of the launch button (links to the ludo-lab build) */
+.launch-btn.onchain {
+    margin-top: 8px;
+    background: var(--accent-purple);
+    color: #fff;
+}
+
+/* ===== AUTH MODAL ===== */
+.auth-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: 0.2s;
+}
+.auth-modal.visible {
+    opacity: 1;
+    visibility: visible;
+}
+.auth-modal-content {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px 20px;
+    width: 90%;
+    max-width: 340px;
+    position: relative;
+    text-align: center;
+}
+.auth-modal-close {
+    position: absolute;
+    top: 10px;
+    right: 14px;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+.auth-modal-content h2 {
+    color: var(--accent);
+    margin-bottom: 6px;
+}
+.auth-hint {
+    color: var(--muted);
+    font-size: 0.85rem;
+    margin-bottom: 16px;
+}
+.auth-modal-content input {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 10px;
+    background: #252535;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: white;
+    font-size: 1rem;
+}
+.auth-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+}
+/* Confirm dialog buttons sit side by side: OK on the LEFT, Cancel on the
+   RIGHT. On mobile the right edge is where a thumb naturally lands when
+   reaching for the ☰ menu, so an accidental tap hits Cancel (safe default)
+   and only a deliberate tap on OK signs out. */
+.gfg-confirm-actions {
+    flex-direction: row;
+    justify-content: stretch;
+}
+.gfg-confirm-actions .auth-btn {
+    flex: 1 1 50%;
+}
+.auth-btn {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.auth-btn.primary {
+    background: var(--accent);
+    color: #000;
+}
+.auth-btn.secondary {
+    background: #252535;
+    color: white;
+    border: 1px solid var(--border);
+}
+
+/* Banner */
+.auth-banner {
+    position: fixed;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    z-index: 1100;
+    max-width: 90%;
+    text-align: center;
+}
+.auth-banner.success { background: var(--success); color: white; }
+.auth-banner.error { background: var(--danger); color: white; }
+
+#auth-otp {
+  letter-spacing: 4px;
+  text-align: center;
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+/* ===== MOBILE =====
+   Everything stays readable, nothing is truncated or hidden. The pill and
+   the ☰ must never split apart: they share the right side as ONE row. When
+   the row is too wide the whole right side wraps to its own line (line 2)
+   together — the menu never falls to a 3rd line on its own. */
+@media (max-width: 640px) {
+  .gfg-header {
+    flex-wrap: wrap;
+    row-gap: 8px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+  .gfg-header-right {
+    flex: 1 1 auto;
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+    min-width: 0;
+    row-gap: 0;
+  }
+  .gfg-user-pill {
+    flex-basis: auto;
+    justify-content: flex-end;
+    white-space: nowrap;
+  }
+}
+
+/* ===== DASH NAV RAIL (left side, opposite the global drawer) =====
+   Glassmorphic vertical navigation for the dashboard / profile page groups.
+   Same language as the drawer: the rail itself is TRANSPARENT (no blur, the
+   page behind stays crisp) and every item is its own solid dark card. Sits on
+   the LEFT so it never collides with the global header menu (which opens from
+   the right). */
+.dash-rail {
+  position: fixed;
+  top: var(--gfg-header-h, 48px);
+  left: 0;
+  bottom: 0;
+  width: min(230px, 74vw);
+  z-index: 950;
+  display: flex;
+  flex-direction: column;
+  padding: 14px 10px 20px;
+  overflow-y: auto;
+  background: transparent;
+  transform: translateX(-105%);
+  transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+}
+.dash-rail.open { transform: translateX(0); }
+
+/* Mobile: rail overlays from the left; body is nudged only on wide screens. */
+.dash-rail-scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.18);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease;
+  z-index: 949;
+}
+.dash-rail-scrim.show { opacity: 1; visibility: visible; }
+
+.dash-rail-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px 10px;
+}
+.dash-rail-brand {
+  font-weight: 800;
+  font-size: 0.92rem;
+  color: #fff;
+}
+.dash-rail-close {
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #fff;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.dash-rail-close:hover { border-color: #f87818; }
+
+.dash-rail-section { margin-bottom: 14px; }
+.dash-rail-heading {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #f87818;
+  margin-bottom: 4px;
+  padding-left: 8px;
+}
+.dash-rail ul { list-style: none; }
+.dash-rail li { margin: 3px 0; }
+.dash-rail a {
+  display: block;
+  padding: 10px 12px;
+  border-radius: 10px;
+  color: #fff;
+  text-decoration: none;
+  font-size: 0.92rem;
+  font-weight: 600;
+  background: rgba(15, 15, 19, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.dash-rail a:hover {
+  background: rgba(243, 156, 18, 0.35);
+  border-color: rgba(243, 156, 18, 0.7);
+  color: #f87818;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+.dash-rail a.active {
+  background: var(--accent, #f87818);
+  border-color: var(--accent, #f87818);
+  color: #1a1a1a;
+  text-shadow: none;
+}
+
+/* Hamburger for the LEFT rail (page nav), distinct from the global ☰. Sits
+   BELOW the global header so it never overlaps the site logo/brand row. */
+.dash-rail-btn {
+  background: rgba(15, 15, 19, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #fff;
+  border-radius: 10px;
+  width: 38px;
+  height: 38px;
+  font-size: 1.15rem;
+  line-height: 1;
+  cursor: pointer;
+  position: fixed;
+  left: 10px;
+  top: calc(var(--gfg-header-h, 48px) + 8px);
+  z-index: 960;
+}
+.dash-rail-btn:hover { border-color: var(--accent); }
+.dash-rail-btn.hide { display: none; }
+
+/* On wide screens the rail is always open; content moves right. */
+@media (min-width: 900px) {
+  .dash-rail { transform: none; }
+  .dash-rail-scrim, .dash-rail-close, .dash-rail-btn { display: none; }
+  body.dash-rail-on .mobile-container.dash-rail-content {
+    margin-left: 240px;
+    max-width: 780px;
+  }
+  /* Homepage overviews use more width so the grid can show 3-4 columns. */
+  body.dash-rail-on .mobile-container.dash-rail-content.dash-home {
+    max-width: 1200px;
+  }
+}
+
+/* Collapsible dashboard sections on the homepage. EXPANDED by default: the
+   body is visible on first landing. Clicking the header row collapses the
+   section (body hides, one-line summary shows). Clicking again re-expands. */
+.dash-fold-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
+}
+.dash-fold-head h3 { margin: 0; }
+.dash-fold-toggle {
+  flex-shrink: 0;
+  background: rgba(15, 15, 19, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #f87818;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.dash-fold-toggle:hover { border-color: #f87818; }
+.dash-fold-body { margin-top: 12px; }
+.dash-section.collapsed .dash-fold-body { display: none; }
+.dash-fold-summary {
+  color: var(--muted);
+  font-size: 0.8rem;
+  margin-top: 6px;
+  padding-left: 2px;
+  display: none;
+}
+.dash-section.collapsed .dash-fold-summary { display: block; }
+
+/* Homepage sections sit in a responsive grid: 3-4 across on wide screens,
+   2 on tablets, 1 stacked on phones. */
+.dash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+  gap: 16px;
+  align-items: start;
+}
+.dash-grid > .game-card { margin: 0; }
+.dash-grid .dash-section { margin-top: 0; }
+
+/* Pagination (pager.js): a Prev / numbered / Next nav that appears only once
+   content spans more than one page. Optional "show per page" selector on the
+   dedicated detail pages. */
+.pager-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+}
+.pager-btn {
+  background: rgba(15, 15, 19, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #ddd;
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  min-width: 30px;
+  text-align: center;
+}
+.pager-btn:hover:not(:disabled) { border-color: var(--accent, #f87818); color: #f87818; }
+.pager-btn.active {
+  background: var(--accent, #f87818);
+  border-color: var(--accent, #f87818);
+  color: #1a1a1a;
+}
+.pager-btn:disabled { opacity: 0.4; cursor: default; }
+.pager-ellipsis { color: #888; padding: 0 2px; }
+.pager-sizes {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.pager-sizes-label { color: var(--muted, #aaa); font-size: 0.78rem; margin-right: 2px; }
+.pager-size {
+  background: rgba(15, 15, 19, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #bbb;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+.pager-size:hover:not(.active) { border-color: var(--accent-purple, #7838f8); color: #fff; }
+.pager-size.active { background: var(--accent-purple, #7838f8); border-color: var(--accent-purple, #7838f8); color: #fff; }
+
+/* Homepage cards: a consistent max height so long sections never dwarf the
+   others. Content that would overflow is paginated (pager kicks in). */
+.mobile-container.dash-home .dash-fold-body {
+  max-height: 480px;
+  overflow-y: auto;
+}
+
+
+/* ===== MOBILE: NEVER HORIZONTAL-SCROLL =====
+   Long words, explorer links, tx signatures and tables must wrap or shrink
+   inside their cards instead of breaking the page into endless left/right
+   scroll (owner 2026-08-31). Applied sitewide so every page inherits it.
+   NOTE: intentionally applies overflow-x only to body, NOT html - setting it
+   on html is a known iOS scroll-trap for flex body pages (the game pages use
+   body { display:flex; min-height:100vh; overflow-y:auto }, which must keep
+   vertical scroll alive). Canvas is excluded so game boards keep their exact
+   sizing. */
+body {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+img, video, iframe, svg {
+  max-width: 100%;
+  height: auto;
+}
+a, p, li, td, th, code, input, textarea, pre, .mono, .wallet-box, .addr {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+th, td {
+  min-width: 0;
+}
+
+/* ===== COMMUNITY "just joined" TOAST (sitewide, owner 2026-08-31) =====
+   Small top-right corner toast: "Gamer GFG-XXXXXX just joined" — shows only
+   the public handle, never email/wallet. Auto-appears a few seconds after load
+   when a new player joined recently, auto-hides, dismissible with ×. */
+.gfg-community {
+  position: fixed;
+  top: 64px;
+  right: 14px;
+  z-index: 9980;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: min(88vw, 360px);
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(26,26,36,0.94);
+  border: 1px solid rgba(243,156,18,0.45);
+  color: #eee;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+  opacity: 0;
+  transform: translateY(-8px);
+  pointer-events: none;
+  transition: opacity .3s ease, transform .3s ease;
+}
+.gfg-community.show {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+.gfg-community-close {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  font-size: 0.9rem;
+  line-height: 22px;
+  cursor: pointer;
+}
+.gfg-community-close:hover { background: rgba(243,156,18,0.35); }
+
+/* Community count chips that read gfgCommunityCount() */
+.gfg-stats-count { color: #f87818; font-weight: 800; }
+
+/* GFG-BS match history (universal): a player's past on-chain matches with
+   clickable start/end explorer links. Reads are free, so this is always shown. */
+.gfg-mh-title { font-weight: 800; color: #f39c12; margin-bottom: 6px; font-size: 0.9rem; }
+.gfg-mh-list { display: flex; flex-direction: column; gap: 6px; }
+.gfg-mh-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 7px 9px; background: rgba(15,15,19,0.72); border: 1px solid rgba(155,89,182,0.35); border-radius: 9px; font-size: 0.78rem; }
+.gfg-mh-status { font-weight: 800; text-transform: uppercase; font-size: 0.66rem; padding: 1px 7px; border-radius: 999px; }
+.gfg-mh-settled { background: rgba(46,204,113,0.18); color: #2ecc71; border: 1px solid rgba(46,204,113,0.5); }
+.gfg-mh-open { background: rgba(243,156,18,0.18); color: #f39c12; border: 1px solid rgba(243,156,18,0.5); }
+.gfg-mh-disputed { background: rgba(231,76,60,0.18); color: #e74c3c; border: 1px solid rgba(231,76,60,0.5); }
+.gfg-mh-time, .gfg-mh-moves, .gfg-mh-game { color: #b9b9c9; }
+.gfg-mh-links { margin-left: auto; display: flex; gap: 8px; }
+.gfg-mh-link { color: #9b59b6; font-weight: 700; text-decoration: none; border-bottom: 1px dotted rgba(155,89,182,0.6); }
+.gfg-mh-link:hover { color: #f39c12; }
+.gfg-mh-empty, .gfg-mh-note { color: #999; font-size: 0.75rem; margin-top: 6px; }

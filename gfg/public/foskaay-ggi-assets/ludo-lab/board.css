@@ -1,0 +1,118 @@
+/* Ludo-lab board + 3D dice skin, copied for the Foskaay GGI Ludo demo so the
+   demo looks exactly like ludo-lab. Purely presentational; the demo's own
+   panels use the .ld-* classes in the page. */
+
+/* Wooden rim around the board, like a physical Ludo set. */
+#board-frame {
+    display: inline-block;
+    padding: 6px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #a8783f 0%, #8b5a2b 22%, #6e451f 48%, #9a6b36 72%, #7a5230 100%);
+    box-shadow:
+        inset 0 2px 3px rgba(255, 214, 160, 0.35),
+        inset 0 -3px 6px rgba(40, 22, 6, 0.55),
+        0 10px 26px rgba(0, 0, 0, 0.6);
+    max-width: 94vw;
+    box-sizing: border-box;
+    position: relative;
+}
+
+#board-frame canvas {
+    background: #ffffff;
+    display: block;
+    width: 100%;
+    height: auto;
+    max-width: none;
+    max-height: none;
+    border-radius: 8px;
+    touch-action: pan-y;
+}
+
+/* ===== Real 3D rolled dice overlay ===== */
+.gfg-dice-3d-stage {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+    perspective: 900px;
+    transform-style: preserve-3d;
+    z-index: 20;
+}
+
+.gfg-die {
+    position: absolute;
+    transform-style: preserve-3d;
+    will-change: transform, left, top;
+}
+
+.gfg-die-shadow {
+    position: absolute;
+    left: 4%;
+    top: 58%;
+    width: 92%;
+    height: 24%;
+    border-radius: 50%;
+    background: radial-gradient(ellipse at center, rgba(0,0,0,0.32) 0%, rgba(0,0,0,0.10) 55%, rgba(0,0,0,0) 75%);
+    transform: translateZ(0);
+    pointer-events: none;
+}
+
+.gfg-die-cube {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transform-origin: 50% 50% 0;
+}
+
+.gfg-die-flat {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(145deg, #ffffff 0%, #f4f4f7 55%, #e8eaee 100%);
+    border: 1px solid #b8bdc6;
+    border-radius: 14%;
+    box-shadow: inset 0 1px 2px rgba(255,255,255,0.9),
+                inset 0 -3px 5px rgba(0,0,0,0.12);
+    z-index: 2;
+}
+
+.gfg-die-face {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(145deg, #ffffff 0%, #f4f4f7 55%, #e8eaee 100%);
+    border: 1px solid #b8bdc6;
+    border-radius: 14%;
+    box-shadow: inset 0 1px 2px rgba(255,255,255,0.9),
+                inset 0 -3px 5px rgba(0,0,0,0.12);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+
+.gfg-die-face-front  { transform: translateZ(calc(var(--die-size) / 2)); }
+.gfg-die-face-back   { transform: rotateY(180deg) translateZ(calc(var(--die-size) / 2)); }
+.gfg-die-face-right  { transform: rotateY(90deg) translateZ(calc(var(--die-size) / 2)); }
+.gfg-die-face-left   { transform: rotateY(-90deg) translateZ(calc(var(--die-size) / 2)); }
+.gfg-die-face-top    { transform: rotateX(-90deg) translateZ(calc(var(--die-size) / 2)); }
+.gfg-die-face-bottom { transform: rotateX(90deg) translateZ(calc(var(--die-size) / 2)); }
+
+.gfg-pip {
+    position: absolute;
+    width: var(--pip-size);
+    height: var(--pip-size);
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #4c4c58 0%, #20202a 55%, #10101a 100%);
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.7);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+}

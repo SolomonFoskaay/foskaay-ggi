@@ -1,0 +1,53 @@
+{
+  "note": "PUBLIC plan-ladder config (arcv2m5). Every plan value lives HERE as data, so adding a level or changing a price is a one-file edit, never code. Safe to serve to any browser: these are plan terms, not secrets. The ON-CHAIN contract enforces the premium COST and the lives POOL; this file is the client's single source for the same numbers plus the display prices.",
+  "ladder": [
+    {
+      "level": 0,
+      "code": "free",
+      "label": "Free",
+      "premiumCost": 0,
+      "membershipCostPts": 0,
+      "winMultiplier": 1,
+      "lives": 5,
+      "dailyReward": 25,
+      "ads": "full",
+      "prices": { "usd": 0, "usdDiscounted": 0, "ngn": 0, "ngnBeta": 0 }
+    },
+    {
+      "level": 1,
+      "code": "l1",
+      "label": "Level 1",
+      "premiumCost": 5000,
+      "membershipCostPts": 5000,
+      "winMultiplier": 1.5,
+      "lives": 10,
+      "dailyReward": 50,
+      "ads": "less",
+      "prices": { "usd": 0, "usdDiscounted": 0, "ngn": 0, "ngnBeta": 0 }
+    },
+    {
+      "level": 2,
+      "code": "l2",
+      "label": "Level 2",
+      "premiumCost": 5000,
+      "membershipCostPts": 5000,
+      "winMultiplier": 2,
+      "lives": 15,
+      "dailyReward": 100,
+      "ads": "less",
+      "prices": { "usd": 10, "usdDiscounted": 5, "ngn": 10000, "ngnBeta": 5000 }
+    },
+    {
+      "level": 3,
+      "code": "l3",
+      "label": "Level 3",
+      "premiumCost": 10000,
+      "membershipCostPts": 10000,
+      "winMultiplier": 3,
+      "lives": 20,
+      "dailyReward": 200,
+      "ads": "none",
+      "prices": { "usd": 20, "usdDiscounted": 10, "ngn": 13500, "ngnBeta": 8000 }
+    }
+  ]
+}
