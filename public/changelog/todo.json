@@ -8,7 +8,7 @@
     "DEPRECATED": "Removed or replaced, kept for the record, do not build"
   },
   "current": {
-    "title": "Foskaay GGI - Phase 1: fresh FoskaayGGI core (locked names, 3-part fee) deployed + propagated",
+    "title": "Foskaay GGI - Phase 1 DONE: fresh FoskaayGGI core (locked names, 3-part fee) deployed + propagated",
     "updated": "2026-09-26",
     "items": [
       {
@@ -41,7 +41,7 @@
       },
       {
         "t": "(8y1) Phase 1: fresh FoskaayGGI core (rename + fee fields), UUPS, new address, update everywhere PENDING",
-        "s": "in_progress"
+        "s": "done"
       },
       {
         "t": "(8y2) Phase 2: fresh FoskaayGGIGames + FoskaayGGIPlayers (UUPS), wired, new addresses PENDING",
