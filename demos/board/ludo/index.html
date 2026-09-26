@@ -8,7 +8,7 @@
     <meta property="og:title" content="Ludo demo (Foskaay GGI)">
     <meta property="og:description" content="A Ludo match on Foskaay GGI. The contract owns the game; the page only displays.">
     <meta property="og:image" content="https://globalfolkgames.fun/media/GlobalFolkGames_banner_001.jpeg">
-    <meta property="og:url" content="https://globalfolkgames.fun/foskaay-ggi/demos/board/ludo/">
+    <meta property="og:url" content="https://foskaayggi.globalfolkgames.fun/demos/board/ludo/">
     <meta property="og:type" content="website">
     <meta name="twitter:card" content="summary_large_image">
     <link rel="stylesheet" href="/style.css">
@@ -59,7 +59,7 @@
         <span class="ld-eyebrow">FOSKAAY GGI DEMO</span>
         <h1 class="ld-h1">Ludo, <span class="grad">fully on-chain</span></h1>
         <p class="ld-sub">A Ludo match on Foskaay Gasless Games Infrastructure. The contract owns the rules, the dice, the crown and the points. During play every move runs free inside the Foskaay GGI Midchain, and only the connect and the settle are transactions. The sponsor pays those two, never you. This page only displays what the chain says.</p>
-        <p class="ld-sub" style="margin-top:10px"><a href="/foskaay-ggi/explorer/" style="color:#f39c12;font-weight:800">Open the Foskaay GGI Explorer</a> to verify the session, the seed and the midchain moves.</p>
+        <p class="ld-sub" style="margin-top:10px"><a href="/explorer/" style="color:#f39c12;font-weight:800">Open the Foskaay GGI Explorer</a> to verify the session, the seed and the midchain moves.</p>
     </section>
 
     <div class="ld-body">
@@ -166,7 +166,7 @@
         },
         ids: function (sessionId) {
             el.ids.innerHTML = 'Session ' + short(sessionId) +
-                '  |  <a href="/foskaay-ggi/explorer/?session=' + sessionId + '" target="_blank" rel="noopener" style="color:#f39c12">open in Foskaay GGI Explorer</a>';
+                '  |  <a href="/explorer/?session=' + sessionId + '" target="_blank" rel="noopener" style="color:#f39c12">open in Foskaay GGI Explorer</a>';
             el.settleBtn.disabled = false;
             el.passBtn.disabled = false;
         },
@@ -200,7 +200,7 @@
     var FAQ = [
         { q: 'Is this really an on-chain game?', a: 'Yes. The rules, the dice, the board and the points live in the game contract as compact BYTES (no images on-chain); this page only renders what the chain returns. During play every roll and every move runs through the contract for free, and the result is settled on-chain in one transaction.' },
         { q: 'What exactly is the Foskaay GGI Midchain, and how is it not "off-chain"?', a: 'The contract is PURE, so the whole game runs through it (a free eth_call) without touching the base chain per move. The relay hash-chains every new state and signs it with the session key. If anything is tampered with, the hash chain and the signatures break and the settle is rejected on-chain. There is no replay: the final hash already commits to the board and the points.' },
-        { q: 'Where are the deployed contracts, and how do I verify them?', a: 'Arc Testnet. Core (FoskaayGGI, single contract, fee is built in): <a href="' + E + CORE + '" target="_blank" rel="noopener">' + CORE + '</a>. Game (FoskaayGGILudo, pure): <a href="' + E + LUDO + '" target="_blank" rel="noopener">' + LUDO + '</a>. Open the live session in the <a href="/foskaay-ggi/explorer/" target="_blank" rel="noopener">Foskaay GGI Explorer</a>.' },
+        { q: 'Where are the deployed contracts, and how do I verify them?', a: 'Arc Testnet. Core (FoskaayGGI, single contract, fee is built in): <a href="' + E + CORE + '" target="_blank" rel="noopener">' + CORE + '</a>. Game (FoskaayGGILudo, pure): <a href="' + E + LUDO + '" target="_blank" rel="noopener">' + LUDO + '</a>. Open the live session in the <a href="/explorer/" target="_blank" rel="noopener">Foskaay GGI Explorer</a>.' },
         { q: 'How much does it cost to deploy?', a: 'The single core (FoskaayGGI with the fee built in) plus the pure Ludo game cost about <b>0.0717 USDC</b> on Arc testnet. One-time, in USDC.' },
         { q: 'What does a match cost, and who pays?', a: 'The player pays nothing. The sponsor pays only two transactions: the connect (about <b>0.00275 USDC</b>, which includes the <b>0.0004 USDC</b> session fee) and the settle (about <b>0.00165 USDC</b>). Every roll and every move in between is free. On Arc testnet (25 Gwei) that is about 250 games per $1; at Arc mainnet gas (5-10 Gwei) it is about $1 per 1,000 games, and batching goes under that.' },
         { q: 'How do the points work?', a: 'Points live INSIDE the game state, so they are credited for free as the match plays and cost nothing extra at settle. 4 players: 1st 100, 2nd 50, 3rd 25, 4th 0. 2 players: 1st 100, 2nd 0.' },
