@@ -18,10 +18,13 @@ export const addresses = {
     usdcDecimalsNative: 18,
     usdcDecimalsErc20: 6,
     contracts: {
-      SessionRegistry: '0x9f078527082b3bCc7c00e27f7C53D31CF1D17A85',
+      FoskaayGGI: '0x793785CE66992211B7c60dFCf0318869678D33a4',
       FoskaayGGILudo: '0xa5040Ece5945a8551499ad1148fc3cD15b165987',
     },
     feeNative: '400000000000000',
+    feeBase: '400000000000000',
+    feePerAccount: '400000000000000',
+    feePerGame: '200000000000000',
     upgradeable: true,
     pattern: 'UUPS proxies (ERC1967). These addresses are permanent: an upgrade swaps the logic behind them and never moves the address or strands data.',
     deployedAt: '2026-09-25',
@@ -35,7 +38,7 @@ export const addresses = {
     usdcDecimalsNative: 18,
     usdcDecimalsErc20: 6,
     contracts: {
-      SessionRegistry: null,
+      FoskaayGGI: null,
     },
     deployedAt: null,
     note: 'Not deployed yet. Testnet first. Addresses appear here in the same format once deployed.',

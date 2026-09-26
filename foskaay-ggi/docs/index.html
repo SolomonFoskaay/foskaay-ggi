@@ -323,7 +323,7 @@
         <table class="ggi-table">
             <thead><tr><th>Contract</th><th>What it does</th></tr></thead>
             <tbody>
-                <tr><td><b>SessionRegistry</b></td><td>Connect a session (the fee is paid here and sent straight to your destination), settle the result, and give free pure randomness to the games that ask. The fee is built in, so there is no separate vault to deploy or wire.</td></tr>
+                <tr><td><b>FoskaayGGI</b></td><td>Connect a session (the fee is paid here and sent straight to your destination), settle the result, and give free pure randomness to the games that ask. The fee is built in, so there is no separate vault to deploy or wire.</td></tr>
             </tbody>
         </table>
         <div class="ggi-h3">Batching and randomness are built in</div>
@@ -381,8 +381,9 @@ await ggi.settle({
     <section class="ggi-card" id="contracts">
         <h2 class="ggi-h2">Contracts</h2>
         <p class="ggi-body">
-            Foskaay GGI is <b>two core contracts</b>, deployed per network. The addresses below are
-            public and safe to use in your app.
+            Foskaay GGI is <b>one core contract</b> (FoskaayGGI), deployed per network. Your own game
+            and player contracts are yours to deploy and own; the core is the only rail address you
+            call. The addresses below are public and safe to use in your app.
         </p>
 
         <div class="ggi-h3"><span class="ggi-pill testnet">TESTNET</span> Arc Testnet (chain id 5042002)</div>
@@ -393,13 +394,15 @@ await ggi.settle({
         <table class="ggi-table">
             <thead><tr><th>Contract</th><th>Responsibility</th><th>Address</th></tr></thead>
             <tbody>
-                <tr><td>SessionRegistry</td><td>Connect a session (paying the fee), settle the result, free randomness</td><td class="ggi-mono">0x9f078527082b3bCc7c00e27f7C53D31CF1D17A85</td></tr>
+                <tr><td>FoskaayGGI</td><td>Connect a session (paying the fee), settle the result, free randomness</td><td class="ggi-mono">0x793785CE66992211B7c60dFCf0318869678D33a4</td></tr>
                 <tr><td>FoskaayGGILudo <span class="ggi-tiny">(demo game, pure)</span></td><td>The Ludo rules as a pure function: board and points are compact bytes the contract returns</td><td class="ggi-mono">0xa5040Ece5945a8551499ad1148fc3cD15b165987</td></tr>
             </tbody>
         </table>
         <p class="ggi-tiny">
-            Fee <span class="ggi-mono">0.0004 native USDC</span> per session (the single fee).
-            Batching many games into one session lowers the GAS, never the fee, so cost per game falls the more you batch.
+            Fee <span class="ggi-mono">0.0004 base + 0.0004 per lifted account + 0.0002 per game</span>
+            in native USDC, charged once at connect. The base and per-account parts do not grow with
+            batching; only the per-game part does, so cost per game falls the more you batch. The full
+            pricing table lives in the Fees section below.
             RPC <span class="ggi-mono">https://rpc.testnet.arc.io</span> &nbsp;|&nbsp;
             Explorer <span class="ggi-mono">https://explorer.testnet.arc.io</span> &nbsp;|&nbsp;
             USDC <span class="ggi-mono">0x3600000000000000000000000000000000000000</span>
@@ -409,7 +412,7 @@ await ggi.settle({
         <table class="ggi-table">
             <thead><tr><th>Contract</th><th>Address</th></tr></thead>
             <tbody>
-                <tr><td>SessionRegistry</td><td class="ggi-mono">Not deployed yet (testnet first)</td></tr>
+                <tr><td>FoskaayGGI</td><td class="ggi-mono">Not deployed yet (testnet first)</td></tr>
             </tbody>
         </table>
         <p class="ggi-tiny">
@@ -609,7 +612,7 @@ await ggi.settle({ sessionId, finalHash, seedReveal, sigs, signers });</code></d
                 <tr><td>Authorise a signer (delegation authority)</td><td>The players sign the final hash; the registry verifies every signature (OpenZeppelin <span class="ggi-mono">ECDSA.recover</span>) before it settles.</td><td>Rail: present and proven</td></tr>
                 <tr><td>ERC VRF</td><td>Free pure <span class="ggi-mono">random</span> / <span class="ggi-mono">randomN</span> on the registry (eth_call), so dice and cards cost nothing extra.</td><td>Rail: present</td></tr>
                 <tr><td>Commit / undelegate</td><td>Foskaay GGI <b>settle</b> (verify signatures, reveal seed) and, for batching, one settle carrying a session Merkle root.</td><td>Rail: present</td></tr>
-                <tr><td>Session + commit fees</td><td><span class="ggi-mono">SessionRegistry</span> per-session fee (built in).</td><td>Rail: present</td></tr>
+                <tr><td>Session + commit fees</td><td><span class="ggi-mono">FoskaayGGI</span> per-session fee (built in).</td><td>Rail: present</td></tr>
                 <tr><td>Two RPCs (base + ER) and its own explorer</td><td>One Arc RPC, plus the public Foskaay GGI <a href="/foskaay-ggi/explorer/">Explorer</a> (the ER's own explorer exists because base explorers cannot see ER transactions; ours exists for the same reason).</td><td>Rail: present</td></tr>
                 <tr><td><span class="ggi-mono">@magicblock-labs/bolt-sdk</span> (contract side) + <span class="ggi-mono">ephemeral-rollups-sdk</span> (client side)</td><td><span class="ggi-mono">@foskaay/ggi-contracts-sdk</span> (contract side) + <span class="ggi-mono">@foskaay/ggi-sdk</span> (client side).</td><td>Published</td></tr>
             </tbody>

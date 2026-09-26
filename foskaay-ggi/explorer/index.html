@@ -204,7 +204,7 @@
     window.GFG_GGI_NAV.render({ active: 'explorer' });
 
     var X = window.GGExplorer;
-    document.getElementById('gx-registry').textContent = X.NET.contracts.SessionRegistry;
+    document.getElementById('gx-registry').textContent = X.NET.contracts.FoskaayGGI;
 
     function short(a) { return a ? a.slice(0, 10) + '…' + a.slice(-8) : '-'; }
     function usdc6(n) { return (Number(n) / 1e6).toFixed(6) + ' USDC'; }
@@ -240,7 +240,7 @@
 
             document.getElementById('gx-v-paid').innerHTML = pill(r.paid, 'PAID', 'not paid');
             document.getElementById('gx-v-fee').textContent = usdc18(r.fee);
-            status.textContent = 'Read at contract ' + X.NET.contracts.SessionRegistry + ' on ' + X.NET.name + '.';
+            status.textContent = 'Read at contract ' + X.NET.contracts.FoskaayGGI + ' on ' + X.NET.name + '.';
         }).catch(function (e) {
             status.textContent = 'Could not read: ' + (e.message || e);
         });
@@ -277,8 +277,8 @@
 
     // Proof tab: core state (single contract, fee built in)
     (function () {
-        X.callView(X.NET.contracts.SessionRegistry, 'fee()').then(function (hex) { document.getElementById('gx-fv-fee').textContent = usdc18(BigInt(hex)); }).catch(function () {});
-        X.callView(X.NET.contracts.SessionRegistry, 'destination()').then(function (hex) {
+        X.callView(X.NET.contracts.FoskaayGGI, 'fee()').then(function (hex) { document.getElementById('gx-fv-fee').textContent = usdc18(BigInt(hex)); }).catch(function () {});
+        X.callView(X.NET.contracts.FoskaayGGI, 'destination()').then(function (hex) {
             document.getElementById('gx-fv-dest').textContent = hex && hex !== '0x' ? ('0x' + hex.slice(26)) : '-';
         }).catch(function () {});
     })();

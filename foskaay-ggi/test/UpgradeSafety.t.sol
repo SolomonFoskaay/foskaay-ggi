@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {SessionRegistry} from "../src/SessionRegistry.sol";
+import {FoskaayGGI} from "../src/FoskaayGGI.sol";
 import {Deploy} from "./Deploy.sol";
 
 interface Vm {
@@ -19,7 +19,7 @@ contract UpgradeSafetyTest {
     bytes32 constant SID = keccak256("s1");
 
     function testRegistryUpgradeKeepsAddressAndData() public {
-        SessionRegistry reg = Deploy.registry(address(this), address(0xD357), FEE);
+        FoskaayGGI reg = Deploy.registry(address(this), address(0xD357), FEE);
         vm.deal(address(this), 10 ether);
         address[] memory players = new address[](1);
         players[0] = address(0x1);
@@ -31,7 +31,7 @@ contract UpgradeSafetyTest {
         bytes32 commitBefore = reg.commitments(SID);
         uint64 counterBefore = reg.sessionCounter();
 
-        SessionRegistry impl = new SessionRegistry();
+        FoskaayGGI impl = new FoskaayGGI();
         reg.upgradeToAndCall(address(impl), "");
 
         require(address(reg) == before, "address kept");
@@ -43,8 +43,8 @@ contract UpgradeSafetyTest {
     }
 
     function testOnlyOwnerCanUpgrade() public {
-        SessionRegistry reg = Deploy.registry(address(this), address(0xD357), FEE);
-        SessionRegistry impl = new SessionRegistry();
+        FoskaayGGI reg = Deploy.registry(address(this), address(0xD357), FEE);
+        FoskaayGGI impl = new FoskaayGGI();
         vm.prank(address(0xBAD));
         vm.expectRevert();
         reg.upgradeToAndCall(address(impl), "");

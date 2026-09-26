@@ -1,17 +1,21 @@
 // @foskaay/ggi-contracts-sdk — Solidity interfaces for Foskaay Gasless Games Infrastructure (Foskaay GGI).
 //
-// Foskaay GGI is TWO core contracts. Import this package (or copy these
-// interfaces) and call them directly. Nothing here is opinionated: no account
-// layout, no commit cadence, no game concept. The rail never learns your game.
+// Foskaay GGI is ONE core contract (FoskaayGGI), plus the game and player
+// contracts a dev deploys. Import this package (or copy this interface) and call
+// it directly. Nothing here is opinionated: no account layout, no commit cadence,
+// no game concept. The rail never learns your game.
 
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-/// CORE 1: the room. Connect a session (paying the fee), settle the result, and
-/// get free pure randomness. Every move inside runs off-chain for free.
-interface ISessionRegistry {
-    /// Connect a session. `msg.value` must equal the FeeVault fee; it is forwarded
-    /// to the FeeVault in this same transaction, so a session cannot start unpaid.
+/// THE CORE: the room. Connect a session (paying the fee), settle the result,
+/// and get free pure randomness. Every move inside runs off-chain for free.
+/// The fee is built in (base + per lifted account + per game) and forwarded
+/// straight to `destination` in the same transaction, so a session cannot start
+/// unpaid and cannot settle unless it paid.
+interface IFoskaayGGI {
+    /// Connect a session. `msg.value` must equal the legacy single fee; it is
+    /// forwarded to `destination` in this same transaction.
     function handover(
         bytes32 sessionId,
         address gameLogic,
@@ -31,6 +35,21 @@ interface ISessionRegistry {
         address[][] calldata players,
         address[][] calldata sessionKeys,
         uint16 randomCount
+    ) external payable;
+
+    /// Connect a session, recording the DEV-declared accounts (ANY count) and
+    /// the number of games. `msg.value` must equal
+    /// feeBase + feePerAccount * accounts.length + feePerGame * games.
+    function handoverWithAccounts(
+        bytes32 sessionId,
+        address gameLogic,
+        bytes32 startHash,
+        bytes32 seedCommit,
+        address[] calldata players,
+        address[] calldata sessionKeys,
+        uint16 randomCount,
+        address[] calldata accounts,
+        uint16 games
     ) external payable;
 
     /// Settle ONE session: every declared signer must have signed
@@ -63,15 +82,25 @@ interface ISessionRegistry {
     /// FREE randomness: N seeds in one call.
     function randomN(bytes32 seed, uint256 counter, uint256 count) external pure returns (bytes32[] memory);
 
-    /// The FeeVault this registry forwards the fee to.
-    function feeVault() external view returns (address);
+    /// The legacy single fee used by `handover`/`handoverMany` (native USDC wei).
+    function fee() external view returns (uint256);
+
+    /// The 3-part session fee used by `handoverWithAccounts`: base + per lifted
+    /// account + per game, all charged at connect.
+    function feeBase() external view returns (uint256);
+    function feePerAccount() external view returns (uint256);
+    function feePerGame() external view returns (uint256);
+
+    /// Where the fee goes (the treasury). A direct transfer, no vault.
+    function destination() external view returns (address);
 
     /// The upgrade/config owner.
     function owner() external view returns (address);
 }
 
-/// CORE 2: the cashier. Holds the per-session fee and lets the owner withdraw it.
-/// ONLY the SessionRegistry can record a payment, so the fee cannot be bypassed.
+/// DEPRECATED (kept for reference): the earlier separate cashier. The FeeVault was
+/// merged into FoskaayGGI, which forwards the fee straight to `destination`, so
+/// there is no separate vault to deploy or wire.
 interface IFeeVault {
     /// Record one paid session. Only the SessionRegistry may call it; msg.value
     /// must equal the fee. Normally reached through SessionRegistry.handover.

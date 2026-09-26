@@ -11,6 +11,7 @@
     ".opencode/rules/todo-admin.md",
     ".opencode/rules/foskaay-ggi-game-design.md",
     ".opencode/rules/follow-owner-instruction.md",
-    ".opencode/rules/upgradeable-contracts.md"
+    ".opencode/rules/upgradeable-contracts.md",
+    ".opencode/rules/foskaay-ggi-contracts.md"
   ]
 }

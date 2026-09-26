@@ -403,10 +403,17 @@ graphics on-chain), credit points inside the room at game end, run nothing outsi
 the session window, and keep the frontend display-only. It is the difference
 between a fraction of a cent per match and fifty times more.
 
-- **CORE = exactly 2 unopinionated contracts:** SessionRegistry, FeeVault,
-  Randomness, FeeVault. BatchedSettlement is an OPTIONAL separate contract, never
-  core. Optional patterns are OFFERED, never enforced: Batched Settlement,
-  Managed Accounts (PlayerCore-style), Verifiers, House/relayer-as-participant.
+- **CORE = ONE unopinionated contract: `FoskaayGGI`** (the `SessionRegistry`
+  renamed; connect/settle/free randomness, fee built in). The game and player
+  contracts are the DEV's own; for GlobalFolkGames' Ludo they are locked as
+  `FoskaayGGIGames` and `FoskaayGGIPlayers` (Phase 2). Fee = 0.0004 base +
+  0.0004 per lifted account + 0.0002 per game, all charged once at connect
+  (only the per-game part grows with batching); nothing inside the Foskaay GGI
+  Midchain is charged. Arc testnet core (UUPS, permanent):
+  `FoskaayGGI` `0x793785CE66992211B7c60dFCf0318869678D33a4`. BatchedSettlement
+  is OPTIONAL, never core. Optional patterns are OFFERED, never enforced:
+  Batched Settlement, Managed Accounts (PlayerCore-style), Verifiers,
+  House/relayer-as-participant.
 - **Law 1:** the rail never learns a game concept (no board/token/position/seat/
   turn/dice). **Law 2:** account layout is the DEV's choice; upgrades must be safe.
 - **THE CONTRACTS ARE UPGRADEABLE (UUPS proxies, locked 2026-09-22).** The proxy
