@@ -23,24 +23,23 @@ import {
   createPublicClient, createWalletClient, defineChain, http, parseAbi, keccak256, toBytes, encodeAbiParameters, parseAbiParameters,
 } from 'viem';
 import * as evmKeys from 'viem/accounts';
+// NON-SECRET single source of truth for the public addresses + Arc facts. Edit
+// the file, never Vercel env, when an address changes.
+import { ADDRESSES as GGI_ADDR, ARC as GGI_ARC } from '../foskaay-ggi/deployments/addresses.mjs';
 
 const accountFor = evmKeys['private' + 'KeyToAccount'];
 
-const RPC = process.env.GFG_Arc_RPC || 'https://rpc.testnet.arc.io';
+const RPC = process.env.GFG_Arc_RPC || GGI_ARC.rpc; // public RPC default; env only for a private RPC
 const SPONSOR_KEY = process.env.GFG_Arc_Gasless_Sponsor_Key || '';
-const CHAIN_ID = 5042002;
+const CHAIN_ID = GGI_ARC.chainId;
 
-// The deployed Foskaay GGI core (proxy addresses; permanent). Kept here as data so
-// this handler has no build dependency on the packages.
+// The deployed Foskaay GGI addresses come from the single non-secret source
+// (foskaay-ggi/deployments/addresses.mjs), never hardcoded here.
 const ADDR = {
-  // The SINGLE core: FoskaayGGI (the SessionRegistry renamed), UUPS. Phase 3
-  // rewires this handler to handoverWithAccounts + FoskaayGGIGames/Players.
-  FoskaayGGI: '0x793785CE66992211B7c60dFCf0318869678D33a4',
-  // Phase 2: the on-chain game (match + rules + settle) and the player account.
-  FoskaayGGIGames: '0x24e38ac2e80958782a8Bc5CD479bbe2e5D81EcDF',
-  FoskaayGGIPlayers: '0x1614ebc72eA1cB3D31975b3976B5B474FAcE3b3C',
-  // The Ludo game (pure rules only): still used by the demo until Phase 3/5.
-  FoskaayGGILudo: '0xa5040Ece5945a8551499ad1148fc3cD15b165987',
+  FoskaayGGI: GGI_ADDR.FoskaayGGI,
+  FoskaayGGIGames: GGI_ADDR.FoskaayGGIGames,
+  FoskaayGGIPlayers: GGI_ADDR.FoskaayGGIPlayers,
+  FoskaayGGILudo: GGI_ADDR.FoskaayGGILudo,
 };
 
 // The pure Ludo rules, now on FoskaayGGIGames.
@@ -197,9 +196,18 @@ async function doDemoCreate(body) {
   const state0 = await gameRead(pub, 'getInitialState', [seatCount, userSeat]);
   const startHash = await gameRead(pub, 'hashState', [state0]);
 
+  // Phase 4 seat wiring: the logged-in user's seat uses their Dynamic EVM
+  // address + their client-held session key (no wallet popup). Every other seat
+  // (computer/house) has NO wallet: it is signed only by this Vercel sponsor key.
+  const sessionKey = body.sessionKey || user;
   const players = new Array(seatCount).fill(account.address);
   players[userSeat] = user;
   const sessionKeys = new Array(seatCount).fill(account.address);
+  sessionKeys[userSeat] = sessionKey;
+  // ONLY the user seat earns points. Computer seats are address(0) here so the
+  // game never credits them (Gap 2).
+  const creditPlayers = new Array(seatCount).fill('0x0000000000000000000000000000000000000000');
+  creditPlayers[userSeat] = user;
 
   // Phase 3: the dev-declared accounts are the two real contracts, lifted once for
   // the whole session. fee = base + perAccount*accounts + perGame*games.
@@ -216,10 +224,10 @@ async function doDemoCreate(body) {
     args: [sessionId, ADDR.FoskaayGGIGames, startHash, seedCommit, players, sessionKeys, 2, accounts, games],
     value: fee, account,
   });
-  const sess = { sessionId, matchRef, seed, seedCommit, state: state0, startState: state0, startHash, lastHash: startHash, players, sessionKeys, accounts, games, seatCount, userSeat, moves: [] };
+  const sess = { sessionId, matchRef, seed, seedCommit, state: state0, startState: state0, startHash, lastHash: startHash, players, sessionKeys, creditPlayers, accounts, games, seatCount, userSeat, user, sessionKey, moves: [] };
   sessions.set(sessionId, sess);
   const total = BigInt(r.costUsdc6) + (fee / 1_000_000_000_000n);
-  return { sessionId, matchRef, userSeat, seatCount, connectTx: r.hash, costUsdc6: total.toString(), fee: fee.toString(), accounts, games, view: viewOf(sess) };
+  return { sessionId, matchRef, userSeat, seatCount, user, sessionKey, connectTx: r.hash, costUsdc6: total.toString(), fee: fee.toString(), accounts, games, view: viewOf(sess) };
 }
 
 /// ROLL: free. Dice come from the core's randomN (pure); applyMove is pure.
@@ -284,14 +292,22 @@ async function doDemoSettle(body) {
   };
   const rGame = await send(wallet, pub, {
     address: ADDR.FoskaayGGIGames, abi: gamesAbi, functionName: 'settle',
-    args: [sess.sessionId, [game], sess.players, GAME_TAG],
+    args: [sess.sessionId, [game], sess.creditPlayers, GAME_TAG],
     account,
   });
   const digest = await pub.readContract({ address: ADDR.FoskaayGGI, abi: coreAbi, functionName: 'midchainDigest', args: [sess.sessionId, finalHash] });
-  const sig = await account.sign({ hash: digest });
+  // Every seat's signer must match the handover commitment. The user seat is
+  // signed by the client session key (body.sig); the house seats by this sponsor.
+  const sigs = [];
+  const signers = [];
+  for (let s = 0; s < sess.seatCount; s++) {
+    signers.push(sess.sessionKeys[s]);
+    if (s === sess.userSeat && body.sig) sigs.push(body.sig);
+    else sigs.push(await account.sign({ hash: digest }));
+  }
   const rCore = await send(wallet, pub, {
     address: ADDR.FoskaayGGI, abi: coreAbi, functionName: 'settle',
-    args: [sess.sessionId, finalHash, sess.seed, sess.players, sess.sessionKeys, [sig], [account.address]],
+    args: [sess.sessionId, finalHash, sess.seed, sess.players, sess.sessionKeys, sigs, signers],
     account,
   });
   return { tx: rGame.hash, coreTx: rCore.hash, finalHash, costUsdc6: (BigInt(rGame.costUsdc6) + BigInt(rCore.costUsdc6)).toString() };
