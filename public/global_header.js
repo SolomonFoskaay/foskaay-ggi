@@ -79,6 +79,7 @@
       + '  <a class="ggi-item" href="/explorer/" ' + act('/explorer') + '>Explorer</a>'
       + '  <a class="ggi-item" href="/about/" ' + act('/about') + '>About</a>'
       + '  <a class="ggi-item" href="/contact/" ' + act('/contact') + '>Contact</a>'
+      + '  <a class="ggi-item" href="/pricing/" ' + act('/pricing') + '>Pricing</a>'
       + '  <a class="ggi-item" href="/profile/" ' + act('/profile') + '>Wallets / Profile</a>'
       + '  <a class="ggi-item hire" href="/hire/">Hire me</a>'
       + '</nav>';
@@ -181,7 +182,7 @@
     f.id = 'ggi-footer';
     f.className = 'ggi-ft';
     f.innerHTML = '<div class="ggi-ft-in">'
-      + '<div><a href="/docs/">Docs</a><a href="/demos/">Demos</a><a href="/explorer/">Explorer</a><a href="/about/">About</a><a href="/contact/">Contact</a><a href="/hire/">Hire me</a></div>'
+      + '<div><a href="/docs/">Docs</a><a href="/demos/">Demos</a><a href="/pricing/">Pricing</a><a href="/explorer/">Explorer</a><a href="/about/">About</a><a href="/contact/">Contact</a><a href="/hire/">Hire me</a></div>'
       + '<div style="display:flex;align-items:center;gap:14px"><span class="ggi-ft-c">&copy; 2026 Foskaay GGI</span><a class="ggi-mbtn" href="mailto:hellofoskaay@gmail.com">Email me</a></div>'
       + '</div>';
     document.body.appendChild(f);

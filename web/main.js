@@ -21,14 +21,18 @@ import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 const ENVIRONMENT_ID = (typeof __DYNAMIC_ENV_ID__ !== 'undefined' && __DYNAMIC_ENV_ID__)
   || '0fd49c9c-1b54-4dc5-88a0-924dd3607bf3';
 
-const dynamicClient = createDynamicClient({
-  environmentId: ENVIRONMENT_ID,
-  metadata: { name: 'Foskaay GGI', universalLink: window.location.origin },
-});
-addSolanaExtension();
-addEvmExtension();
-window.dynamicClient = dynamicClient;
-
+let dynamicClient = null;
+try {
+  dynamicClient = createDynamicClient({
+    environmentId: ENVIRONMENT_ID,
+    metadata: { name: 'Foskaay GGI', universalLink: window.location.origin },
+  });
+  addSolanaExtension();
+  addEvmExtension();
+  window.dynamicClient = dynamicClient;
+} catch (e) {
+  console.error('Foskaay GGI: Dynamic client init failed:', e.message || e);
+}
 window.currentUser = null;
 window.currentProfile = null;
 
@@ -124,6 +128,7 @@ function otpStep(email) {
   document.getElementById('ggi-back').onclick = emailStep;
 }
 async function sendOtp() {
+  if (!dynamicClient) { banner('Sign in is not configured yet. Set DYNAMIC_ENV_ID and allow this domain in Dynamic.'); return; }
   const email = (document.getElementById('ggi-email').value || '').trim();
   if (!email) { banner('Please enter your email'); return; }
   pendingEmail = email;

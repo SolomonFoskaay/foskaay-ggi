@@ -272,6 +272,16 @@ async function doDemoMoves(body) {
   return { found: true, sessionId: sess.sessionId, gameLogic: ADDR.FoskaayGGIGames, startHash: sess.startHash, finalHash: sess.lastHash, moves: sess.moves };
 }
 
+/// The digest + final hash for the current state, so the client's session key
+/// can sign the settle hash (Phase 4 real player seat).
+async function doDemoDigest(body) {
+  const { pub } = clients();
+  const sess = needSession(body);
+  const finalHash = await gameRead(pub, 'hashState', [sess.state]);
+  const digest = await pub.readContract({ address: ADDR.FoskaayGGI, abi: coreAbi, functionName: 'midchainDigest', args: [sess.sessionId, finalHash] });
+  return { sessionId: sess.sessionId, finalHash, digest };
+}
+
 /// SETTLE: the LAST transactions. First FoskaayGGIGames.settle writes the match
 /// on-chain and credits FoskaayGGIPlayers in the same step; then the core settle
 /// verifies the players' signatures and closes the session. No replay: the final
@@ -327,6 +337,7 @@ export default async function handler(req, res) {
       case 'demoPass': out = await doDemoPass(body); break;
       case 'demoBoard': out = await doDemoBoard(body); break;
       case 'demoMoves': out = await doDemoMoves(body); break;
+      case 'demoDigest': out = await doDemoDigest(body); break;
       case 'demoSettle': out = await doDemoSettle(body); break;
       case 'sponsorAddress': {
         const { account } = clients();

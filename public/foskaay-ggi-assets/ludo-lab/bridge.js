@@ -15,7 +15,7 @@
     var COLOR_OF = ['green', 'yellow', 'blue', 'red'];
     var SEAT_OF = { green: 0, yellow: 1, blue: 2, red: 3 };
 
-    var SID = null, USER = null, USERSEAT = 0, SEATS = 2;
+    var SID = null, USER = null, SESSION_KEY = null, USERSEAT = 0, SEATS = 2;
     var VIEW = null;
     var pendingDice = [];
     var busy = false;
@@ -245,7 +245,14 @@
         busy = true;
         setPrompt('Match finished. Sealing the result on-chain...');
         try {
-            var r = await relay('demoSettle', { sessionId: SID });
+            // Phase 4: the user seat signs the final settle hash with its own
+            // session key; the house seats are signed by the sponsor relay.
+            var sig = null;
+            try {
+                var dg = await relay('demoDigest', { sessionId: SID });
+                if (dg && dg.digest && typeof window.ggiSignDigest === 'function') sig = await window.ggiSignDigest(dg.digest);
+            } catch (e) { /* fall back to the relay signing the user seat */ }
+            var r = await relay('demoSettle', { sessionId: SID, sig: sig });
             if (ui().log) ui().log('Settled on-chain: result sealed', r.costUsdc6);
             if (ui().gas) ui().gas(r.costUsdc6, 'sealed');
             if (ui().tx) ui().tx(r.tx, 'settled');
@@ -298,9 +305,17 @@
         window.isDiceRolled = false;
         window.currentTurnMoves = [];
         try {
-            var info = await relay('sponsorAddress');
-            USER = info.address;
-            var created = await relay('demoCreate', { seatCount: seatCount, userSeat: userSeat, user: USER });
+            // Phase 4: the real player seat is the signed-in Dynamic EVM wallet.
+            var evm = (typeof window.getDynamicEvmWallet === 'function') ? window.getDynamicEvmWallet() : null;
+            if (!(window.currentUser || evm)) {
+                setPrompt('Sign in to play. You get an embedded EVM wallet automatically.');
+                if (typeof window.openDynamicLogin === 'function') window.openDynamicLogin();
+                return null;
+            }
+            USER = evm || (window.currentUser && window.currentUser.evm) || null;
+            var sk = (typeof window.ggiCreateSessionKey === 'function') ? window.ggiCreateSessionKey() : null;
+            SESSION_KEY = sk ? sk.address : USER;
+            var created = await relay('demoCreate', { seatCount: seatCount, userSeat: userSeat, user: USER, sessionKey: SESSION_KEY });
             SID = created.sessionId;
             applyBoard(created.view);
             if (ui().log) ui().log('Session connected on-chain (fee paid, one transaction)', created.costUsdc6);

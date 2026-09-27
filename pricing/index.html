@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Foskaay GGI Pricing | What gasless play costs you, not your players</title>
+    <meta name="description" content="Foskaay GGI pricing for game developers: a small fee per session, your players pay nothing, and heavy batching drops the per-game cost.">
+    <meta property="og:title" content="Foskaay GGI Pricing">
+    <meta property="og:description" content="What gasless play costs you, the developer. Your players pay nothing.">
+    <meta property="og:url" content="https://foskaayggi.globalfolkgames.fun/pricing/">
+    <meta property="og:type" content="website">
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/ggi.css">
+</head>
+<body>
+<main class="ggi-wrap">
+    <section class="ggi-hero">
+        <span class="ggi-eyebrow">PRICING</span>
+        <h1 class="ggi-h1">What it costs <span class="grad">you, not your players</span></h1>
+        <p class="ggi-sub">Your players always pay nothing. This page is the single place for what Foskaay GGI costs a game developer. If numbers change, they change here, nowhere else.</p>
+        <div class="ggi-ctas">
+            <a class="ggi-btn primary" href="/docs/#quickstart">Start with the SDK</a>
+            <a class="ggi-btn ghost" href="/hire/">Hire me to integrate</a>
+        </div>
+    </section>
+
+    <div class="ggi-body">
+        <div class="ggi-section-title"><h2>The fee</h2></div>
+        <p class="ggi-p">A small fee per session, in USDC, charged once at connect:
+        <b>0.0004 base + 0.0004 per delegated account + 0.0002 per game</b>.
+        Everything inside the session (moves, dice, timers, point credits) is free, so a 200-move game costs the same as a 5-move game. Nothing else is charged.</p>
+
+        <div class="ggi-section-title"><h2>What one match really costs</h2></div>
+        <p class="ggi-p">Two delegated accounts, Arc at 20 Gwei, a real compact game. The table shows the rail fee, the Arc gas, and the total you pay.</p>
+        <table class="ggi-table">
+            <thead><tr><th>Games in one session</th><th>Foskaay GGI fee</th><th>Arc gas</th><th>Total you pay</th><th>Per 1,000 games</th><th>Games per 1 USDC</th></tr></thead>
+            <tbody>
+                <tr><td>1 (unbatched)</td><td>0.0014</td><td>0.005539</td><td>0.006939</td><td>6.9390</td><td>144</td></tr>
+                <tr><td>2</td><td>0.0016</td><td>0.006039</td><td>0.007639</td><td>3.8195</td><td>262</td></tr>
+                <tr><td>4</td><td>0.0020</td><td>0.007039</td><td>0.009039</td><td>2.2598</td><td>442</td></tr>
+                <tr><td>8</td><td>0.0028</td><td>0.009039</td><td>0.011839</td><td>1.4799</td><td>676</td></tr>
+                <tr><td>10</td><td>0.0032</td><td>0.010039</td><td>0.013239</td><td>1.3239</td><td>755</td></tr>
+                <tr><td>20</td><td>0.0052</td><td>0.015039</td><td>0.020239</td><td>1.0120</td><td>988</td></tr>
+                <tr><td>22</td><td>0.0056</td><td>0.016039</td><td>0.021639</td><td>0.9836</td><td>1,017</td></tr>
+                <tr><td>25</td><td>0.0062</td><td>0.017539</td><td>0.023739</td><td>0.9496</td><td>1,053</td></tr>
+                <tr><td>50</td><td>0.0112</td><td>0.030039</td><td>0.041239</td><td>0.8248</td><td>1,212</td></tr>
+            </tbody>
+        </table>
+
+        <div class="ggi-section-title"><h2>How to read it</h2></div>
+        <ul class="ggi-list">
+            <li><b>Your players pay nothing, always.</b> There is no player-pay option in the rail at all.</li>
+            <li><b>Batch to drop the per-game cost.</b> One session can cover many matches for the same two delegated accounts; only the per-game part grows, so cost per game keeps falling.</li>
+            <li><b>Gas shrinks at lower Gwei.</b> At 5 Gwei the Arc gas column is about 4x smaller, and total cost crosses under 1 USDC per 1,000 games around a batch of 4.</li>
+            <li><b>A real compact game.</b> The numbers are measured on Arc testnet with a real game, not guessed.</li>
+        </ul>
+
+        <div class="ggi-note">Want to know the exact numbers for <i>your</i> game? I measure real cost on Arc and can help you shape the contracts so the cost stays low. <a href="/hire/" style="color:#f39c12">Hire me</a>, or copy the fee note above and start with the <a href="/docs/#quickstart" style="color:#f39c12">quickstart</a>.</div>
+    </div>
+</main>
+<script src="/global_header.js"></script>
+</body>
+</html>
