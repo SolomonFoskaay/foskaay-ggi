@@ -109,7 +109,13 @@ function ensureModal() {
 }
 function openModal() { ensureModal().style.display = 'flex'; }
 function closeModal() { const m = document.getElementById('ggi-auth-modal'); if (m) m.style.display = 'none'; otpVerification = null; }
-function box() { return document.getElementById('ggi-auth-box'); }
+function box() {
+  // Ensure the modal exists before anything reads/writes it. This was the bug:
+  // openDynamicLogin ran emailStep() (which uses box()) before openModal()
+  // created the modal, so box() was null and the click did nothing.
+  ensureModal();
+  return document.getElementById('ggi-auth-box');
+}
 
 function emailStep() {
   box().innerHTML = '<h2 style="margin:0 0 6px;color:#f39c12">Sign in</h2>'
@@ -161,7 +167,7 @@ async function verifyOtp() {
   }
 }
 
-window.openDynamicLogin = function () { emailStep(); openModal(); };
+window.openDynamicLogin = function () { ensureModal(); openModal(); emailStep(); };
 window.logoutDynamic = async function () {
   try { await logout(); } catch (e) {}
   window.currentUser = null;

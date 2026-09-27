@@ -1,6 +1,6 @@
 {
   "name": "@foskaay/ggi-contracts-sdk",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Solidity interfaces and deployed addresses for Foskaay Gasless Games Infrastructure (Foskaay GGI). Install, point at a network, call four functions.",
   "license": "MIT",
   "type": "module",
