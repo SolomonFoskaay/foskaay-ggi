@@ -96,6 +96,21 @@
     document.getElementById('sol-chip').onclick = function () { copy(readAddr(window.getDynamicSolanaWallet), solEl); };
     document.getElementById('sol-copy').onclick = function (e) { e.stopPropagation(); copy(readAddr(window.getDynamicSolanaWallet), solEl); };
     render();
+
+    var started = Date.now();
+    var timer = setInterval(function () {
+      var evm = readAddr(window.getDynamicEvmWallet);
+      var sol = readAddr(window.getDynamicSolanaWallet);
+      render();
+      if (evm || sol || !(window.currentUser || window.__ggiEmail)) {
+        if (Date.now() - started > 15000 && !(evm || sol)) {
+          clearInterval(timer);
+          if (!evm && !sol) emailEl.textContent = 'Signed in, but no embedded wallet was created yet.';
+        }
+        if (evm || sol) clearInterval(timer);
+      }
+    }, 400);
+
     window.addEventListener('gfg:auth-changed', function () { render(); }, false);
 })();
 </script>

@@ -250,7 +250,8 @@
             var sig = null;
             try {
                 var dg = await relay('demoDigest', { sessionId: SID });
-                if (dg && dg.digest && typeof window.ggiSignDigest === 'function') sig = await window.ggiSignDigest(dg.digest);
+                if (dg && dg.digest && window.GGI_SDK && typeof window.GGI_SDK.signMove === 'function' && window.ggiSessionKey) sig = await window.GGI_SDK.signMove(window.ggiSessionKey, SID, dg.finalHash);
+                else if (dg && dg.digest && typeof window.ggiSignDigest === 'function') sig = await window.ggiSignDigest(dg.digest);
             } catch (e) { /* fall back to the relay signing the user seat */ }
             var r = await relay('demoSettle', { sessionId: SID, sig: sig });
             if (ui().log) ui().log('Settled on-chain: result sealed', r.costUsdc6);
@@ -313,7 +314,18 @@
                 return null;
             }
             USER = evm || (window.currentUser && window.currentUser.evm) || null;
-            var sk = (typeof window.ggiCreateSessionKey === 'function') ? window.ggiCreateSessionKey() : null;
+            // Use the published @foskaay/ggi-sdk the way an outside developer
+            // would (loaded from the npm CDN), so the demo exercises the SDK.
+            var sdk = window.GGI_SDK;
+            if (!sdk && window.FoskaayGGI) {
+                var Klass = window.FoskaayGGI.GgiClient || window.FoskaayGGI.default;
+                if (Klass) { try { sdk = new Klass({ network: 'testnet' }); } catch (e) {} }
+            }
+            window.GGI_SDK = sdk;
+            var sk = null;
+            if (sdk && typeof sdk.createSessionKey === 'function') sk = sdk.createSessionKey();
+            else if (typeof window.ggiCreateSessionKey === 'function') sk = window.ggiCreateSessionKey();
+            window.ggiSessionKey = sk;
             SESSION_KEY = sk ? sk.address : USER;
             var created = await relay('demoCreate', { seatCount: seatCount, userSeat: userSeat, user: USER, sessionKey: SESSION_KEY });
             SID = created.sessionId;

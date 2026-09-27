@@ -53,6 +53,39 @@ function getEvmWallet() {
 window.getDynamicSolanaWallet = getSolanaWallet;
 window.getDynamicEvmWallet = getEvmWallet;
 
+// The email survives a reload so the header initial (first letter before @)
+// keeps working after refresh. The address is not sensitive; store it locally.
+window.__ggiEmail = (function () { try { return localStorage.getItem('ggi_email') || null; } catch (e) { return null; } })();
+window.getDynamicEmail = function () {
+  return (window.currentUser && window.currentUser.email) || window.__ggiEmail || null;
+};
+
+// Dynamic restores the signed-in session in the background after a reload. We
+// poll until the embedded wallets are exposed, then set the user and tell the
+// header and the profile page to re-render (gfg:auth-changed). This is what kept
+// the header "logged out" on every page and left the wallets empty.
+async function restoreSession() {
+  if (!dynamicClient) return;
+  const start = Date.now();
+  let seen = false;
+  while (Date.now() - start < 10000) {
+    const evm = getEvmWallet();
+    const sol = getSolanaWallet();
+    if (evm || sol) {
+      seen = true;
+      break;
+    }
+    await new Promise(r => setTimeout(r, 300));
+  }
+  if (seen) {
+    await ensureSessionKeys();
+    if (!window.currentUser) {
+      window.currentUser = { dynamicId: getEvmWallet() || getSolanaWallet() || null, email: window.__ggiEmail, evm: getEvmWallet(), solana: getSolanaWallet() };
+    }
+  }
+  try { window.dispatchEvent(new CustomEvent('gfg:auth-changed')); } catch (e) {}
+}
+
 async function waitFor(fn, timeoutMs = 10000) {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
@@ -158,6 +191,8 @@ async function verifyOtp() {
     const evm = await waitFor(getEvmWallet);
     await ensureSessionKeys();
     window.currentUser = { dynamicId: evm || getSolanaWallet() || 'user', email: pendingEmail, evm, solana: getSolanaWallet() };
+    try { localStorage.setItem('ggi_email', pendingEmail); } catch (e) {}
+    window.__ggiEmail = pendingEmail;
     closeModal();
     banner('Signed in');
     if (typeof window.refreshAuthHeader === 'function') await window.refreshAuthHeader();
@@ -171,6 +206,8 @@ window.openDynamicLogin = function () { ensureModal(); openModal(); emailStep();
 window.logoutDynamic = async function () {
   try { await logout(); } catch (e) {}
   window.currentUser = null;
+  window.__ggiEmail = null;
+  try { localStorage.removeItem('ggi_email'); } catch (e) {}
   if (typeof window.refreshAuthHeader === 'function') window.refreshAuthHeader();
   try { window.dispatchEvent(new CustomEvent('gfg:auth-changed')); } catch (e) {}
 };
@@ -193,3 +230,4 @@ function banner(msg) {
 
 console.log('Foskaay GGI: Dynamic auth + EVM session key ready');
 try { window.dispatchEvent(new Event('ggi:auth-ready')); } catch (e) {}
+restoreSession();
