@@ -10,20 +10,43 @@
 (function () {
     'use strict';
 
-    var NET = {
-        name: 'Arc Testnet',
-        chainId: 5042002,
-        rpc: 'https://rpc.testnet.arc.io',
-        explorer: 'https://explorer.testnet.arc.io',
-        usdc: '0x3600000000000000000000000000000000000000',
-        relay: '/api/foskaay-ggi-sponsor',
-        contracts: {
-            FoskaayGGI: '0x793785CE66992211B7c60dFCf0318869678D33a4',
-            FoskaayGGIGames: '0x24e38ac2e80958782a8Bc5CD479bbe2e5D81EcDF',
-            FoskaayGGIPlayers: '0x1614ebc72eA1cB3D31975b3976B5B474FAcE3b3C',
-            FoskaayGGILudo: '0xa5040Ece5945a8551499ad1148fc3cD15b165987'
+    var NETS = {
+        testnet: {
+            name: 'Arc Testnet',
+            chainId: 5042002,
+            rpc: 'https://rpc.testnet.arc.io',
+            explorer: 'https://explorer.testnet.arc.io',
+            usdc: '0x3600000000000000000000000000000000000000',
+            relay: '/api/foskaay-ggi-sponsor',
+            contracts: {
+                FoskaayGGI: '0x793785CE66992211B7c60dFCf0318869678D33a4',
+                FoskaayGGIGames: '0x24e38ac2e80958782a8Bc5CD479bbe2e5D81EcDF',
+                FoskaayGGIPlayers: '0x1614ebc72eA1cB3D31975b3976B5B474FAcE3b3C',
+                FoskaayGGILudo: '0xa5040Ece5945a8551499ad1148fc3cD15b165987'
+            }
+        },
+        mainnet: {
+            name: 'Arc Mainnet',
+            chainId: 5042,
+            rpc: 'https://rpc.mainnet.arc.io',
+            explorer: 'https://explorer.arc.io',
+            usdc: '0x3600000000000000000000000000000000000000',
+            relay: '/api/foskaay-ggi-sponsor',
+            contracts: {
+                FoskaayGGI: '0xb406295b4F7E5B513b656122AfFF29AF720E9E23',
+                FoskaayGGIGames: '0xb2d5DfF81B076948f50dA2CcF01887f5ed6Ae2b2',
+                FoskaayGGIPlayers: '0x9425c1d6bA7923D5C804c5e549E08629AbBe3165',
+                FoskaayGGILudo: null
+            }
         }
     };
+    var NET = NETS.testnet;
+
+    // Switch the whole explorer between testnet and mainnet.
+    function setNetwork(name) {
+        if (NETS[name]) NET = NETS[name];
+        try { window.dispatchEvent(new CustomEvent('ggi:net-changed', { detail: name })); } catch (e) {}
+    }
 
     // Event topic0 hashes (keccak of the event signature). Recomputed with
     // `cast keccak "<signature>"`. If an event signature ever changes, recompute.
@@ -78,7 +101,7 @@
     function addrFromWord(hexWord) { return '0x' + hexWord.slice(24); }
     function addrFromTopic(topic) { return '0x' + topic.slice(26); }
     function bytes32FromWord(hexWord) { return '0x' + hexWord; }
-    function numFromWord(hexWord) { return BigInt('0x' + hexWord); }
+    function numFromWord(hexWord) { const h = String(hexWord || '0').replace(/^0x/, ''); return BigInt('0x' + h); }
     function boolFromHex(hex) { return hex && hex !== '0x' && BigInt(hex) !== 0n; }
 
     // Non-indexed Handover data: startHash, seedCommit, players[], sessionKeys[],
@@ -219,6 +242,8 @@
 
     window.GGExplorer = {
         NET: NET,
+        NETS: NETS,
+        setNetwork: setNetwork,
         TOPIC: TOPIC,
         rpc: rpc,
         callView: callView,

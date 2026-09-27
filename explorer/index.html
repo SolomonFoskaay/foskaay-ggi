@@ -55,6 +55,13 @@
             <span class="gx-mono" id="gx-registry"></span>. There is no backend and no server in between:
             what you see is what the chain says.
         </p>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+            <select id="gx-network" style="background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.14);border-radius:10px;color:#fff;padding:8px 12px;font-size:0.82rem;">
+                <option value="mainnet" selected>Arc Mainnet (live)</option>
+                <option value="testnet">Arc Testnet (dev)</option>
+            </select>
+            <span class="gx-pill ok" id="gx-netstate" style="font-size:0.7rem;">MAINNET</span>
+        </div>
         <div class="gx-tabs">
             <div class="gx-tab active" data-tab="session">Session</div>
             <div class="gx-tab" data-tab="midchain">Midchain</div>
@@ -213,7 +220,32 @@
 
 
     var X = window.GGExplorer;
-    document.getElementById('gx-registry').textContent = X.NET.contracts.FoskaayGGI;
+    function applyNet() {
+        document.getElementById('gx-registry').textContent = X.NET.contracts.FoskaayGGI;
+        var gamesEl = document.getElementById('gx-m-games');
+        var playersEl = document.getElementById('gx-m-players');
+        if (gamesEl) gamesEl.textContent = X.NET.contracts.FoskaayGGIGames;
+        if (playersEl) playersEl.textContent = X.NET.contracts.FoskaayGGIPlayers;
+        document.getElementById('gx-netstate').textContent = X.NET.name.toUpperCase().replace('ARC ', '');
+        document.getElementById('gx-netstate').className = 'gx-pill ok';
+        // Re-read the core fee rows for the selected network.
+        if (typeof X.callView === 'function' && X.NET.contracts.FoskaayGGI) {
+            X.callView(X.NET.contracts.FoskaayGGI, 'feeBase()').then(function (hex) { var el = document.getElementById('gx-fv-fee'); if (el) el.textContent = usdc18(BigInt(hex)); }).catch(function () {});
+            X.callView(X.NET.contracts.FoskaayGGI, 'feePerAccount()').then(function (hex) { var el = document.getElementById('gx-fv-acct'); if (el) el.textContent = usdc18(BigInt(hex)); }).catch(function () {});
+            X.callView(X.NET.contracts.FoskaayGGI, 'feePerGame()').then(function (hex) { var el = document.getElementById('gx-fv-game'); if (el) el.textContent = usdc18(BigInt(hex)); }).catch(function () {});
+            X.callView(X.NET.contracts.FoskaayGGI, 'destination()').then(function (hex) {
+                var el = document.getElementById('gx-fv-dest');
+                if (el) el.textContent = hex && hex !== '0x' ? ('0x' + hex.slice(26)) : '-';
+            }).catch(function () {});
+        }
+    }
+    document.getElementById('gx-network').addEventListener('change', function () {
+        X.setNetwork(this.value);
+        applyNet();
+    });
+    // Explorer defaults to mainnet (live).
+    X.setNetwork('mainnet');
+    applyNet();
 
     function short(a) { return a ? a.slice(0, 10) + '…' + a.slice(-8) : '-'; }
     function usdc6(n) { return (Number(n) / 1e6).toFixed(6) + ' USDC'; }

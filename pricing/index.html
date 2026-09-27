@@ -28,7 +28,8 @@
         <div class="ggi-section-title"><h2>The fee</h2></div>
         <p class="ggi-p">A small fee per session, in USDC, charged once at connect:
         <b>0.0004 base + 0.0004 per delegated account + 0.0002 per game</b>.
-        Everything inside the session (moves, dice, timers, point credits) is free, so a 200-move game costs the same as a 5-move game. Nothing else is charged.</p>
+        Everything inside the session (moves, dice, timers, point credits) is free, so a 200-move game costs the same as a 5-move game. Nothing else is charged.
+        The contracts are <b>live on Arc mainnet</b>; the table below is measured on testnet, which is your real cost preview for mainnet.</p>
 
         <div class="ggi-section-title"><h2>What one match really costs</h2></div>
         <p class="ggi-p">Two delegated accounts, Arc at 20 Gwei, a real compact game. The table shows the rail fee, the Arc gas, and the total you pay.</p>
@@ -51,6 +52,7 @@
         <ul class="ggi-list">
             <li><b>Your players pay nothing, always.</b> There is no player-pay option in the rail at all.</li>
             <li><b>Batch to drop the per-game cost.</b> One session can cover many matches for the same two delegated accounts; only the per-game part grows, so cost per game keeps falling.</li>
+            <li><b>Provable randomness is included, free.</b> Dice, cards and lootboxes derive from the committed seed through the core's pure random (seed, counter); no extra contract and no extra fee.</li>
             <li><b>Gas shrinks at lower Gwei.</b> At 5 Gwei the Arc gas column is about 4x smaller, and total cost crosses under 1 USDC per 1,000 games around a batch of 4.</li>
             <li><b>A real compact game.</b> The numbers are measured on Arc testnet with a real game, not guessed.</li>
         </ul>

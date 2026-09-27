@@ -1,6 +1,6 @@
 {
   "name": "@foskaay/ggi-sdk",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Add gasless play to any on-chain game on Arc. Open a session, act for free, settle once. Four calls, session-key signing, read helpers, runtime fee read.",
   "license": "MIT",
   "type": "module",
@@ -29,7 +29,7 @@
     "viem": "^2.0.0"
   },
   "dependencies": {
-    "@foskaay/ggi-contracts-sdk": "^0.2.1"
+    "@foskaay/ggi-contracts-sdk": "^0.2.2"
   },
   "publishConfig": {
     "access": "public"
