@@ -254,11 +254,20 @@
                 else if (dg && dg.digest && typeof window.ggiSignDigest === 'function') sig = await window.ggiSignDigest(dg.digest);
             } catch (e) { /* fall back to the relay signing the user seat */ }
             var r = await relay('demoSettle', { sessionId: SID, sig: sig });
-            if (ui().log) ui().log('Settled on-chain: result sealed', r.costUsdc6);
+            if (ui().log) ui().log('GREEN: match committed on-chain, points credited', r.costUsdc6);
             if (ui().gas) ui().gas(r.costUsdc6, 'sealed');
             if (ui().tx) ui().tx(r.tx, 'settled');
-            var won = VIEW.order && VIEW.order[0] === USERSEAT;
-            setPrompt(won ? 'Sealed. You won the crown.' : 'Sealed. The match is over.');
+            var winnerColor = null;
+            if (VIEW && VIEW.order && VIEW.order.length) {
+                var w = VIEW.order[0];
+                winnerColor = COLOR_OF[w] != null ? COLOR_OF[w] : null;
+            }
+            var won = winnerColor === COLOR_OF[USERSEAT];
+            var baseMsg = winnerColor
+                ? (winnerColor.toUpperCase() + ': ' + (won ? 'you win the crown' : 'wins the crown, first place'))
+                : 'match over';
+            setPrompt('Sealed on-chain. ' + baseMsg + '.');
+            if (ui().log) ui().log((winnerColor ? winnerColor.toUpperCase() + ': ' : '') + 'on-chain record sealed', 0);
             if (ui().onSettled) ui().onSettled(won, r.tx);
         } catch (e) {
             setPrompt('Settle failed: ' + e.message);

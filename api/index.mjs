@@ -176,7 +176,7 @@ async function step(sess, kind, seat, tokenIndex, value, seeds) {
   sess.state = newState;
   sess.lastHash = newHash;
   if (!sess.startState) { sess.startState = newState; }
-  sess.moves.push({ kind, seat, tokenIndex, value, seeds: seeds || [], prevHash, newHash, sig });
+  sess.moves.push({ kind, seat, seatLabel: ['green', 'yellow', 'blue', 'red'][seat] || ('seat' + seat), tokenIndex, value, seeds: seeds || [], prevHash, newHash, sig });
   return viewOf(sess);
 }
 
@@ -315,12 +315,24 @@ async function doDemoSettle(body) {
     if (s === sess.userSeat && body.sig) sigs.push(body.sig);
     else sigs.push(await account.sign({ hash: digest }));
   }
-  const rCore = await send(wallet, pub, {
-    address: ADDR.FoskaayGGI, abi: coreAbi, functionName: 'settle',
-    args: [sess.sessionId, finalHash, sess.seed, sess.players, sess.sessionKeys, sigs, signers],
-    account,
-  });
-  return { tx: rGame.hash, coreTx: rCore.hash, finalHash, costUsdc6: (BigInt(rGame.costUsdc6) + BigInt(rCore.costUsdc6)).toString() };
+  // The match commit (Games.settle) is the important result: it records the game
+  // and credits the player. The core session-close is a bonus but must never
+  // hard-fail the demo (that is what froze a finished 2P match). Report either way.
+  let coreTx = null;
+  let coreSettleError = null;
+  let coreCost = 0n;
+  try {
+    const rCore = await send(wallet, pub, {
+      address: ADDR.FoskaayGGI, abi: coreAbi, functionName: 'settle',
+      args: [sess.sessionId, finalHash, sess.seed, sess.players, sess.sessionKeys, sigs, signers],
+      account,
+    });
+    coreTx = rCore.hash;
+    coreCost = BigInt(rCore.costUsdc6);
+  } catch (e) {
+    coreSettleError = (e && (e.shortMessage || e.message)) || String(e);
+  }
+  return { tx: rGame.hash, coreTx, finalHash, costUsdc6: (BigInt(rGame.costUsdc6) + coreCost).toString(), coreSettleError };
 }
 
 export default async function handler(req, res) {

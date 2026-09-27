@@ -74,7 +74,6 @@
       + '  <a class="ggi-item" href="/" ' + act('/') + '>Home</a>'
       + '  <a class="ggi-item" href="/demos/">Demos</a>'
       + '  <a class="ggi-item sub" href="/demos/board/ludo/">Ludo demo</a>'
-      + '  <a class="ggi-item sub" href="/demos/board/ludo/">Ludo demo</a>'
       + '  <a class="ggi-item" href="/docs/" ' + act('/docs') + '>Docs</a>'
       + '  <a class="ggi-item" href="/explorer/" ' + act('/explorer') + '>Explorer</a>'
       + '  <a class="ggi-item" href="/about/" ' + act('/about') + '>About</a>'
@@ -131,32 +130,24 @@
       var sol = window.getDynamicSolanaWallet && window.getDynamicSolanaWallet();
       var email = window.getDynamicEmail && window.getDynamicEmail();
       var signed = !!(window.currentUser || evm);
-      if (!signed) {
-        if (btn) { btn.textContent = 'Sign in'; }
-        if (acct) {
-          acct.innerHTML = '<div style="color:#8f8fa0;font-size:.82rem;line-height:1.5">You are not signed in. Use the account button in the header to sign in with your email.</div>';
-        }
-        return;
-      }
-      var initial = (email && email[0]) ? email[0].toUpperCase() : (evm ? evm.slice(2, 3).toUpperCase() : 'W');
-      var label = short(evm) || 'Account';
-      if (btn) btn.innerHTML = '<span class="ggi-avatar">' + initial + '</span>' + label;
+      // Web2 flow: the global header only shows Sign in / Sign out, never a
+      // wallet, so a demo recording looks like an email login.
+      if (btn) btn.textContent = signed ? 'Sign out' : 'Sign in';
       if (acct) {
-        acct.innerHTML = '<div class="ggi-acct-line" style="margin-bottom:10px">'
-          + '<span class="ggi-avatar" style="width:38px;height:38px;font-size:1rem">' + initial + '</span>'
-          + '<div><div class="ggi-acct-email">' + (email || 'Signed in with a wallet') + '</div>'
-          + '<div class="ggi-acct-wallets">' + (evm ? 'EVM ' + short(evm) : '') + (evm && sol ? ' &middot; ' : '') + (sol ? 'SOL ' + short(sol) : '') + '</div></div>'
-          + '</div>'
-          + '<a class="ggi-item" href="/profile/" style="padding:10px 12px">My wallets and profile</a>'
-          + '<button class="ggi-btn out" id="ggi-signout">Sign out</button>';
-        var so = document.getElementById('ggi-signout');
-        if (so) so.onclick = function (e) { e.preventDefault(); confirmSignout(); };
-      }
-      var drawerAcct = document.getElementById('ggi-draw-acct');
-      if (drawerAcct) {
-        var avatar = drawerAcct.querySelector('.ggi-avatar');
-        drawerAcct.querySelectorAll('.ggi-item').forEach(function () {});
-        if (avatar) avatar.onclick = function () { window.location.href = '/profile/'; };
+        if (!signed) {
+          acct.innerHTML = '<div style="color:#8f8fa0;font-size:.82rem;line-height:1.5">You are not signed in. Use the account button in the header to sign in with your email.</div>';
+        } else {
+          var initial = (email && email[0]) ? email[0].toUpperCase() : 'W';
+          acct.innerHTML = '<div class="ggi-acct-line" style="margin-bottom:10px">'
+            + '<span class="ggi-avatar" style="width:38px;height:38px;font-size:1rem">' + initial + '</span>'
+            + '<div><div class="ggi-acct-email">' + (email || 'Signed in') + '</div>'
+            + '<div class="ggi-acct-wallets">' + (evm ? 'EVM ' + short(evm) : '') + (evm && sol ? ' &middot; ' : '') + (sol ? 'SOL ' + short(sol) : '') + '</div></div>'
+            + '</div>'
+            + '<a class="ggi-item" href="/profile/" style="padding:10px 12px">My wallets and profile</a>'
+            + '<button class="ggi-btn out" id="ggi-signout">Sign out</button>';
+          var so = document.getElementById('ggi-signout');
+          if (so) so.onclick = function (e) { e.preventDefault(); confirmSignout(); };
+        }
       }
     }
 
@@ -179,7 +170,7 @@
     }
     document.getElementById('ggi-auth-btn').onclick = function () {
       var evm = window.getDynamicEvmWallet && window.getDynamicEvmWallet();
-      if (window.currentUser || evm) window.location.href = '/profile/';
+      if (window.currentUser || evm) confirmSignout();
       else openLoginWhenReady();
     };
 
