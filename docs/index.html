@@ -41,7 +41,7 @@
         .ggi-tiny { font-size: 0.78rem; color: #999; line-height: 1.6; margin-top: 10px; }
         .ggi-toc { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 0; }
         .ggi-toc a { font-size: 0.8rem; text-decoration: none; color: #f39c12; background: rgba(243,156,18,0.08); border: 1px solid rgba(243,156,18,0.25); border-radius: 999px; padding: 5px 11px; }
-    .docs-lnav { position: fixed; left: 14px; top: 110px; width: 190px; max-height: calc(100vh - 140px); overflow-y: auto; display: none; flex-direction: column; gap: 2px; background: #101016; border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 10px; z-index: 5; }
+    .docs-lnav { position: fixed; left: 14px; top: 110px; width: 190px; max-height: calc(100vh - 140px); overflow-y: auto; display: none; flex-direction: column; gap: 2px; background: rgba(15,15,19,0.72); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.12); border-radius: 14px; padding: 10px; z-index: 5; }
         .docs-lnav a { color: #b9b9c6; text-decoration: none; font-size: 0.82rem; padding: 7px 10px; border-radius: 8px; }
         .docs-lnav a:hover { color: #fff; background: rgba(255,255,255,0.06); }
         .docs-lnav .docs-lnav-h { color: #f39c12; font-weight: 800; font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 4px 10px 8px; }
@@ -80,21 +80,7 @@
             popup. The game pays a small fixed fee per session instead of a fee per action, so an
             on-chain game can be as cheap to run as a normal web2 backend.
         </p>
-        <div class="ggi-toc">
-            <a href="#why">Why use it</a>
-            <a href="#how">How it works</a>
-            <a href="#unopinionated">Built to fit your game</a>
-            <a href="#quickstart">Quickstart</a>
-            <a href="#get-started">Get started</a>
-            <a href="#demos">Demos</a>
-            <a href="#usecases">Use cases</a>
-            <a href="#contracts">Contracts</a>
-            <a href="/explorer/">Explorer</a>
-            <a href="#fees">Fees</a>
-            <a href="#hardware">What you run</a>
-            <a href="#faq">FAQ and fixes</a>
-        </div>
-    </section>
+        </section>
 
     <section class="ggi-card" id="why">
         <h2 class="ggi-h2">Why use it</h2>
@@ -377,21 +363,30 @@
         <div class="ggi-code"><code>// Pseudo-code: the shape of an integration
 const ggi = new GgiClient({ network: 'testnet', walletClient });
 
-// 1. connect a session for this match (one transaction; the fee is paid here)
-await ggi.handover({
+// 1. connect a session and delegate your game + player accounts
+//    (one transaction; the 3-part fee is read from the chain and paid here)
+const key = ggi.createSessionKey();
+await ggi.handoverWithAccounts({
   sessionId,
   gameLogic: myGameAddress,
   startHash: hashOf(myStartState),
   seedCommit: optionalSeedCommit,
   players: [p0, p1],
-  sessionKeys: [k0, k1],
+  sessionKeys: [key0, key1],
   randomCount: 1,
+  accounts: [myGameAddress, myPlayerAddress], // your delegated accounts
+  games: 1,
 });
 
-// 2. play: every move is free, signed with a session key
-const sig = await ggi.signMove(key, sessionId, finalHash);
+// 2. play for free: run your pure rules via eth_call, dice free via randomN
+const state = await ggi.applyMove(stateBytes, kind, seat, token, value, seeds);
+const finalHash = await ggi.hashState(state);
 
-// 3. settle once at the end (one transaction)
+// 3. commit the match + credit the players (one transaction)
+const sig = await ggi.signMove(key, sessionId, finalHash);
+await ggi.settleGame(sessionId, [gameTuple], seatPlayers, gameTag);
+
+// 4. close the session on the core (players sign the final hash)
 await ggi.settle({
   sessionId, finalHash, seedReveal,
   sigs: [sig0, sig1], signers: [p0, p1],
@@ -564,8 +559,8 @@ const ggi = new GgiClient({
 }</code></div>
 
         <div class="ggi-h3">4. Connect, sign, settle</div>
-        <div class="ggi-code"><code>// CONNECT once per session (one transaction; the fee is paid here)
-await ggi.handover({
+        <div class="ggi-code"><code>// CONNECT once per session and delegate your game + player accounts
+await ggi.handoverWithAccounts({
   sessionId,
   gameLogic: myGameAddress,
   startHash: hashOf(myStartState),
@@ -573,12 +568,17 @@ await ggi.handover({
   players: [p0, p1],
   sessionKeys: [k0, k1],
   randomCount: 1,
+  accounts: [myGameAddress, myPlayerAddress],
+  games: 1,
 });
 
 // PLAY for free: run your pure rules, hash the state, sign it silently
+const state = await ggi.applyMove(stateBytes, kind, seat, token, value, seeds);
+const finalHash = await ggi.hashState(state);
 const sig = await ggi.signMove(key, sessionId, finalHash);
 
-// SETTLE once at the end (one transaction; every player signs)
+// SETTLE: commit the match and credit the player, then close the session
+await ggi.settleGame(sessionId, [gameTuple], seatPlayers, gameTag);
 await ggi.settle({ sessionId, finalHash, seedReveal, sigs, signers });</code></div>
 
         <div class="ggi-callout good">
@@ -633,7 +633,7 @@ await ggi.settle({ sessionId, finalHash, seedReveal, sigs, signers });</code></d
                 <tr><td><span class="ggi-mono">Game</span> component (the shared board, one account)</td><td>The game's OWN contract storage (e.g. <span class="ggi-mono">Game</span> struct in a Solidity contract). Not rail core.</td><td>Game builds it</td></tr>
                 <tr><td><span class="ggi-mono">GamePlayer</span> (seat inside the board)</td><td>A seat struct inside the game contract (authority + score).</td><td>Game builds it</td></tr>
                 <tr><td>Systems <span class="ggi-mono">join / start / command / tick / finish</span></td><td>Solidity functions on the game contract with the SAME rules, validated on-chain.</td><td>Game builds it</td></tr>
-                <tr><td>Delegate account to the ER</td><td>Connect a session: <span class="ggi-mono">ggi.handover(...)</span>. The connect event carries the game link, so no separate link transaction is needed.</td><td>Rail: present</td></tr>
+                <tr><td>Delegate account to the ER</td><td>Connect a session: <span class="ggi-mono">ggi.handoverWithAccounts(...)</span>. The connect event carries the game link, so no separate link transaction is needed.</td><td>Rail: present</td></tr>
                 <tr><td>Free execute inside the ER</td><td>Moves run off the base chain through the Foskaay GGI Midchain: signed by the session key and tied by a hash chain, free. Only connect and settle are transactions.</td><td>Rail: present</td></tr>
                 <tr><td>Authorise a signer (delegation authority)</td><td>The players sign the final hash; the registry verifies every signature (OpenZeppelin <span class="ggi-mono">ECDSA.recover</span>) before it settles.</td><td>Rail: present and proven</td></tr>
                 <tr><td>ERC VRF</td><td>Free pure <span class="ggi-mono">random</span> / <span class="ggi-mono">randomN</span> on the registry (eth_call), so dice and cards cost nothing extra.</td><td>Rail: present</td></tr>
@@ -681,7 +681,7 @@ await ggi.settle({ sessionId, finalHash, seedReveal, sigs, signers });</code></d
             <thead><tr><th>Step</th><th>MagicBlock (their code)</th><th>Foskaay GGI (our port)</th></tr></thead>
             <tbody>
                 <tr><td>Create the board</td><td><span class="ggi-mono">AddEntity</span> + <span class="ggi-mono">InitializeComponent(Game)</span> with <span class="ggi-mono">status=Generate</span></td><td>The game's own contract holds its rules. In the free path those rules are pure functions, run off-chain.</td></tr>
-                <tr><td>Make it live</td><td><span class="ggi-mono">createDelegateInstruction</span> (delegate the component to the ER)</td><td>Sponsor connects a session: <span class="ggi-mono">ggi.handover({...})</span>. The fee is paid here and the connect event carries the game link, so no separate link transaction.</td></tr>
+                <tr><td>Make it live</td><td><span class="ggi-mono">createDelegateInstruction</span> (delegate the component to the ER)</td><td>Sponsor connects a session: <span class="ggi-mono">ggi.handoverWithAccounts({...})</span>. The fee is paid here and the connect event carries the game link, so no separate link transaction.</td></tr>
                 <tr><td>Generate the map</td><td>system <span class="ggi-mono">generate</span></td><td>The game's own rules, run free through the Foskaay GGI Midchain (eth_call).</td></tr>
                 <tr><td>Lobby, Join, Ready, Start</td><td>systems <span class="ggi-mono">join</span> / <span class="ggi-mono">start</span>, <span class="ggi-mono">players[i].ready</span></td><td>Part of the game's own rules, and part of the signed move log. No per-step rail call.</td></tr>
                 <tr><td>The move</td><td>system <span class="ggi-mono">command</span> (adjacency, ownership, strength, invade math)</td><td>The game's pure <span class="ggi-mono">applyMove</span> run via eth_call; each move is signed with the session key and tied by a hash chain. Free for the player and the sponsor.</td></tr>

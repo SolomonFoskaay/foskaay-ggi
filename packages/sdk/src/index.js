@@ -52,6 +52,11 @@ const registryAbi = parseAbi([
 const gamesAbi = parseAbi([
   'function settle(bytes32 sessionId, (uint8 turn, uint8 seats, uint32 step, bytes board, bytes32 boardHash, bool over)[] list, address[] seatPlayers, bytes32 gameTag) returns (uint256)',
   'function gameCount(bytes32 sessionId) view returns (uint256)',
+  'function getInitialState(uint8 seatCount, uint8 userSeat) pure returns (bytes)',
+  'function applyMove(bytes state, uint8 kind, uint8 seat, uint8 tokenIndex, uint8 value, bytes32[] seeds) pure returns (bytes)',
+  'function hashState(bytes state) pure returns (bytes32)',
+  'function isTerminal(bytes state) pure returns (bool finished, uint8 winner)',
+  'function placePoints(uint8 place, uint8 seatCount) pure returns (uint16)',
 ]);
 
 const playersAbi = parseAbi([
@@ -310,6 +315,48 @@ export class GgiClient {
   async gameCount(sessionId) {
     if (!this.addresses.Games) return 0n;
     return this.publicClient.readContract({ address: this.addresses.Games, abi: gamesAbi, functionName: 'gameCount', args: [sessionId] });
+  }
+
+  // ---------------------------------------------------------------- game rules
+  // The game's pure rules run free through the Foskaay GGI Midchain (eth_call).
+  // A dev calls these instead of writing their own Solidity UI logic.
+
+  async getInitialState(seatCount, userSeat) {
+    if (!this.addresses.Games) throw new Error('Foskaay GGI: no game contract on ' + this.network);
+    return this.publicClient.readContract({ address: this.addresses.Games, abi: gamesAbi, functionName: 'getInitialState', args: [seatCount, userSeat] });
+  }
+
+  async applyMove(state, kind, seat, tokenIndex, value, seeds) {
+    if (!this.addresses.Games) throw new Error('Foskaay GGI: no game contract on ' + this.network);
+    return this.publicClient.readContract({ address: this.addresses.Games, abi: gamesAbi, functionName: 'applyMove', args: [state, kind, seat, tokenIndex, value, seeds || []] });
+  }
+
+  async hashState(state) {
+    if (!this.addresses.Games) throw new Error('Foskaay GGI: no game contract on ' + this.network);
+    return this.publicClient.readContract({ address: this.addresses.Games, abi: gamesAbi, functionName: 'hashState', args: [state] });
+  }
+
+  async isTerminal(state) {
+    if (!this.addresses.Games) throw new Error('Foskaay GGI: no game contract on ' + this.network);
+    return this.publicClient.readContract({ address: this.addresses.Games, abi: gamesAbi, functionName: 'isTerminal', args: [state] });
+  }
+
+  // ------------------------------------------------------------- game settle
+
+  /// Commit N games in ONE transaction and credit the players in the same step.
+  /// `games` is an array of { turn, seats, step, board (hex bytes), boardHash,
+  /// over }. `seatPlayers` maps seat -> player; `gameTag` e.g. 'ludo' as bytes32.
+  /// Only the game owner (your sponsor) may call this.
+  async settleGame(sessionId, games, seatPlayers, gameTag) {
+    this.requireWallet();
+    if (!this.addresses.Games) throw new Error('Foskaay GGI: no game contract on ' + this.network);
+    return this.walletClient.writeContract({
+      address: this.addresses.Games,
+      abi: gamesAbi,
+      functionName: 'settle',
+      args: [sessionId, games, seatPlayers, gameTag],
+      account: this.walletClient.account,
+    });
   }
 }
 

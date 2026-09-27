@@ -186,3 +186,4 @@ function banner(msg) {
 }
 
 console.log('Foskaay GGI: Dynamic auth + EVM session key ready');
+try { window.dispatchEvent(new Event('ggi:auth-ready')); } catch (e) {}
