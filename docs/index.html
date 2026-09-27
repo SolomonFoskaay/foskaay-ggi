@@ -376,12 +376,14 @@ await ggi.settle({
         <table class="ggi-table">
             <thead><tr><th>Contract</th><th>Address</th></tr></thead>
             <tbody>
-                <tr><td>FoskaayGGI</td><td class="ggi-mono">Not deployed yet (testnet first)</td></tr>
+                <tr><td>FoskaayGGI</td><td class="ggi-mono">0xb406295b4F7E5B513b656122AfFF29AF720E9E23</td></tr>
+                <tr><td>FoskaayGGIGames</td><td class="ggi-mono">0xb2d5DfF81B076948f50dA2CcF01887f5ed6Ae2b2</td></tr>
+                <tr><td>FoskaayGGIPlayers</td><td class="ggi-mono">0x9425c1d6bA7923D5C804c5e549E08629AbBe3165</td></tr>
             </tbody>
         </table>
         <p class="ggi-tiny">
-            Mainnet addresses will appear here, in the same format, once deployment is done. Nothing in
-            the SDK hardcodes these, so switching networks is one setting.
+            Deployed and live on Arc mainnet. The SDK defaults to mainnet and reads the addresses and the
+            fee from the chain at runtime, never hardcoded. Testnet remains for development.
         </p>
     </section>
 

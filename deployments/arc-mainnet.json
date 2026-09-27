@@ -1,0 +1,42 @@
+{
+  "network": "Arc Mainnet",
+  "chainId": 5042,
+  "rpc": "https://rpc.mainnet.arc.io",
+  "explorer": "https://explorer.arc.io",
+  "usdc": "0x3600000000000000000000000000000000000000",
+  "deployedAt": "2026-09-27T00:00:00.000Z",
+  "deployer": "0xAd0A4348C7202E44e96c3FAE1cBB0B645dD86EB4",
+  "contracts": {
+    "FoskaayGGI": "0xb406295b4F7E5B513b656122AfFF29AF720E9E23",
+    "FoskaayGGIGames": "0xb2d5DfF81B076948f50dA2CcF01887f5ed6Ae2b2",
+    "FoskaayGGIPlayers": "0x9425c1d6bA7923D5C804c5e549E08629AbBe3165"
+  },
+  "implementations": {
+    "FoskaayGGI": "0xC0d3c82994e31d8C97A589aCCd480B2Cf36311eb",
+    "FoskaayGGIGames": "0xd013592aEFBf018695A4c402aBa664EB13719C69",
+    "FoskaayGGIPlayers": "0x7669a25DBF92C271F87657C16286992ad95Cd94E"
+  },
+  "upgradeable": true,
+  "pattern": "UUPS proxy (ERC1967). Proxy addresses are permanent.",
+  "fees": {
+    "base": "400000000000000",
+    "perAccount": "400000000000000",
+    "perGame": "200000000000000",
+    "note": "Native USDC wei (18 decimals). Charged once at connect; only per-game grows with batching."
+  },
+  "cost": {
+    "totalTxGas": 5379205,
+    "costUsdc6": "0.107585",
+    "walletBalanceAfterDeployUsdc6": "0.393415"
+  },
+  "txs": {
+    "coreImpl": "0x33fa6fdea8da503b829ed4e92bc70d50bf17ea2b1740984cd6d074335af7eb45",
+    "coreProxy": "0x4ad021439ff815429c7059f9d2554907b6f07b8d26921605bb4aa63ffd088e34",
+    "playersImpl": "0xebe653bf5863a9b4cfe5802b55f945cb8f14d5439cbdcf5328025a219d8ec6ba",
+    "playersProxy": "0xfffc34a06ef37fae83cb5d29f77227876cd7e6cef258d153c47dd2e1e2b33739",
+    "gamesImpl": "0xbdf1db37da121c3a897e299774a161d9fed2c03946b8452559f946f67f3c7d48",
+    "gamesProxy": "0x776f6c925973a5dc618aec9cf6d1bf3e1489b4f85db7f0cc2734bc69431b2905",
+    "wireSetGame": "0xc44a25b6819282fc45feb991c27ef175311927d1bb6cbab7920998a0cd9ab9ab"
+  },
+  "note": "Mainnet launch deploy. Same wire as testnet: players.game = games, games.players = players. Core version 2, game/player version 1. Single-owner upgrade authority for launch (game-agnostic, non-value core); a multisig/timelock is added after real usage."
+}

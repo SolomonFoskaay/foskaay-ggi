@@ -31,11 +31,17 @@
     "usdcDecimalsNative": 18,
     "usdcDecimalsErc20": 6,
     "contracts": {
-      "FoskaayGGI": null,
-      "FoskaayGGIGames": null,
-      "FoskaayGGIPlayers": null
+      "FoskaayGGI": "0xb406295b4F7E5B513b656122AfFF29AF720E9E23",
+      "FoskaayGGIGames": "0xb2d5DfF81B076948f50dA2CcF01887f5ed6Ae2b2",
+      "FoskaayGGIPlayers": "0x9425c1d6bA7923D5C804c5e549E08629AbBe3165",
+      "FoskaayGGILudo": null
     },
-    "deployedAt": null,
-    "note": "Not deployed yet. Testnet first. Addresses appear here in the same format once deployed."
+    "feeBase": "400000000000000",
+    "feePerAccount": "400000000000000",
+    "feePerGame": "200000000000000",
+    "deployedAt": "2026-09-27",
+    "upgradeable": true,
+    "pattern": "UUPS proxies (ERC1967). These addresses are permanent: an upgrade swaps the logic behind them and never moves the address or strands data.",
+    "note": "Deployed. Live on Arc mainnet."
   }
 }

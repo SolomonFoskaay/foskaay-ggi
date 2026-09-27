@@ -28,6 +28,7 @@
         <div class="ggi-section-title"><h2>Why this exists</h2></div>
         <p class="ggi-p">On Solana, an ephemeral rollup can take your game accounts off the base chain, run everything for free inside, and commit the result back. That is a huge unlock for games, because the player never sees gas. Arc is an EVM chain with USDC as its gas token, and it has no such rollup. So I built the same effect in a simpler way, and named it the Foskaay GGI Midchain.</p>
         <p class="ggi-p">Inside a session, every move, dice roll, timer and point credit is a signed message run through your own pure rules, off the base chain. Nothing you do inside costs anything. Only two moments are real Arc transactions: the connect and the settle. That is why a 200-move game costs the same as a 5-move game, and why the player never sees a wallet popup or a gas top-up.</p>
+        <p class="ggi-p"><b>Provable randomness is part of the core, at no extra cost.</b> Your game commits a seed at connect, every roll, card draw or lootbox is derived from that seed through your own rules, and the seed is revealed at settle. Any player can replay it in the Explorer and check it, so dice, cards and lootboxes are fair by default. It is live on Arc mainnet now.</p>
 
         <div class="ggi-section-title"><h2>The shape I recommend</h2></div>
         <p class="ggi-p">Two accounts, however many games you run:</p>

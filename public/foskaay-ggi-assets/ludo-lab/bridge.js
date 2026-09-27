@@ -250,8 +250,11 @@
             var sig = null;
             try {
                 var dg = await relay('demoDigest', { sessionId: SID });
-                if (dg && dg.digest && window.GGI_SDK && typeof window.GGI_SDK.signMove === 'function' && window.ggiSessionKey) sig = await window.GGI_SDK.signMove(window.ggiSessionKey, SID, dg.finalHash);
-                else if (dg && dg.digest && typeof window.ggiSignDigest === 'function') sig = await window.ggiSignDigest(dg.digest);
+                // Sign the RELAY's digest (the relay knows the active network) so
+                // mainnet and testnet signatures always agree. ggiSignDigest signs
+                // with the session key created at start.
+                if (dg && dg.digest && typeof window.ggiSignDigest === 'function') sig = await window.ggiSignDigest(dg.digest);
+                else if (dg && dg.digest && window.GGI_SDK && typeof window.GGI_SDK.signMove === 'function' && window.ggiSessionKey) sig = await window.GGI_SDK.signMove(window.ggiSessionKey, SID, dg.finalHash);
             } catch (e) { /* fall back to the relay signing the user seat */ }
             var r = await relay('demoSettle', { sessionId: SID, sig: sig });
             if (ui().log) ui().log('GREEN: match committed on-chain, points credited', r.costUsdc6);
@@ -328,7 +331,7 @@
             var sdk = window.GGI_SDK;
             if (!sdk && window.FoskaayGGI) {
                 var Klass = window.FoskaayGGI.GgiClient || window.FoskaayGGI.default;
-                if (Klass) { try { sdk = new Klass({ network: 'testnet' }); } catch (e) {} }
+                if (Klass) { try { sdk = new Klass({ network: window.GGI_NETWORK || 'mainnet' }); } catch (e) {} }
             }
             window.GGI_SDK = sdk;
             var sk = null;

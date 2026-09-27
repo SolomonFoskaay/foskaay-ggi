@@ -24,22 +24,25 @@ import {
 } from 'viem';
 import * as evmKeys from 'viem/accounts';
 // NON-SECRET single source of truth for the public addresses + Arc facts. Edit
-// the file, never Vercel env, when an address changes.
-import { ADDRESSES as GGI_ADDR, ARC as GGI_ARC } from '../deployments/addresses.mjs';
+// the file, never Vercel env, when an address changes. Default network is
+// mainnet now that it is deployed; set GFG_GGI_NETWORK=testnet to run testnet.
+import { NETWORKS as GGI_NETS } from '../deployments/addresses.mjs';
 
 const accountFor = evmKeys['private' + 'KeyToAccount'];
 
-const RPC = process.env.GFG_Arc_RPC || GGI_ARC.rpc; // public RPC default; env only for a private RPC
+const NET_NAME = process.env.GFG_GGI_NETWORK || 'mainnet';
+const NETWORK = GGI_NETS[NET_NAME] || GGI_NETS.testnet;
+const RPC = process.env.GFG_Arc_RPC || NETWORK.rpc; // env override only for a private RPC
 const SPONSOR_KEY = process.env.GFG_Arc_Gasless_Sponsor_Key || '';
-const CHAIN_ID = GGI_ARC.chainId;
+const CHAIN_ID = NETWORK.chainId;
 
 // The deployed Foskaay GGI addresses come from the single non-secret source
 // (foskaay-ggi/deployments/addresses.mjs), never hardcoded here.
 const ADDR = {
-  FoskaayGGI: GGI_ADDR.FoskaayGGI,
-  FoskaayGGIGames: GGI_ADDR.FoskaayGGIGames,
-  FoskaayGGIPlayers: GGI_ADDR.FoskaayGGIPlayers,
-  FoskaayGGILudo: GGI_ADDR.FoskaayGGILudo,
+  FoskaayGGI: NETWORK.contracts.FoskaayGGI,
+  FoskaayGGIGames: NETWORK.contracts.FoskaayGGIGames,
+  FoskaayGGIPlayers: NETWORK.contracts.FoskaayGGIPlayers,
+  FoskaayGGILudo: NETWORK.contracts.FoskaayGGILudo,
 };
 
 // The pure Ludo rules, now on FoskaayGGIGames.

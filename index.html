@@ -91,7 +91,8 @@
         <div class="fg-chips">
             <span class="fg-chip">⚡ <b>Players pay 0 gas</b></span>
             <span class="fg-chip">💵 USDC gas, not a volatile token</span>
-            <span class="fg-chip">🔗 Fully on-chain on Arc</span>
+            <span class="fg-chip">🔗 Live on Arc mainnet</span>
+            <span class="fg-chip">🎲 <b>Provable randomness included</b></span>
             <span class="fg-chip">🧩 Any game type</span>
             <span class="fg-chip">🛠 Nothing to run</span>
         </div>
@@ -147,6 +148,7 @@ await ggi.settle({ sessionId, finalHash, seedReveal, sigs, signers });</code></d
             <li><b>Nothing to run.</b> No validator, no rollup node, no RPC to babysit. A sponsor key pays the two transactions.</li>
             <li><b>Fully on-chain.</b> Your contract is the source of truth. The browser only displays what the chain returns.</li>
             <li><b>Verifiable.</b> Real usage, real transactions, a public Explorer and measured costs, all on Arc.</li>
+            <li><b>Provable randomness, free.</b> Dice, cards and lootboxes derive from the committed seed through the core's free pure <code>random()</code>; nobody pays for it, and anyone can verify it at settle.</li>
         </ul>
 
         <div class="fg-section-title"><h2>Do it yourself, or hire me</h2></div>
@@ -214,8 +216,10 @@ await ggi.settle({ sessionId, finalHash, seedReveal, sigs, signers });</code></d
         { q: 'Can I batch many games into one session?', a: 'Yes, and that is the cheapest mode. One session can cover many matches for the same delegated accounts; only the per-game part of the fee grows, so cost per game keeps falling. Nothing inside the session is charged.' },
         { q: 'Is it really on-chain?', a: 'Yes. Your contract holds the rules and the state, the connect event carries the session and the game link, and the settle verifies the players\' signatures on-chain. The frontend only draws what the chain returns. Anyone can replay a session in the <a href="/explorer/">Explorer</a>.' },
         { q: 'Where are the contracts?', a: 'Arc Testnet. Core: <a href="' + E + '0x793785CE66992211B7c60dFCf0318869678D33a4" target="_blank" rel="noopener">FoskaayGGI 0x793785CE66992211B7c60dFCf0318869678D33a4</a> (single contract, fee built in, permanent UUPS proxy). Game: <a href="' + E + '0x24e38ac2e80958782a8Bc5CD479bbe2e5D81EcDF" target="_blank" rel="noopener">FoskaayGGIGames 0x24e38ac2e80958782a8Bc5CD479bbe2e5D81EcDF</a>. Player: <a href="' + E + '0x1614ebc72eA1cB3D31975b3976B5B474FAcE3b3C" target="_blank" rel="noopener">FoskaayGGIPlayers 0x1614ebc72eA1cB3D31975b3976B5B474FAcE3b3C</a>.' },
+        { q: 'Is it live on mainnet?', a: 'Yes. Arc mainnet (chain 5042): core <a href="https://explorer.arc.io/address/0xb406295b4F7E5B513b656122AfFF29AF720E9E23" target="_blank" rel="noopener">FoskaayGGI 0xb406295b4F7E5B513b656122AfFF29AF720E9E23</a>, game <a href="https://explorer.arc.io/address/0xb2d5DfF81B076948f50dA2CcF01887f5ed6Ae2b2" target="_blank" rel="noopener">FoskaayGGIGames 0xb2d5DfF81B076948f50dA2CcF01887f5ed6Ae2b2</a>, player <a href="https://explorer.arc.io/address/0x9425c1d6bA7923D5C804c5e549E08629AbBe3165" target="_blank" rel="noopener">FoskaayGGIPlayers 0x9425c1d6bA7923D5C804c5e549E08629AbBe3165</a>. The SDK defaults to mainnet.' },
         { q: 'Can I just fork it and run my own?', a: 'Yes, it is open source. The trade is simple: the official rail keeps getting upgrades, the Explorer and the standard integrations, while a fork is frozen the day you copied it. Most teams would rather build their game than maintain a rail.' },
-        { q: 'Does Foskaay GGI work on Arc?', a: 'Yes. It is deployed on Arc testnet right now, so you can build and test your game with real numbers before you commit anything. When the mainnet project is live, the rail will be deployed there too. The testnet numbers are your real cost preview for mainnet, which is exactly what you want before launch.' },
+        { q: 'Does Foskaay GGI work on Arc?', a: 'Yes, and it is live on Arc mainnet now. The core (FoskaayGGI), the game and the player contracts are deployed on Arc testnet for development and on Arc mainnet for real use, and the SDK defaults to mainnet. Testnet stays a free place to build and measure before you ship.' },
+        { q: 'Is the randomness fair and provable?', a: 'Yes, and it is built in at no extra cost. Your game commits a seed at connect, every roll, card draw or lootbox is derived from that seed through your own pure rules, and you reveal the seed at settle. Anyone can replay it in the Explorer and verify it against the on-chain final hash, so dice, cards and lootboxes can all be provably fair out of the box.' },
         { q: 'Can you do the integration for me?', a: 'Yes. I design, develop or redevelop game contracts to get the cheapest, most gasless shape, then integrate and deploy with you. See <a href="/hire/">Hire me</a>.' }
     ];
     var host = document.getElementById('fg-faq');
