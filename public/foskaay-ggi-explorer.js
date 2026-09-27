@@ -36,6 +36,10 @@
     var SELECTORS = {
         'isPaid(bytes32)': '0xfeef6640',
         'fee()': '0xddca3f43',
+        'feeBase()': '0x95e911a8',
+        'feePerAccount()': '0x50b7c6e7',
+        'feePerGame()': '0xd6ae481e',
+        'gameCount(bytes32)': '0x892b48e6',
         'destination()': '0xb269681d',
         'midchainDigest(bytes32,bytes32)': '0x00918792',
         'commitments(bytes32)': '0x839df945'
@@ -122,7 +126,11 @@
             getLogs(C.FoskaayGGI, TOPIC.Settled, sessionId).catch(function () { return []; }),
             callView(C.FoskaayGGI, 'isPaid(bytes32)', idArg).catch(function () { return '0x'; }),
             callView(C.FoskaayGGI, 'fee()').catch(function () { return '0x'; }),
-            callView(C.FoskaayGGI, 'destination()').catch(function () { return '0x'; })
+            callView(C.FoskaayGGI, 'destination()').catch(function () { return '0x'; }),
+            callView(C.FoskaayGGI, 'feeBase()').catch(function () { return '0x'; }),
+            callView(C.FoskaayGGI, 'feePerAccount()').catch(function () { return '0x'; }),
+            callView(C.FoskaayGGI, 'feePerGame()').catch(function () { return '0x'; }),
+            C.FoskaayGGIGames ? callView(C.FoskaayGGIGames, 'gameCount(bytes32)', idArg).catch(function () { return '0x'; }) : Promise.resolve('0x')
         ]).then(function (r) {
             var hLog = r[0][0], sLog = r[1][0];
             var handover = null, settled = null;
@@ -154,7 +162,13 @@
                 settled: settled,
                 paid: boolFromHex(r[2]),
                 fee: numFromWord(r[3] || '0x0'),
-                destination: r[4] && r[4] !== '0x' ? addrFromWord(r[4].slice(2)) : null
+                destination: r[4] && r[4] !== '0x' ? addrFromWord(r[4].slice(2)) : null,
+                fees: {
+                    base: r[5] && r[5] !== '0x' ? numFromWord(r[5]) : 0n,
+                    perAccount: r[6] && r[6] !== '0x' ? numFromWord(r[6]) : 0n,
+                    perGame: r[7] && r[7] !== '0x' ? numFromWord(r[7]) : 0n
+                },
+                gamesCommitted: r[8] && r[8] !== '0x' ? numFromWord(r[8]) : 0n
             };
         });
     }

@@ -112,15 +112,34 @@ Or with a bundler, import normally.
 
 | Method | What it does |
 |---|---|
-| `handover(cfg)` | connect a session and pay the fee (one transaction) |
-| `handoverMany(cfg)` | connect many sessions in one transaction |
-| `settle(cfg)` | settle one session (verified signatures on-chain) |
-| `settleMany(cfg)` | settle many sessions in one transaction |
+| `handoverWithAccounts(cfg)` | connect + delegate your game/player accounts (recommended) |
+| `handover(cfg)` | connect a session with the legacy single fee (one transaction) |
+| `settle(cfg)` | close one session (verified signatures on-chain) |
+| `settleMany(cfg)` | close many sessions in one transaction |
+| `settleGame(sessionId, games, seatPlayers, gameTag)` | write the finished game(s) and credit the player |
+| `encodeGame({turn,seats,step,board,over})` | build a game tuple for `settleGame` (game-agnostic) |
+| `getInitialState` / `applyMove` / `hashState` | run your game's pure rules free via eth_call |
+| `pointsOf(player, gameTag)` / `gameCount(sessionId)` | read the player points and games committed |
 | `createSessionKey()` | fresh in-memory signer (silent moves, no popups) |
-| `signMove(key, sessionId, finalHash)` | sign the exact digest the registry checks |
-| `verifyMove(...)` | recover the signer of a move |
+| `signMove(key, sessionId, finalHash)` | sign the exact digest the core checks |
 | `random(seed, counter)` / `randomN(...)` | free randomness via eth_call |
-| `fee()` / `isPaid(sessionId)` | read the fee and whether a session is paid |
+| `feeBase()` / `feePerAccount()` / `feePerGame()` / `sessionFee(accounts, games)` | read the 3-part fee |
+| `isPaid(sessionId)` | whether a session is paid |
+
+### How a session ends (read this)
+
+A session does not close itself. Your game decides when a game is over, then you close it:
+
+1. `settleGame(sessionId, games, seatPlayers, gameTag)` records the game(s) on-chain and credits the
+   player account in the same transaction. Call it when the match ends (unbatched) or when your batch
+   is full (batched).
+2. `settle(cfg)` closes the session on the core, verifying the players' signatures over the final hash.
+
+Unbatched: `games: 1` at connect, then `settleGame([one])` + `settle` after the match.
+Batched: `games: N` at connect, play N matches free, then ONE `settleGame([...N])` + ONE `settle`.
+Batching only changes when the result lands on-chain, never how fast play is. Measured on Arc testnet:
+3 games in one session, one `settleGame` wrote all 3 and credited 3x; only the per-game part of the
+fee grew. Numbers live on the pricing page.
 
 Everything else (boards, points, lives, timers) lives in **your** game contract,
 never here: the rail never learns your game.

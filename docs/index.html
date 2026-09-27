@@ -67,6 +67,7 @@
         <a href="#fees">Fees</a>
         
         <a href="#quickstart">Quickstart</a>
+        <a href="#ending">Ending a session</a>
         <a href="#get-started">Get started</a>
         <a href="#demos">Demos</a>
         <a href="#usecases">Use cases</a>
@@ -342,7 +343,10 @@ await ggi.settle({
         <p class="ggi-body">
             Foskaay GGI is <b>one core contract</b> (FoskaayGGI), deployed per network. Your own game
             and player contracts are yours to deploy and own; the core is the only rail address you
-            call. The addresses below are public and safe to use in your app.
+            call. The addresses below are public and safe to use in your app. <b>FoskaayGGIGames and
+            FoskaayGGIPlayers are the Ludo demo contracts</b>: a working example of one game on the rail,
+            used here to prove the SDK and the gasless promise end to end. They are not part of the
+            core. Bring your own game and player contracts; use the demo only as a reference.
         </p>
 
         <div class="ggi-h3"><span class="ggi-pill testnet">TESTNET</span> Arc Testnet (chain id 5042002)</div>
@@ -397,6 +401,36 @@ await ggi.settle({
 </section>
 
     
+
+    <section class="ggi-card" id="ending">
+        <h2 class="ggi-h2">Starting is half. Ending is the other half</h2>
+        <p class="ggi-body">
+            A session does not close itself. <b>Your game decides when a game is over</b> (it knows), and you
+            close it with two calls:
+        </p>
+        <ul class="ggi-list">
+            <li><b><span class="ggi-mono">settleGame(sessionId, games[], seatPlayers, gameTag)</span></b>: writes the finished game (or many games) on-chain and credits the player account in the same transaction.</li>
+            <li><b><span class="ggi-mono">settle(...)</span></b>: closes the session on the core, verifying the players' signatures over the final hash.</li>
+        </ul>
+        <p class="ggi-body">
+            <b>Unbatched (one game per session):</b> connect with <span class="ggi-mono">games: 1</span>, play, then
+            <span class="ggi-mono">settleGame([one game])</span> and <span class="ggi-mono">settle</span>. The game is on-chain
+            the moment it ends. On testnet that is 0.0014 USDC in the rail fee (0.0004 base + 0.0004 per account x2 + 0.0002 x1)
+            plus Arc gas.
+        </p>
+        <p class="ggi-body">
+            <b>Batched (many games per session):</b> connect once with <span class="ggi-mono">games: N</span>, play N matches
+            for free, then ONE <span class="ggi-mono">settleGame</span> with all N games and ONE <span class="ggi-mono">settle</span>.
+            Measured on Arc testnet: 3 games in one session, rail fee 0.0018 (only the per-game part grew), one
+            <span class="ggi-mono">settleGame</span> wrote all 3 games and credited the player 3x, and the core settle stayed flat
+            at about 72k gas. All transactions succeeded.
+        </p>
+        <div class="ggi-note good">
+            Batching only changes <b>when</b> the result lands on-chain, never how fast play is: every move is already free
+            and signed instantly. A dev picks close-on-game-end (unbatched) or close-when-the-batch-is-full (batched).
+            Numbers live on the <a href="/pricing/">pricing page</a>.
+        </div>
+    </section>
 
     <section class="ggi-card" id="get-started">
         <h2 class="ggi-h2">Get started</h2>
