@@ -146,7 +146,7 @@ await ggi.settle({ sessionId, finalHash, seedReveal, sigs, signers });</code></d
             <li><b>Stablecoin gas.</b> Arc uses USDC as gas, so your costs are predictable, not tied to a volatile token.</li>
             <li><b>Nothing to run.</b> No validator, no rollup node, no RPC to babysit. A sponsor key pays the two transactions.</li>
             <li><b>Fully on-chain.</b> Your contract is the source of truth. The browser only displays what the chain returns.</li>
-            <li><b>Grant-friendly.</b> Real usage, real transactions, a public Explorer and measured costs, all on Arc.</li>
+            <li><b>Verifiable.</b> Real usage, real transactions, a public Explorer and measured costs, all on Arc.</li>
         </ul>
 
         <div class="fg-section-title"><h2>Do it yourself, or hire me</h2></div>
@@ -207,15 +207,15 @@ await ggi.settle({ sessionId, finalHash, seedReveal, sigs, signers });</code></d
 (function () {
     var E = 'https://explorer.testnet.arc.io/address/';
     var FAQ = [
-        { q: 'What is Foskaay GGI in one sentence?', a: 'It is the rail that makes an on-chain game gasless for its players on Arc: you delegate your game and player contracts to a session, everything inside runs free through your own rules, and one settlement closes it. Players pay nothing and see no wallet popup.' },
+        { q: 'What is Foskaay GGI in one sentence?', a: 'Foskaay Gasless Games Infrastructure (Foskaay GGI) is the rail that makes an on-chain game gasless for its players on Arc. As a game developer you delegate your game and player contracts to a session, everything inside runs free through your own rules, and one settlement closes it. Your players pay no gas, and you pay a cheap, per-session fee instead of a fee per move.' },
         { q: 'I already have a game. How much do I change?', a: 'Very little. You install the SDK, delegate your existing game account (and a player account if you have one) into a session, then call connect once and settle once. Your rules and your contract stay yours. If your contract is not shaped for the Midchain yet, the <a href="/docs/#designing">designing guide</a> shows the two-account shape that is cheapest.' },
         { q: 'Do players need a wallet or any gas?', a: 'No. They sign in how you onboard them (here, an email code), an embedded wallet is created silently, and every action is signed for them. They never hold gas and never see a top-up wall. There is no player-pay option in the rail at all.' },
-        { q: 'What does it cost me, the developer?', a: 'One small fixed fee per session, in USDC, never per move. The fee is 0.0004 base + 0.0004 per delegated account + 0.0002 per game, charged once at connect. The table above shows total cost including Arc gas. A 200-move game costs the same as a 5-move game.' },
+        { q: 'What does Foskaay GGI cost me as a game developer?', a: 'A cheap per-session fee in USDC, paid once at connect, never per move. Your players pay nothing. Exact numbers can change, so they live in one place: the <a href="/pricing/">pricing page</a>. A 200-move game costs the same as a 5-move game, because everything inside the session is free.' },
         { q: 'Can I batch many games into one session?', a: 'Yes, and that is the cheapest mode. One session can cover many matches for the same delegated accounts; only the per-game part of the fee grows, so cost per game keeps falling. Nothing inside the session is charged.' },
         { q: 'Is it really on-chain?', a: 'Yes. Your contract holds the rules and the state, the connect event carries the session and the game link, and the settle verifies the players\' signatures on-chain. The frontend only draws what the chain returns. Anyone can replay a session in the <a href="/explorer/">Explorer</a>.' },
         { q: 'Where are the contracts?', a: 'Arc Testnet. Core: <a href="' + E + '0x793785CE66992211B7c60dFCf0318869678D33a4" target="_blank" rel="noopener">FoskaayGGI 0x793785CE66992211B7c60dFCf0318869678D33a4</a> (single contract, fee built in, permanent UUPS proxy). Game: <a href="' + E + '0x24e38ac2e80958782a8Bc5CD479bbe2e5D81EcDF" target="_blank" rel="noopener">FoskaayGGIGames 0x24e38ac2e80958782a8Bc5CD479bbe2e5D81EcDF</a>. Player: <a href="' + E + '0x1614ebc72eA1cB3D31975b3976B5B474FAcE3b3C" target="_blank" rel="noopener">FoskaayGGIPlayers 0x1614ebc72eA1cB3D31975b3976B5B474FAcE3b3C</a>.' },
         { q: 'Can I just fork it and run my own?', a: 'Yes, it is open source. The trade is simple: the official rail keeps getting upgrades, the Explorer and the standard integrations, while a fork is frozen the day you copied it. Most teams would rather build their game than maintain a rail.' },
-        { q: 'Does it work off Arc?', a: 'Foskaay GGI is built for Arc (Circle\'s EVM L1 where USDC is the gas token). The design is chain-agnostic, but Arc is the home today and the rail is deployed on Arc testnet first.' },
+        { q: 'Does Foskaay GGI work on Arc?', a: 'Yes. It is deployed on Arc testnet right now, so you can build and test your game with real numbers before you commit anything. When the mainnet project is live, the rail will be deployed there too. The testnet numbers are your real cost preview for mainnet, which is exactly what you want before launch.' },
         { q: 'Can you do the integration for me?', a: 'Yes. I design, develop or redevelop game contracts to get the cheapest, most gasless shape, then integrate and deploy with you. See <a href="/hire/">Hire me</a>.' }
     ];
     var host = document.getElementById('fg-faq');

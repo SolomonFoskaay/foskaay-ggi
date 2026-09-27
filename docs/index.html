@@ -41,9 +41,33 @@
         .ggi-tiny { font-size: 0.78rem; color: #999; line-height: 1.6; margin-top: 10px; }
         .ggi-toc { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 0; }
         .ggi-toc a { font-size: 0.8rem; text-decoration: none; color: #f39c12; background: rgba(243,156,18,0.08); border: 1px solid rgba(243,156,18,0.25); border-radius: 999px; padding: 5px 11px; }
+    .docs-lnav { position: fixed; left: 14px; top: 110px; width: 190px; max-height: calc(100vh - 140px); overflow-y: auto; display: none; flex-direction: column; gap: 2px; background: #101016; border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 10px; z-index: 5; }
+        .docs-lnav a { color: #b9b9c6; text-decoration: none; font-size: 0.82rem; padding: 7px 10px; border-radius: 8px; }
+        .docs-lnav a:hover { color: #fff; background: rgba(255,255,255,0.06); }
+        .docs-lnav .docs-lnav-h { color: #f39c12; font-weight: 800; font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 4px 10px 8px; }
+        @media (min-width: 1000px) { .docs-lnav { display: flex; } .ggi-wrap { padding-left: 226px; max-width: 1060px; } }
     </style>
 </head>
 <body>
+
+<nav class="docs-lnav" id="docs-lnav">
+    <span class="docs-lnav-h">Docs</span>
+    <a href="#why">Why use it</a>
+    <a href="#how">How it works</a>
+    <a href="#designing">Designing for the rail</a>
+    <a href="#settle-modes">Two settle modes</a>
+    <a href="#upgradeable">Upgradeable or not</a>
+    <a href="#unopinionated">Built to fit your game</a>
+    <a href="#contracts">Contracts</a>
+    <a href="#fees">Fees</a>
+    <a href="#hardware">What you run</a>
+    <a href="#quickstart">Quickstart</a>
+    <a href="#get-started">Get started</a>
+    <a href="#demos">Demos</a>
+    <a href="#usecases">Use cases</a>
+    <a href="/pricing/">Pricing</a>
+    <a href="/hire/">Hire me</a>
+</nav>
 
 <main class="ggi-wrap">
 
