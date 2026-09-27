@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Wallets and Profile | Foskaay GGI</title>
+    <meta name="description" content="Your Foskaay GGI profile: the embedded EVM and Solana wallets behind your sign-in, copyable.">
+    <meta property="og:title" content="My Wallets and Profile | Foskaay GGI">
+    <meta property="og:description" content="Your embedded EVM and Solana wallets, copyable.">
+    <meta property="og:url" content="https://foskaayggi.globalfolkgames.fun/profile/">
+    <meta property="og:type" content="website">
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/ggi.css">
+    <style>
+        .ww { background: linear-gradient(180deg,#191922,#15151c); border: 1px solid rgba(255,255,255,.09); border-radius: 16px; padding: 18px; max-width: 560px; }
+        .ww h3 { margin: 0 0 4px; font-size: 1.05rem; color: #fff; }
+        .ww-sub { color: #8f8fa0; font-size: .84rem; margin: 0 0 16px; }
+        .ww-row { margin-bottom: 14px; }
+        .ww-label { font-size: .72rem; color: #888; font-weight: 700; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .03em; }
+        .ww-chip { display: flex; align-items: center; gap: 8px; background: #1a1a24; border: 1px solid #333; border-radius: 8px; padding: 10px 12px; cursor: pointer; user-select: all; }
+        .ww-chip span { flex: 1; font-family: monospace; font-size: .82rem; word-break: break-all; }
+        .ww-chip .evm { color: #7838f8; }
+        .ww-chip .sol { color: #f87818; }
+        .ww-copy { background: #7838f8; color: #fff; border: none; border-radius: 6px; padding: 6px 12px; font-size: .75rem; font-weight: bold; cursor: pointer; flex-shrink: 0; }
+        .ww-msg { color: #8f8fa0; font-size: .75rem; margin-top: 6px; min-height: 1em; }
+        .ww-email { color: #ddd; font-size: .95rem; font-weight: 700; margin-bottom: 12px; word-break: break-all; }
+    </style>
+</head>
+<body>
+<main class="ggi-wrap">
+    <section class="ggi-hero">
+        <span class="ggi-eyebrow">MY PROFILE</span>
+        <h1 class="ggi-h1">Your wallets, <span class="grad">ready to copy</span></h1>
+        <p class="ggi-sub">Signing in with an email silently creates an embedded EVM wallet (Arc) and a Solana wallet behind it. This is the same wallet flow I build into games on Foskaay GGI: players never pay gas and never see a popup.</p>
+    </section>
+
+    <div class="ggi-body">
+        <div class="ww" id="ww">
+            <h3>Account</h3>
+            <p class="ww-sub">The wallets behind your sign-in. Tap an address or its copy button.</p>
+            <div class="ww-email" id="ww-email">Checking account...</div>
+            <div class="ww-row">
+                <div class="ww-label">EVM wallet (Arc)</div>
+                <div class="ww-chip" id="evm-chip"><span class="evm" id="evm-addr">Checking wallet...</span><button class="ww-copy" id="evm-copy">Copy</button></div>
+            </div>
+            <div class="ww-row">
+                <div class="ww-label">Solana wallet</div>
+                <div class="ww-chip" id="sol-chip"><span class="sol" id="sol-addr">Checking wallet...</span><button class="ww-copy" id="sol-copy">Copy</button></div>
+            </div>
+            <p class="ww-msg" id="ww-msg"></p>
+        </div>
+
+        <p style="color:#b9b9c6;font-size:.9rem;line-height:1.7;margin-top:18px">Not signed in yet? Use the <b>Sign in</b> button in the header. If you want a profile like this for your own game, I build these wallet flows into games on <a href="/docs/" style="color:#f39c12">Foskaay GGI</a>, or <a href="/hire/" style="color:#f39c12">hire me</a> to do it for you.</p>
+    </div>
+</main>
+<script src="/global_header.js"></script>
+<script>
+(function () {
+    function readAddr(getter) {
+        try {
+            if (typeof getter !== 'function') return null;
+            var w = getter();
+            if (!w) return null;
+            return (typeof w === 'string') ? w : (w.address ? String(w.address) : null);
+        } catch (e) { return null; }
+    }
+    var emailEl = document.getElementById('ww-email');
+    var evmEl = document.getElementById('evm-addr');
+    var solEl = document.getElementById('sol-addr');
+    var msg = document.getElementById('ww-msg');
+
+    function copy(addr, el) {
+        if (!addr) { msg.textContent = 'No wallet connected yet.'; return; }
+        var done = function () { msg.textContent = 'Wallet copied!'; };
+        var fail = function () { msg.textContent = 'Press and hold to copy manually.'; };
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(addr).then(done).catch(fail);
+        else {
+            try {
+                var range = document.createRange(); range.selectNodeContents(el);
+                var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+                msg.textContent = 'Address selected, tap Copy.';
+            } catch (e) { fail(); }
+        }
+    }
+    function render() {
+        var email = window.getDynamicEmail ? window.getDynamicEmail() : null;
+        var evm = readAddr(window.getDynamicEvmWallet);
+        var sol = readAddr(window.getDynamicSolanaWallet);
+        var signed = !!(window.currentUser || evm);
+        emailEl.textContent = email || (signed ? 'Signed in with a wallet' : 'Not signed in');
+        evmEl.textContent = evm || (signed ? 'EVM wallet still restoring...' : 'No EVM wallet yet. Sign in.');
+        solEl.textContent = sol || (signed ? 'Solana wallet still restoring...' : 'No Solana wallet yet. Sign in.');
+    }
+    document.getElementById('evm-chip').onclick = function () { copy(readAddr(window.getDynamicEvmWallet), evmEl); };
+    document.getElementById('evm-copy').onclick = function (e) { e.stopPropagation(); copy(readAddr(window.getDynamicEvmWallet), evmEl); };
+    document.getElementById('sol-chip').onclick = function () { copy(readAddr(window.getDynamicSolanaWallet), solEl); };
+    document.getElementById('sol-copy').onclick = function (e) { e.stopPropagation(); copy(readAddr(window.getDynamicSolanaWallet), solEl); };
+    render();
+    window.addEventListener('gfg:auth-changed', function () { render(); }, false);
+})();
+</script>
+</body>
+</html>
