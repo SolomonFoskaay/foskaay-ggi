@@ -24,7 +24,7 @@
     + '.ggi-burger i{display:block;width:20px;height:2px;background:#eee;border-radius:2px;}'
     + '.ggi-scrim{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:990;opacity:0;pointer-events:none;transition:opacity .2s;}'
     + '.ggi-scrim.show{opacity:1;pointer-events:auto;}'
-    + '.ggi-draw{position:fixed;top:0;right:0;bottom:0;width:min(86vw,330px);background:#101016;border-left:1px solid rgba(255,255,255,.1);z-index:995;transform:translateX(102%);transition:transform .22s ease;display:flex;flex-direction:column;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;}'
+    + '.ggi-draw{position:fixed;top:0;right:0;bottom:0;width:min(86vw,330px);background:rgba(15,15,19,.72);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-left:1px solid rgba(255,255,255,.12);z-index:995;transform:translateX(102%);transition:transform .22s ease;display:flex;flex-direction:column;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;}'
     + '.ggi-draw.open{transform:translateX(0);}'
     + '.ggi-draw-head{display:flex;align-items:center;justify-content:space-between;padding:16px 16px;border-bottom:1px solid rgba(255,255,255,.08);}'
     + '.ggi-draw-head .ggi-brand{flex:1;}'
@@ -134,9 +134,7 @@
       if (!signed) {
         if (btn) { btn.textContent = 'Sign in'; }
         if (acct) {
-          acct.innerHTML = '<button class="ggi-btn sign" id="ggi-signin">Sign in</button>';
-          var b = document.getElementById('ggi-signin');
-          if (b) b.onclick = function () { closeDrawer(); if (window.openDynamicLogin) window.openDynamicLogin(); };
+          acct.innerHTML = '<div style="color:#8f8fa0;font-size:.82rem;line-height:1.5">You are not signed in. Use the account button in the header to sign in with your email.</div>';
         }
         return;
       }
@@ -162,11 +160,27 @@
       }
     }
 
-    // Account button: signed in -> profile; signed out -> login.
+    // Account button: signed in -> profile; signed out -> login. If the auth
+    // module is still loading, wait for its ready event, then open the login.
+    function openLoginWhenReady() {
+      if (typeof window.openDynamicLogin === 'function') { window.openDynamicLogin(); return; }
+      var once = function () {
+        window.removeEventListener('ggi:auth-ready', once);
+        if (typeof window.openDynamicLogin === 'function') window.openDynamicLogin();
+        else window.showAuthBanner ? window.showAuthBanner('Sign in could not start. Check that DYNAMIC_ENV_ID is set and this domain is allowed in Dynamic.') : alert('Sign in could not start (Dynamic not configured).');
+      };
+      window.addEventListener('ggi:auth-ready', once);
+      setTimeout(function () {
+        if (typeof window.openDynamicLogin !== 'function') {
+          window.removeEventListener('ggi:auth-ready', once);
+          window.showAuthBanner ? window.showAuthBanner('Sign in could not start. Check that DYNAMIC_ENV_ID is set and this domain is allowed in Dynamic.') : alert('Sign in could not start (Dynamic not configured).');
+        }
+      }, 8000);
+    }
     document.getElementById('ggi-auth-btn').onclick = function () {
       var evm = window.getDynamicEvmWallet && window.getDynamicEvmWallet();
       if (window.currentUser || evm) window.location.href = '/profile/';
-      else if (window.openDynamicLogin) window.openDynamicLogin();
+      else openLoginWhenReady();
     };
 
     window.refreshAuthHeader = function () { renderAccount(); };
