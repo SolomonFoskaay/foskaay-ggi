@@ -67,7 +67,7 @@
     <section id="gx-tab-session">
         <div class="gx-card">
             <h2 class="gx-h2">Look up a session</h2>
-            <p class="gx-tiny">Paste a session id (bytes32). The game chooses it and passes it to <span class="gx-mono">handover()</span>.</p>
+            <p class="gx-tiny">Paste a session id (bytes32). The game chooses it and passes it to <span class="gx-mono">handoverWithAccounts()</span>.</p>
             <input id="gx-session-input" class="gx-input" placeholder="0x..." autocomplete="off" spellcheck="false">
             <button class="gx-btn" id="gx-load">Inspect session</button>
             <div id="gx-status" class="gx-tiny" style="margin-top:8px;"></div>
@@ -103,7 +103,15 @@
             <div class="gx-card">
                 <h2 class="gx-h2">The fee</h2>
                 <div class="gx-row"><span class="k">Paid at connect</span><span class="v" id="gx-v-paid"></span></div>
-                <div class="gx-row"><span class="k">Current per-session fee</span><span class="v" id="gx-v-fee"></span></div>
+                <div class="gx-row"><span class="k">Session base</span><span class="v" id="gx-v-feebase"></span></div>
+                <div class="gx-row"><span class="k">Per delegated account</span><span class="v" id="gx-v-feeacct"></span></div>
+                <div class="gx-row"><span class="k">Per game</span><span class="v" id="gx-v-feegame"></span></div>
+                <div class="gx-row"><span class="k">Games committed on-chain</span><span class="v" id="gx-v-games"></span></div>
+                <div class="gx-note">
+                    One fee per session, charged once at connect: a session base plus a per-delegated-account
+                    part plus a per-game part. Nothing inside the session is charged. The exact numbers and the
+                    full table live on the single <a href="/pricing/" style="color:#f39c12">pricing page</a>.
+                </div>
             </div>
         </div>
     </section>
@@ -126,12 +134,14 @@
             </div>
         </div>
         <div class="gx-card">
-            <h2 class="gx-h2">The pure game</h2>
-            <div class="gx-row"><span class="k">Game contract (no storage)</span><span class="v gx-mono" id="gx-m-ludo"></span></div>
+            <h2 class="gx-h2">The game contract</h2>
+            <div class="gx-row"><span class="k">Game (rules + match + settle)</span><span class="v gx-mono" id="gx-m-games"></span></div>
+            <div class="gx-row"><span class="k">Player account</span><span class="v gx-mono" id="gx-m-players"></span></div>
             <div class="gx-note">
-                The game is a PURE function: the board and the points live in compact bytes the contract
-                returns (no images on-chain). Because it is pure, the whole match runs with free calls;
-                only the connect and the settle are transactions.
+                The rules are pure functions: the board and the points are compact bytes the contract
+                returns (no images on-chain), so the whole match runs with free calls. The game contract
+                holds the match and, at settle, writes the games and credits the player account in one step.
+                Only the connect and the settle are transactions.
             </div>
         </div>
     </section>
@@ -152,7 +162,9 @@
 
         <div class="gx-card">
             <h2 class="gx-h2">Core state (single contract, fee built in)</h2>
-            <div class="gx-row"><span class="k">Per-session fee</span><span class="v" id="gx-fv-fee"></span></div>
+            <div class="gx-row"><span class="k">Session base fee</span><span class="v" id="gx-fv-fee"></span></div>
+            <div class="gx-row"><span class="k">Per delegated account</span><span class="v" id="gx-fv-acct"></span></div>
+            <div class="gx-row"><span class="k">Per game</span><span class="v" id="gx-fv-game"></span></div>
             <div class="gx-row"><span class="k">Destination</span><span class="v gx-mono" id="gx-fv-dest"></span></div>
             <div class="gx-note">
                 The fee is charged at connect and required before a session can settle, so it cannot be
@@ -236,7 +248,10 @@
             document.getElementById('gx-v-sblock').textContent = s ? blockLink(s.block) : '-';
 
             document.getElementById('gx-v-paid').innerHTML = pill(r.paid, 'PAID', 'not paid');
-            document.getElementById('gx-v-fee').textContent = usdc18(r.fee);
+            document.getElementById('gx-v-feebase').textContent = usdc18(r.fees.base);
+            document.getElementById('gx-v-feeacct').textContent = usdc18(r.fees.perAccount);
+            document.getElementById('gx-v-feegame').textContent = usdc18(r.fees.perGame);
+            document.getElementById('gx-v-games').textContent = r.gamesCommitted.toString();
             status.textContent = 'Read at contract ' + X.NET.contracts.FoskaayGGI + ' on ' + X.NET.name + '.';
         }).catch(function (e) {
             status.textContent = 'Could not read: ' + (e.message || e);
@@ -255,7 +270,8 @@
     });
 
     // Midchain tab: verify the signed move log against the on-chain anchor.
-    document.getElementById('gx-m-ludo').textContent = X.NET.contracts.FoskaayGGILudo;
+    document.getElementById('gx-m-games').textContent = X.NET.contracts.FoskaayGGIGames;
+    document.getElementById('gx-m-players').textContent = X.NET.contracts.FoskaayGGIPlayers;
     document.getElementById('gx-verify').addEventListener('click', function () {
         var id = document.getElementById('gx-m-session').value.trim();
         var status = document.getElementById('gx-m-status');
@@ -266,7 +282,8 @@
             document.getElementById('gx-m-proof').innerHTML = pill(r.ok, 'VERIFIED', 'NOT VERIFIED') + ' ' + r.reason;
             var list = document.getElementById('gx-moves-list');
             list.innerHTML = r.moves.length ? r.moves.map(function (m, i) {
-                return (i + 1) + '. kind=' + m.kind + ' seat=' + m.seat + ' token=' + m.tokenIndex + ' value=' + m.value + '<br>  newHash ' + short(m.newHash);
+                var seat = (m.seatLabel || ('seat' + m.seat)).toUpperCase();
+                return (i + 1) + '. ' + seat + ': kind=' + m.kind + ' token=' + m.tokenIndex + ' value=' + m.value + '<br>  newHash ' + short(m.newHash);
             }).join('<br>') : 'No moves published.';
             status.textContent = r.hasLog ? (r.moves.length + ' moves loaded.') : 'No move log for this session (the relay keeps it in memory and may have restarted).';
         }).catch(function (e) { status.textContent = 'Could not verify: ' + (e.message || e); });
@@ -274,7 +291,9 @@
 
     // Proof tab: core state (single contract, fee built in)
     (function () {
-        X.callView(X.NET.contracts.FoskaayGGI, 'fee()').then(function (hex) { document.getElementById('gx-fv-fee').textContent = usdc18(BigInt(hex)); }).catch(function () {});
+        X.callView(X.NET.contracts.FoskaayGGI, 'feeBase()').then(function (hex) { document.getElementById('gx-fv-fee').textContent = usdc18(BigInt(hex)); }).catch(function () {});
+        X.callView(X.NET.contracts.FoskaayGGI, 'feePerAccount()').then(function (hex) { document.getElementById('gx-fv-acct').textContent = usdc18(BigInt(hex)); }).catch(function () {});
+        X.callView(X.NET.contracts.FoskaayGGI, 'feePerGame()').then(function (hex) { document.getElementById('gx-fv-game').textContent = usdc18(BigInt(hex)); }).catch(function () {});
         X.callView(X.NET.contracts.FoskaayGGI, 'destination()').then(function (hex) {
             document.getElementById('gx-fv-dest').textContent = hex && hex !== '0x' ? ('0x' + hex.slice(26)) : '-';
         }).catch(function () {});
