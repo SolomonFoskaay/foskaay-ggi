@@ -85,7 +85,7 @@
         <p class="fg-sub">Foskaay GGI is the rail that does for Arc what an ephemeral rollup does on Solana. You delegate your game and player contracts to one Foskaay GGI session, everything inside runs for free through your own rules, and one settlement closes it. Players never pay gas and never see a wallet popup. You pay a fraction of a cent per match, in USDC.</p>
         <div class="fg-ctas">
             <a class="fg-btn primary" href="/docs/#quickstart">Start with the SDK</a>
-            <a class="fg-btn ghost" href="/hire/">Hire us to integrate</a>
+            <a class="fg-btn ghost" href="/hire/">Hire me to integrate</a>
             <a class="fg-btn ghost" href="/demos/board/ludo/">See the live demo</a>
         </div>
         <div class="fg-chips">
@@ -111,7 +111,7 @@ await ggi.handoverWithAccounts({
 // 2. play for free. every move runs your own rules, off the base chain
 // 3. settle once. the result, the board and the points land on-chain
 await ggi.settle({ sessionId, finalHash, seedReveal, sigs, signers });</code></div>
-        <p class="fg-p">No fork. No contract to copy. You keep your economy; the rail owns the room. If you would rather we do it with you, see <a href="/hire/" style="color:#f39c12">Hire us</a>.</p>
+        <p class="fg-p">No fork. No contract to copy. You keep your economy; the rail owns the room. If you would rather I do it with you, see <a href="/hire/" style="color:#f39c12">Hire me</a>.</p>
 
         <div class="fg-section-title"><h2>What one match really costs</h2></div>
         <p class="fg-p">Two delegated accounts, Arc at 20 Gwei, a real compact game. "Foskaay GGI fee" is what the rail charges, "Total you pay" is the fee plus the Arc gas. Your players pay none of it.</p>
@@ -149,7 +149,7 @@ await ggi.settle({ sessionId, finalHash, seedReveal, sigs, signers });</code></d
             <li><b>Grant-friendly.</b> Real usage, real transactions, a public Explorer and measured costs, all on Arc.</li>
         </ul>
 
-        <div class="fg-section-title"><h2>Do it yourself, or hire us</h2></div>
+        <div class="fg-section-title"><h2>Do it yourself, or hire me</h2></div>
         <div class="fg-grid">
             <a class="fg-card gold" href="/docs/#quickstart">
                 <span class="fg-card-glow"></span>
@@ -165,12 +165,14 @@ await ggi.settle({ sessionId, finalHash, seedReveal, sigs, signers });</code></d
                 <span class="fg-badge gold">Premium</span>
                 <div class="fg-card-top">
                     <span class="fg-thumb">🤝</span>
-                    <div><h3 class="fg-card-name">Hire us</h3><p class="fg-card-tag">Design, build, integrate</p></div>
+                    <div><h3 class="fg-card-name">Hire me</h3><p class="fg-card-tag">Design, build, integrate</p></div>
                 </div>
-                <p class="fg-card-desc">We design, develop or redevelop your smart contracts and game to get the most out of the Foskaay GGI Midchain and its costs, then deploy and verify it with you.</p>
+                <p class="fg-card-desc">I design, develop or redevelop your smart contracts and game to get the most out of the Foskaay GGI Midchain and its costs, then deploy and verify it with you.</p>
                 <span class="fg-card-cta">See the service &rarr;</span>
             </a>
         </div>
+
+        <div style="background:rgba(243,156,18,.07);border:1px solid rgba(243,156,18,.3);border-radius:12px;padding:12px 16px;color:#e8d9c2;font-size:.86rem;line-height:1.6;margin-top:12px">I take on a few game projects at a time, so it is best to <b>book a slot</b> before the open ones fill up. I am not always available to hire, which keeps every project hands-on.</div>
 
         <div class="fg-section-title"><h2>See it running</h2></div>
         <div class="fg-grid">
@@ -214,7 +216,7 @@ await ggi.settle({ sessionId, finalHash, seedReveal, sigs, signers });</code></d
         { q: 'Where are the contracts?', a: 'Arc Testnet. Core: <a href="' + E + '0x793785CE66992211B7c60dFCf0318869678D33a4" target="_blank" rel="noopener">FoskaayGGI 0x793785CE66992211B7c60dFCf0318869678D33a4</a> (single contract, fee built in, permanent UUPS proxy). Game: <a href="' + E + '0x24e38ac2e80958782a8Bc5CD479bbe2e5D81EcDF" target="_blank" rel="noopener">FoskaayGGIGames 0x24e38ac2e80958782a8Bc5CD479bbe2e5D81EcDF</a>. Player: <a href="' + E + '0x1614ebc72eA1cB3D31975b3976B5B474FAcE3b3C" target="_blank" rel="noopener">FoskaayGGIPlayers 0x1614ebc72eA1cB3D31975b3976B5B474FAcE3b3C</a>.' },
         { q: 'Can I just fork it and run my own?', a: 'Yes, it is open source. The trade is simple: the official rail keeps getting upgrades, the Explorer and the standard integrations, while a fork is frozen the day you copied it. Most teams would rather build their game than maintain a rail.' },
         { q: 'Does it work off Arc?', a: 'Foskaay GGI is built for Arc (Circle\'s EVM L1 where USDC is the gas token). The design is chain-agnostic, but Arc is the home today and the rail is deployed on Arc testnet first.' },
-        { q: 'Can you do the integration for us?', a: 'Yes. We design, develop or redevelop game contracts to get the cheapest, most gasless shape, then integrate and deploy with you. See <a href="/hire/">Hire us</a>.' }
+        { q: 'Can you do the integration for me?', a: 'Yes. I design, develop or redevelop game contracts to get the cheapest, most gasless shape, then integrate and deploy with you. See <a href="/hire/">Hire me</a>.' }
     ];
     var host = document.getElementById('fg-faq');
     FAQ.forEach(function (f) {

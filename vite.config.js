@@ -26,6 +26,7 @@ export default defineConfig({
         about: 'about/index.html',
         contact: 'contact/index.html',
         hire: 'hire/index.html',
+        profile: 'profile/index.html',
         'web/main.js': 'web/main.js'
       },
       output: {

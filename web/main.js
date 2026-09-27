@@ -90,6 +90,7 @@ window.ggiSignDigest = async function (digest) {
 
 // ---- minimal email OTP modal (self-contained, no page markup needed) -------
 let otpVerification = null;
+let pendingEmail = null;
 
 function ensureModal() {
   let m = document.getElementById('ggi-auth-modal');
@@ -125,6 +126,7 @@ function otpStep(email) {
 async function sendOtp() {
   const email = (document.getElementById('ggi-email').value || '').trim();
   if (!email) { banner('Please enter your email'); return; }
+  pendingEmail = email;
   const b = document.getElementById('ggi-send'); b.disabled = true; b.textContent = 'Sending...';
   try { otpVerification = await sendEmailOTP({ email }); otpStep(email); }
   catch (e) { banner(e.message || 'Failed to send code'); b.disabled = false; b.textContent = 'Send Code'; }
@@ -144,7 +146,7 @@ async function verifyOtp() {
     await waitFor(getSolanaWallet);
     const evm = await waitFor(getEvmWallet);
     await ensureSessionKeys();
-    window.currentUser = { dynamicId: evm || getSolanaWallet() || 'user', evm, solana: getSolanaWallet() };
+    window.currentUser = { dynamicId: evm || getSolanaWallet() || 'user', email: pendingEmail, evm, solana: getSolanaWallet() };
     closeModal();
     banner('Signed in');
     if (typeof window.refreshAuthHeader === 'function') await window.refreshAuthHeader();
@@ -162,6 +164,7 @@ window.logoutDynamic = async function () {
   try { window.dispatchEvent(new CustomEvent('gfg:auth-changed')); } catch (e) {}
 };
 window.showAuthBanner = function (msg) { banner(msg); };
+window.getDynamicEmail = function () { return (window.currentUser && window.currentUser.email) || null; };
 
 function banner(msg) {
   let el = document.getElementById('ggi-auth-banner');
