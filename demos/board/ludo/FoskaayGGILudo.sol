@@ -245,7 +245,10 @@ contract FoskaayGGILudo is Initializable, UUPSUpgradeable, OwnableUpgradeable {
         uint8 homeCount = 0;
         uint8 base = uint8(seat) * 4;
         for (uint8 t = 0; t < TOKENS_PER_SEAT; t++) {
-            if (uint8(out[8 + base + t]) >= 57) homeCount++;
+            // HOME is exactly 57 (the centre). A yard token is 0xFF (255), which
+            // is >= 57, so it must NEVER be counted as home.
+            uint8 sv = uint8(out[8 + base + t]);
+            if (sv >= 57 && sv != YARD) homeCount++;
         }
         if (homeCount < TOKENS_PER_SEAT) return;
 

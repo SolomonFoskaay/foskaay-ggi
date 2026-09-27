@@ -119,6 +119,38 @@ contract FoskaayGGIGamesTest {
         games.settle(SID, list, _two(P0, P1), TAG);
     }
 
+    function testYardTokensAreNeverCountedAsFinished() public {
+        // Regression: a token in the yard is 0xFF (255), which is >= 57. The old
+        // finish check counted yard tokens as home, so a single token reaching
+        // 57 crowned a seat that still had three tokens in its base.
+        bytes memory b = new bytes(36);
+        b[3] = bytes1(uint8(2));        // 2 seats
+        b[4] = bytes1(uint8(6));        // dieA = 6
+        b[8] = bytes1(uint8(51));       // seat0 token0 at 51
+        b[9] = bytes1(uint8(0xFF));     // seat0 token1 in yard
+        b[10] = bytes1(uint8(0xFF));    // seat0 token2 in yard
+        b[11] = bytes1(uint8(0xFF));    // seat0 token3 in yard
+        bytes memory moved = games.applyMove(b, 1, 0, 0, 6, new bytes32[](0));
+        // token0 moved 51 -> 57 (home), but the other three are STILL in the yard.
+        require(uint8(moved[8]) == 57, "token reached centre");
+        require(uint8(moved[1]) == 0, "must NOT be recorded as a finish");
+        require(uint8(moved[24]) == 0, "no finish order entry");
+    }
+
+    function testAllFourHomeRecordsFinish() public {
+        bytes memory b = new bytes(36);
+        b[3] = bytes1(uint8(2));        // 2 seats
+        b[4] = bytes1(uint8(1));        // dieA = 1
+        b[8] = bytes1(uint8(56));       // seat0 token0 at 56
+        b[9] = bytes1(uint8(57));       // seat0 token1 home
+        b[10] = bytes1(uint8(57));      // seat0 token2 home
+        b[11] = bytes1(uint8(57));      // seat0 token3 home
+        bytes memory moved = games.applyMove(b, 1, 0, 0, 1, new bytes32[](0));
+        require(uint8(moved[8]) == 57, "last token home");
+        require(uint8(moved[1]) == 1, "recorded as a finish");
+        require(uint8(moved[24]) == 0, "seat 0 is 1st");
+    }
+
     function testPureRulesRunFree() public {
         bytes memory s0 = games.getInitialState(2, 0);
         require(s0.length == 36, "initial state");

@@ -341,7 +341,13 @@ contract FoskaayGGIGames is Initializable, UUPSUpgradeable, OwnableUpgradeable {
         uint8 homeCount = 0;
         uint8 base = uint8(seat) * 4;
         for (uint8 t = 0; t < TOKENS_PER_SEAT; t++) {
-            if (uint8(out[8 + base + t]) >= 57) homeCount++;
+            // A token is HOME only when it reached the centre (exactly 57).
+            // IMPORTANT: a token still in the yard is stored as 0xFF (255), and
+            // 255 >= 57, so the old check wrongly counted yard tokens as home and
+            // crowned a seat that still had tokens in its base. A token is home
+            // only when it is 57 (never YARD).
+            uint8 sv = uint8(out[8 + base + t]);
+            if (sv >= 57 && sv != YARD) homeCount++;
         }
         if (homeCount < TOKENS_PER_SEAT) return;
 
