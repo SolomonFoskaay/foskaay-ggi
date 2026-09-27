@@ -341,6 +341,30 @@ export class GgiClient {
     return this.publicClient.readContract({ address: this.addresses.Games, abi: gamesAbi, functionName: 'isTerminal', args: [state] });
   }
 
+  /// Build the on-chain game tuple a dev passes to `settleGame`, from ANY game
+  /// (game-agnostic: the SDK never learns what your game holds). Pass the raw
+  /// `board` bytes (hex `0x...` or a byte array) your pure rules produced, and
+  /// either your own `boardHash` or none (it is computed with `hashState`).
+  /// Always async because hashState is an eth_call.
+  async encodeGame(rec) {
+    if (!rec || typeof rec !== 'object') throw new Error('Foskaay GGI: encodeGame needs { turn, seats, step, board, over, boardHash? }');
+    let board = rec.board;
+    if (!board) throw new Error('Foskaay GGI: encodeGame needs board bytes');
+    if (board instanceof Uint8Array) board = '0x' + Buffer.from(board).toString('hex');
+    else if (Array.isArray(board)) board = '0x' + Buffer.from(board).toString('hex');
+    else if (!(typeof board === 'string' && board.startsWith('0x'))) throw new Error('Foskaay GGI: board must be a 0x hex string or byte array');
+    let boardHash = rec.boardHash;
+    if (!boardHash) boardHash = await this.hashState(board);
+    return {
+      turn: Number(rec.turn) || 0,
+      seats: Number(rec.seats) || 2,
+      step: Number(rec.step) || 0,
+      board,
+      boardHash,
+      over: Boolean(rec.over),
+    };
+  }
+
   // ------------------------------------------------------------- game settle
 
   /// Commit N games in ONE transaction and credit the players in the same step.
