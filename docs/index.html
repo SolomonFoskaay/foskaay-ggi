@@ -60,12 +60,12 @@
         <a href="#why">Why use it</a>
         <a href="#how">How it works</a>
         <a href="#designing">Designing for the rail</a>
-        <a href="#settle-modes">Two settle modes</a>
+        
         <a href="#upgradeable">Upgradeable or not</a>
         <a href="#unopinionated">Built to fit your game</a>
         <a href="#contracts">Contracts</a>
         <a href="#fees">Fees</a>
-        <a href="#hardware">What you run</a>
+        
         <a href="#quickstart">Quickstart</a>
         <a href="#get-started">Get started</a>
         <a href="#demos">Demos</a>
@@ -204,81 +204,6 @@
             this section first. It is the difference between a game that costs a fraction of a cent per
             match and one that quietly costs fifty times more, and it is the mindset an outside developer
             should bring: cheap to lift, free to play inside, one clean commit home.
-        </div>
-    </section>
-
-    <section class="ggi-card" id="settle-modes">
-        <h2 class="ggi-h2">Two ways to settle a match, and when to use each</h2>
-        <p class="ggi-body">
-            When a game settles a match, it has to answer one question: who proves that nobody cheated
-            during play? There are two honest answers, and your game picks one per match. Both are always
-            cheaper than the old way of sending every move to the chain.
-        </p>
-
-        <div class="ggi-h3">The old, expensive way (for comparison)</div>
-        <p class="ggi-body">
-            If every move is its own transaction, a hundred-move match is a hundred transactions. On Arc
-            that measured about <b>0.00069 USDC of gas per move</b>, so a hundred moves is about
-            <b>0.069 USDC per match</b> (about 14 games per 1 USDC). The player pays nothing, but the game
-            operator pays all of it, and it grows with every move.
-        </p>
-
-        <div class="ggi-h3">Mode 1: signature settle (the cheap, default one)</div>
-        <p class="ggi-body">
-            The players' session keys sign the final result off-chain, and the chain verifies those
-            signatures at settle. It does <b>not</b> replay the rules; it trusts the co-signed result. A
-            false result would need <b>both players to lie</b>, which is fine for casual play, free play,
-            leaderboards and a demo.
-        </p>
-        <ul class="ggi-list">
-            <li><b>One settle transaction</b> no matter how many moves. A hundred moves still settles in one.</li>
-            <li><b>Cheapest, and flat.</b> Measured about <b>0.0016 USDC per match</b> all-in (connect plus settle, moves free).</li>
-            <li><b>Best for:</b> casual and free play, a ranking or points ladder, a demo, anything where both players have no reason to fake the result.</li>
-        </ul>
-
-        <div class="ggi-h3">Mode 2: replay settle (the strict one, for money)</div>
-        <p class="ggi-body">
-            The contract takes the signed move log and <b>replays every move through the rules</b> at
-            settle. An illegal move, a wrong die or a tampered log makes the settle revert. Nobody has to
-            trust the players: the contract itself proves the match was legal.
-        </p>
-        <ul class="ggi-list">
-            <li><b>Still ONE transaction.</b> The hundred moves are replayed inside a single settle, not sent one by one.</li>
-            <li><b>Costs a bit more than signature mode</b> because the settle does the replay work, but you still save every per-move transaction.</li>
-            <li><b>Best for:</b> money matches, prizes, competitions with strangers, anything where a fake result must be impossible even if both seats wanted to fake it.</li>
-        </ul>
-
-        <div class="ggi-h3">The saving, in plain USDC (a hundred-move match)</div>
-        <div class="research-table-wrap">
-        <table class="ggi-table">
-            <thead><tr><th>How you settle a 100-move match</th><th>Transactions on chain</th><th>Approx cost per match</th><th>Games per 1 USDC</th></tr></thead>
-            <tbody>
-                <tr><td>Every move its own transaction (old way)</td><td>100</td><td>about 0.069 USDC</td><td>about 14</td></tr>
-                <tr><td>Signature settle (mode 1)</td><td>2 (connect + settle)</td><td>about 0.0016 USDC</td><td>about 600</td></tr>
-                <tr><td>Replay settle (mode 2)</td><td>2 (connect + settle, replay inside)</td><td>a little more than mode 1</td><td>still hundreds</td></tr>
-            </tbody>
-        </table>
-        </div>
-        <p class="ggi-body">
-            Read it as a dev would: the old way spends a transaction per move. Both new modes spend
-            <b>two</b> transactions for the whole match. So a hundred-move match goes from 100 transactions
-            to 2, meaning <b>98 fewer transactions</b> for the same result. Signature mode is the cheapest;
-            replay mode is a small amount more and buys you a contract that checks every move itself.
-        </p>
-
-        <div class="ggi-h3">How a dev knows which one a match used</div>
-        <p class="ggi-body">
-            It is not a hidden setting. Your game chooses the mode once, at match creation, and the
-            contract stores it and can be read afterwards. So a player, a judge or an explorer can always
-            see which mode a match used. A dev can support both and let the game decide per match: for
-            example, a friendly game uses signature mode, and a paid entry uses replay mode.
-        </p>
-
-        <div class="ggi-note good">
-            <b>Beginner summary.</b> Send every move to the chain and you pay for every move. Let the moves
-            run inside the session and settle once, and you pay for one connect and one settle. Then choose
-            who proves it: the players co-sign (cheap, trust both), or the contract replays the moves
-            (a little more, trust nobody). Same two transactions for a hundred moves either way.
         </div>
     </section>
 
@@ -435,10 +360,9 @@ await ggi.settle({
             </tbody>
         </table>
         <p class="ggi-tiny">
-            Fee <span class="ggi-mono">0.0004 base + 0.0004 per lifted account + 0.0002 per game</span>
-            in native USDC, charged once at connect. The base and per-account parts do not grow with
-            batching; only the per-game part does, so cost per game falls the more you batch. The full
-            pricing table lives in the Fees section below.
+            Fee in native USDC, charged once at connect: a session base plus a per-delegated-account
+            part plus a per-game part. Nothing inside the session is charged. The exact numbers live on
+            the single <a href="/pricing/">pricing page</a>.
             RPC <span class="ggi-mono">https://rpc.testnet.arc.io</span> &nbsp;|&nbsp;
             Explorer <span class="ggi-mono">https://explorer.testnet.arc.io</span> &nbsp;|&nbsp;
             USDC <span class="ggi-mono">0x3600000000000000000000000000000000000000</span>
@@ -462,84 +386,17 @@ await ggi.settle({
         <h2 class="ggi-h2">Fees</h2>
         <ul class="ggi-list">
             <li><b>Players pay nothing.</b> Always. The game pays a small fixed fee per session. There is no player-pay option anywhere in the rail: paying is not a mode a dev can switch on, so your players never hit the "top up your wallet first" wall that kills most web3 games.</li>
-            <li><b>Charged twice per session:</b> once at open and once at settle. An abandoned session pays only the open fee.</li>
+            <li><b>One fee per session, in USDC, charged once at connect.</b> It is a session base plus a per-delegated-account part plus a per-game part. Nothing inside the session is charged.</li>
             <li><b>Never per action.</b> A thousand moves and one move cost the same, so heavy games are not punished.</li>
             <li><b>Paid in USDC,</b> a stablecoin, so the price does not swing with a volatile token.</li>
-            <li><b>Set by the operator,</b> changeable with one call and never baked into your code: the SDK reads the current fee at runtime.</li>
+            <li><b>Set by the operator,</b> changeable with one call and read at runtime by the SDK, never baked into your code.</li>
         </ul>
-        <div class="ggi-h3">How the cost compares</div>
         <p class="ggi-body">
-            MagicBlock is a leader in gasless gaming on Solana, and their model bills a delegation
-            session plus each commit. Here is where Foskaay GGI stands beside it, at a standard
-            $100 per SOL:
+            The exact numbers (Foskaay GGI fee, Arc gas, total you pay, games per 1 USDC) live on the single <a href="/pricing/">pricing page</a>, so there is one place to update and never a stale number here.
         </p>
-        <table class="ggi-table">
-            <thead><tr><th></th><th>MagicBlock (Solana)</th><th>Foskaay GGI (Arc)</th></tr></thead>
-            <tbody>
-                <tr><td>Per session</td><td>0.0003 SOL (about $0.03)</td><td>Owner-set, per session</td></tr>
-                <tr><td>Per commit</td><td>0.0001 SOL (about $0.01)</td><td>Included in settle</td></tr>
-                <tr><td>A match (1 session + 2 commits)</td><td>0.0005 SOL (about $0.05)</td><td>About $0.0015 all-in on testnet</td></tr>
-                <tr><td>Denominated in</td><td>VOLATILE token</td><td>Stable USDC</td></tr>
-                <tr><td>Infrastructure you run</td><td>ER endpoints</td><td>None</td></tr>
-            </tbody>
-        </table>
-        <div class="ggi-callout">
-            <b>Why you might pick Foskaay GGI.</b> It works on EVM, specifically Arc, where an ER cannot
-            run. Gas is a stablecoin, not a volatile token. There is no infrastructure to operate. The
-            fee is per session, not per commit, so a heavy game is not punished. And because fees are
-            charged on testnet too, you measure your real mainnet cost before you commit to anything.
-        </div>
-        <p class="ggi-tiny">
-            Exact numbers depend on your usage and on-chain gas. The point is the shape: a fixed cost per
-            session, in a stablecoin, with nothing to run.
-        </p>
+</section>
 
-        <div class="ggi-h3">What one game costs, with and without Foskaay GGI</div>
-        <p class="ggi-body">
-            Real measurements on Arc testnet. A normal game runs 60 to 100+ moves; this uses 100 moves.
-            "Not batched" means one game per session. "Batched" means many games share one session.
-            Every Foskaay GGI game uses the same infrastructure either way; the only choice is whether
-            you batch. The two cost columns separate the raw chain cost from the operator fee.
-        </p>
-        <div class="research-table-wrap">
-        <table class="ggi-table">
-            <thead><tr><th>How you run it</th><th>Cost for one game (gas only)</th><th>Cost for one game (with operator fee)</th><th>Games per $1 (with fee)</th></tr></thead>
-            <tbody>
-                <tr><td>Direct on-chain, no Foskaay GGI (100+ moves)</td><td>0.2444 USDC</td><td>not applicable</td><td>about 4</td></tr>
-                <tr><td>Foskaay GGI, not batched</td><td>0.001712 USDC</td><td>0.002712 USDC</td><td>about 369</td></tr>
-                <tr><td>Foskaay GGI, batched 3</td><td>0.000570 USDC</td><td>0.000904 USDC</td><td>about 1,106</td></tr>
-                <tr><td>Foskaay GGI, batched 5</td><td>0.000342 USDC</td><td>0.000542 USDC</td><td>about 1,845</td></tr>
-                <tr><td>Foskaay GGI, batched 10</td><td>0.000171 USDC</td><td>0.000271 USDC</td><td>about 3,690</td></tr>
-                <tr><td>Foskaay GGI, batched 100</td><td>0.000017 USDC</td><td>0.000027 USDC</td><td>about 36,900</td></tr>
-            </tbody>
-        </table>
-        </div>
-        <p class="ggi-tiny">
-            The operator fee column uses a 0.001 USDC per session placeholder. It is set by the operator,
-            changeable with one call, and read at runtime, never hardcoded.
-        </p>
-        <ul class="ggi-list">
-            <li><b>Not batched vs batched.</b> Not batched anchors each game as it ends, so the result is on-chain immediately. Batched puts many games in one session and settles them together, which is cheaper because the connect and settle cost is shared. A game's on-chain event lands when the session settles, and the operator picks that cadence. It is not a gameplay delay: moves are already signed and free.</li>
-            <li><b>How it gets this cheap (the tech behind it).</b> Inside a session, every move runs off the base chain through the Foskaay GGI Midchain: signed by the session key and tied together by a hash chain, so a thousand moves cost the same as one. Only the session connect and the session settle are transactions. That is what turns a 100-move game from about 0.24 USDC into a fraction of a cent.</li>
-            <li><b>Why batched keeps dropping.</b> The connect and settle are charged per session, so the more games share a session, the cheaper each game, without limit.</li>
-        </ul>
-    </section>
-
-    <section class="ggi-card" id="hardware">
-        <h2 class="ggi-h2">What you run</h2>
-        <p class="ggi-body">
-            <b>Nothing extra.</b> There is no validator, no RPC node and no rollup to operate. You
-            deploy your own game as usual; the rail handles the room;
-            your game owns its economy.
-        </p>
-        <div class="ggi-callout good">
-            <b>Honest limits, so there are no surprises.</b> Inside a session the state is signed, not a
-            live parallel machine, so a third party cannot read your mid-session state the way they can
-            read a public account. A relayer submits the settlement, and it is trusted for <b>timing</b>,
-            never for <b>truth</b> (the signatures decide what is true). And the rail ships its own
-            session reader so sessions and receipts are visible.
-        </div>
-    </section>
+    
 
     <section class="ggi-card" id="get-started">
         <h2 class="ggi-h2">Get started</h2>
@@ -761,8 +618,9 @@ await ggi.settle({ sessionId, finalHash, seedReveal, sigs, signers });</code></d
 
         <div class="ggi-h3">Does every move cost something?</div>
         <p class="ggi-body">
-            No. Nothing is written to the chain during play. Cost appears only at open and settle, so a
-            thousand actions cost the same as one.
+            No. Nothing is written to the chain during play. The fee is charged once, at connect, as a session base
+            plus a per-delegated-account part plus a per-game part, and a thousand actions inside the session
+            cost nothing more than one. The numbers live on the <a href="/pricing/">pricing page</a>.
         </p>
 
         <div class="ggi-h3">What if a session is abandoned?</div>
