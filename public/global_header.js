@@ -188,6 +188,21 @@
     try { window.addEventListener('gfg:auth-changed', function () { window.refreshAuthHeader(); }); } catch (e) {}
 
     renderFooter();
+    renderTopButton();
+  }
+
+  function renderTopButton() {
+    if (document.getElementById('ggi-top')) return;
+    var b = document.createElement('button');
+    b.id = 'ggi-top';
+    b.setAttribute('aria-label', 'Back to top');
+    b.textContent = '^';
+    b.style.cssText = 'position:fixed;right:16px;bottom:20px;width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.16);background:rgba(15,15,19,.78);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:#f39c12;font-size:1.1rem;font-weight:900;cursor:pointer;z-index:940;display:none;box-shadow:0 8px 24px rgba(0,0,0,.4);';
+    b.onclick = function () { window.scrollTo({ top: 0, behavior: 'smooth' }); };
+    document.body.appendChild(b);
+    window.addEventListener('scroll', function () {
+      b.style.display = (window.scrollY > 420) ? 'block' : 'none';
+    }, { passive: true });
   }
 
   function renderFooter() {
