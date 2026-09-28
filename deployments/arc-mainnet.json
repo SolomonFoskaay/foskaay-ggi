@@ -38,5 +38,7 @@
     "gamesProxy": "0x776f6c925973a5dc618aec9cf6d1bf3e1489b4f85db7f0cc2734bc69431b2905",
     "wireSetGame": "0xc44a25b6819282fc45feb991c27ef175311927d1bb6cbab7920998a0cd9ab9ab"
   },
-  "note": "Mainnet launch deploy. Same wire as testnet: players.game = games, games.players = players. Core version 2, game/player version 1. Single-owner upgrade authority for launch (game-agnostic, non-value core); a multisig/timelock is added after real usage."
+  "note": "Mainnet launch deploy. Same wire as testnet: players.game = games, games.players = players. Core version 2, game/player version 1. Single-owner upgrade authority for launch (game-agnostic, non-value core); a multisig/timelock is added after real usage.",
+  "destination": "0x49A5A783fA200ad926A26552e2b3Dd3919033994",
+  "destinationNote": "Fee tracking wallet (separate from the sponsor/deployer). setDestination on 2026-09-28 so session fees are trackable."
 }
