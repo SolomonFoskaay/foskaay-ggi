@@ -13,7 +13,7 @@
   },
   "implementations": {
     "FoskaayGGI": "0xC0d3c82994e31d8C97A589aCCd480B2Cf36311eb",
-    "FoskaayGGIGames": "0xcebA2d46ea6d30BC32f6A6dC336c9b8adb3F56cc",
+    "FoskaayGGIGames": "0x25DF55A76b149776e8A6f5238b1e57D045454fdd",
     "FoskaayGGIPlayers": "0x7669a25DBF92C271F87657C16286992ad95Cd94E"
   },
   "upgradeable": true,
@@ -45,5 +45,10 @@
     "impl": "0xcebA2d46ea6d30BC32f6A6dC336c9b8adb3F56cc",
     "upgradeTx": "0x2cc8b333e316e3ffab802fdff1d0dd38d63d6b83bb76c37afa3ca6aea8855f04",
     "note": "Persistent-gameplay upgrade (version 2): append-only per-player game index (playerGameIndices) + playerGamesOf/gamesOf getters + setVersion. Same address, same data; version + us (append-only storage after __gap)."
+  },
+  "foskaayGGILiveBoardUpgrade": {
+    "version": 3,
+    "note": "Live-board store (recordLive/liveBoard): each move's board bytes commit to FoskaayGGIGames so any device reconstructs/rejoins the exact mid-game state from the chain (GFG board-PDA equivalent). Moves are computed free via eth_call; the per-move record is a tiny sponsor tx.",
+    "txupgraded": "0x8ceb882967973d59edd2644d495d526b45d4952c68909ea7c1cbdfd1b587f5d9"
   }
 }

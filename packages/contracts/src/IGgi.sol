@@ -161,6 +161,14 @@ interface IFoskaayGGIGames {
     /// index). Pair with gamesOf(sessionId) to rebuild that player's boards.
     function playerGamesOf(bytes32 sessionId, address player) external view returns (uint32[] memory);
 
+    /// The latest live board bytes of an in-progress session (the game's on-chain
+    /// "program" store, written by recordLive after each move).
+    function liveBoard(bytes32 sessionId) external view returns (bytes memory);
+
+    /// Write the latest live board bytes (game owner/relayer). The game's store,
+    /// so any device reconstructs/rejoins the exact mid-game state from the chain.
+    function recordLive(bytes32 sessionId, bytes calldata board) external;
+
     /// Commit N games in one transaction and credit the players in the same step.
     /// `seatPlayers` maps seat => player (length must equal each game's seats).
     function settle(bytes32 sessionId, Game[] calldata list, address[] calldata seatPlayers, bytes32 gameTag)

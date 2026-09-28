@@ -54,6 +54,7 @@ const gamesAbi = parseAbi([
   'function gameCount(bytes32 sessionId) view returns (uint256)',
   'function gamesOf(bytes32 sessionId) view returns ((uint8 turn, uint8 seats, uint32 step, bytes board, bytes32 boardHash, bool over)[])',
   'function playerGamesOf(bytes32 sessionId, address player) view returns (uint32[])',
+  'function liveBoard(bytes32 sessionId) view returns (bytes)',
   'function getInitialState(uint8 seatCount, uint8 userSeat) pure returns (bytes)',
   'function applyMove(bytes state, uint8 kind, uint8 seat, uint8 tokenIndex, uint8 value, bytes32[] seeds) pure returns (bytes)',
   'function hashState(bytes state) pure returns (bytes32)',
@@ -330,6 +331,13 @@ export class GgiClient {
   async playerGamesOf(sessionId, player) {
     if (!this.addresses.Games) return [];
     return this.publicClient.readContract({ address: this.addresses.Games, abi: gamesAbi, functionName: 'playerGamesOf', args: [sessionId, player] });
+  }
+
+  /// The latest live board bytes of an in-progress session (the game's on-chain
+  /// store), so a frontend can rejoin/reconstruct the exact mid-game state.
+  async liveBoard(sessionId) {
+    if (!this.addresses.Games) return '0x';
+    return this.publicClient.readContract({ address: this.addresses.Games, abi: gamesAbi, functionName: 'liveBoard', args: [sessionId] });
   }
 
   // ---------------------------------------------------------------- game rules

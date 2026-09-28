@@ -504,6 +504,17 @@ const dev  = new GgiClient({ network: 'testnet' }); // build + test, free to run
             <span class="ggi-mono">gameCount(sessionId)</span>. This is the same idea as MagicBlock's ER boards: the
             state lives in the midchain (your contracts) and any device reads it to continue, refresh or rejoin.
         </p>
+        <div class="ggi-h3">The live board: your game contract is the store (GFG/MagicBlock style)</div>
+        <p class="ggi-body">
+            The reload-proof way to play is the same one GFG's multiplayer used: the game's own contract is
+            the store. Each move's <b>board bytes are committed to your game contract</b> (
+            <span class="ggi-mono">FoskaayGGIGames.recordLive(sessionId, board)</span>, read back with
+            <span class="ggi-mono">liveBoard(sessionId)</span>), so ANY device reconstructs and rejoins the
+            exact mid-game state from the chain, with no server memory and no snapshots from the rail. The
+            next state is still computed free via <span class="ggi-mono">eth_call</span>; only the record
+            write is a tiny real transaction. The relay can rebuild a cold session from on-chain (
+            <span class="ggi-mono">liveBoard</span> + the Handover event + the session seed) and continue it.
+        </p>
         <div class="ggi-note good">Persistent gameplay is game-side code, on top of Foskaay GGI. The rail stays game-agnostic: it only gave your contracts a free room; how long their data lives is your design, and the contracts above prove it can live forever.</div>
     </section>
 
