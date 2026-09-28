@@ -318,7 +318,7 @@
         updatePoints();
         if (!(window.currentUser || evm)) { host.innerHTML = '<span class="ld-muted" style="color:#8f8fa0">Sign in to see your sessions.</span>'; return; }
         host.innerHTML = '<span class="ld-muted" style="color:#8f8fa0">Loading your sessions...</span>';
-        fetch(RELAY, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'demoSessions', wallet: evm }) })
+        fetch(RELAY, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'walletSessions', wallet: evm }) })
             .then(function (r) { return r.json(); })
             .then(function (j) {
                 var list = (j && j.sessions) || [];

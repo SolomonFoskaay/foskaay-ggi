@@ -411,6 +411,7 @@
             SESSION_KEY = sk ? sk.address : USER;
             var created = await relay('demoCreate', { seatCount: seatCount, userSeat: userSeat, user: USER, sessionKey: SESSION_KEY });
             SID = created.sessionId;
+            try { if (history && history.replaceState) history.replaceState(null, '', '/demos/board/ludo/?game=' + SID); } catch (e) {}
             applyBoard(created.view);
             if (ui().log) ui().log('Session connected on-chain (fee paid, one transaction)', created.costUsdc6);
             if (ui().gas) ui().gas(created.costUsdc6, 'connected');

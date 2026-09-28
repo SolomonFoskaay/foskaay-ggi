@@ -79,6 +79,34 @@ const gamesAbi = parseAbi([
 // The demo's game tag (the same bucket the player points are stored under).
 const GAME_TAG = keccak256(toBytes('ludo'));
 
+// On-chain HANDOVER/SETTLED events, used to build a WALLET's permanent session
+// history from the chain (no relay memory, never resets). Delegation starts at
+// the core proxy deploy block on each network.
+const HANDOVER_EVENT = {
+  type: 'event', name: 'Handover',
+  inputs: [
+    { type: 'bytes32', name: 'sessionId', indexed: true },
+    { type: 'address', name: 'gameLogic', indexed: true },
+    { type: 'bytes32', name: 'startHash' },
+    { type: 'bytes32', name: 'seedCommit' },
+    { type: 'address[]', name: 'players' },
+    { type: 'address[]', name: 'sessionKeys' },
+    { type: 'uint16', name: 'randomCount' },
+    { type: 'address', name: 'payer', indexed: true },
+    { type: 'uint64', name: 'counter' },
+  ],
+};
+const SETTLED_EVENT = {
+  type: 'event', name: 'Settled',
+  inputs: [
+    { type: 'bytes32', name: 'sessionId', indexed: true },
+    { type: 'bytes32', name: 'finalHash' },
+    { type: 'bytes32', name: 'seedReveal' },
+    { type: 'address', name: 'payer', indexed: true },
+  ],
+};
+const HANDOVER_FROM = { testnet: 64110469n, mainnet: 23065553n };
+
 const chain = defineChain({
   id: CHAIN_ID,
   name: 'Arc Testnet',
@@ -286,6 +314,36 @@ async function doDemoSession(body) {
   return { found: !!sess, sessionId: body.sessionId, connectTx: sess ? sess.connectTx : null, settleTx: sess ? sess.settleTx : null };
 }
 
+/// PERMANENT wallet session history from the chain (Handover/Settled events from
+/// the deploy block), filtered by the player wallet. Never stored in relay memory
+/// and never resets: it is derived from on-chain facts on every call.
+async function doWalletSessions(body) {
+  const { pub } = clients();
+  const wallet = String(body.wallet || '').toLowerCase();
+  if (!wallet) return { sessions: [] };
+  const from = HANDOVER_FROM[NET_NAME] || 0n;
+  const [hands, setts] = await Promise.all([
+    pub.getLogs({ address: ADDR.FoskaayGGI, event: HANDOVER_EVENT, fromBlock: from, toBlock: 'latest' }).catch(() => []),
+    pub.getLogs({ address: ADDR.FoskaayGGI, event: SETTLED_EVENT, fromBlock: from, toBlock: 'latest' }).catch(() => []),
+  ]);
+  const settledMap = {};
+  for (const L of setts) settledMap[L.args.sessionId.toLowerCase()] = true;
+  const out = [];
+  for (let i = hands.length - 1; i >= 0; i--) {
+    const L = hands[i];
+    const ps = (L.args.players || []).map(String);
+    if (!ps.length || ps.map((x) => x.toLowerCase()).indexOf(wallet) === -1) continue;
+    const sid = L.args.sessionId;
+    let gamesCommitted = 0;
+    try {
+      if (ADDR.FoskaayGGIGames) gamesCommitted = Number(await pub.readContract({ address: ADDR.FoskaayGGIGames, abi: gamesAbi, functionName: 'gameCount', args: [sid] }));
+    } catch (e) { /* soft */ }
+    out.push({ sessionId: sid, block: L.blockNumber, tx: L.transactionHash, paid: true, settled: !!settledMap[sid.toLowerCase()], gamesCommitted, games: gamesCommitted });
+    if (out.length >= 12) break;
+  }
+  return { sessions: out };
+}
+
 /// A logged-in account's recent sessions (in this relay instance), with on-chain
 /// status: does the core see it paid/committed. Serverless memory is per-instance,
 /// so this is a best-effort history, never localstorage.
@@ -414,6 +472,7 @@ export default async function handler(req, res) {
       case 'demoDigest': out = await doDemoDigest(body); break;
       case 'demoSession': out = await doDemoSession(body); break;
       case 'demoSessions': out = await doDemoSessions(body); break;
+      case 'walletSessions': out = await doWalletSessions(body); break;
       case 'demoRejoin': out = await doDemoRejoin(body); break;
       case 'demoGame': out = await doDemoGame(body); break;
       case 'demoSettle': out = await doDemoSettle(body); break;
