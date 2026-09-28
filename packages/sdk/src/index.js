@@ -54,7 +54,6 @@ const gamesAbi = parseAbi([
   'function gameCount(bytes32 sessionId) view returns (uint256)',
   'function gamesOf(bytes32 sessionId) view returns ((uint8 turn, uint8 seats, uint32 step, bytes board, bytes32 boardHash, bool over)[])',
   'function playerGamesOf(bytes32 sessionId, address player) view returns (uint32[])',
-  'function liveBoard(bytes32 sessionId) view returns (bytes)',
   'function getInitialState(uint8 seatCount, uint8 userSeat) pure returns (bytes)',
   'function applyMove(bytes state, uint8 kind, uint8 seat, uint8 tokenIndex, uint8 value, bytes32[] seeds) pure returns (bytes)',
   'function hashState(bytes state) pure returns (bytes32)',
@@ -283,6 +282,46 @@ export class GgiClient {
     return got.toLowerCase() === getAddress(expectedSigner).toLowerCase();
   }
 
+  /// Verify a signed move log (the Foskaay GGI midchain) CLIENT-SIDE, for free,
+  /// so an untrusted relay/cache cannot feed a tampered session. Checks:
+  ///  1. hash-chain continuity: every move.prevHash == previous move.newHash,
+  ///     and the first move starts from the on-chain Handover startHash,
+  ///  2. every move signature recovers to that seat's session key OR the
+  ///     sponsor, over midchainDigest(sessionId, newHash),
+  ///  3. if the session settled, the last newHash equals the on-chain finalHash.
+  /// All reads are eth_call (free). Returns { valid, reason, checked }.
+  ///
+  /// MIDCHAIN RULE: moves are NEVER Arc transactions. Each move is an off-chain
+  /// signed hash tied to the chain by the Handover (startHash, seedCommit,
+  /// participants) and the settle (finalHash). Writing live state to Arc on a
+  /// per-move basis reintroduces a third fee per session; do not do it.
+  async verifyMoveLog(sessionId, { startHash, moves, sessionKeys = [], sponsorAddress = '', finalHash = '', settled = false }) {
+    const list = moves || [];
+    if (!list.length) return { valid: true, reason: 'empty move log', checked: 0 };
+    const sponsor = sponsorAddress ? getAddress(sponsorAddress).toLowerCase() : null;
+    let prev = startHash;
+    for (let i = 0; i < list.length; i++) {
+      const m = list[i];
+      if (String(m.prevHash || '').toLowerCase() !== String(prev || '').toLowerCase()) {
+        return { valid: false, reason: 'hash-chain break at move ' + i, checked: i };
+      }
+      const digest = await this.midchainDigest(sessionId, m.newHash);
+      let got = '';
+      try { got = (await recoverAddress({ hash: digest, signature: m.sig })).toLowerCase(); } catch (_) {
+        return { valid: false, reason: 'unparseable signature at move ' + i, checked: i };
+      }
+      const seatKey = sessionKeys[m.seat] ? getAddress(sessionKeys[m.seat]).toLowerCase() : '';
+      if (!((seatKey && got === seatKey) || (sponsor && got === sponsor))) {
+        return { valid: false, reason: 'bad signature at move ' + i, checked: i };
+      }
+      prev = m.newHash;
+    }
+    if (settled && finalHash && String(prev).toLowerCase() !== String(finalHash).toLowerCase()) {
+      return { valid: false, reason: 'move log does not match the on-chain finalHash' };
+    }
+    return { valid: true, reason: 'ok', checked: list.length };
+  }
+
   // ------------------------------------------------------------- randomness
 
   /// One free random seed: keccak(seed, counter), via eth_call. Costs nothing.
@@ -331,13 +370,6 @@ export class GgiClient {
   async playerGamesOf(sessionId, player) {
     if (!this.addresses.Games) return [];
     return this.publicClient.readContract({ address: this.addresses.Games, abi: gamesAbi, functionName: 'playerGamesOf', args: [sessionId, player] });
-  }
-
-  /// The latest live board bytes of an in-progress session (the game's on-chain
-  /// store), so a frontend can rejoin/reconstruct the exact mid-game state.
-  async liveBoard(sessionId) {
-    if (!this.addresses.Games) return '0x';
-    return this.publicClient.readContract({ address: this.addresses.Games, abi: gamesAbi, functionName: 'liveBoard', args: [sessionId] });
   }
 
   // ---------------------------------------------------------------- game rules

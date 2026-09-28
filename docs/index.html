@@ -484,41 +484,41 @@ const dev  = new GgiClient({ network: 'testnet' }); // build + test, free to run
             in one open session; after each game, reading the contracts from outside the session showed the
             points and committed games already there, identical after the session closed.
         </p>
-        <div class="ggi-h3">The live board closes the last gap</div>
+        <div class="ggi-h3">The midchain: no per-move Arc transactions, ever</div>
         <p class="ggi-body">
-            With the live board (<span class="ggi-mono">recordLive</span>), even the <b>in-progress game's
-            board bytes are written on-chain after every move</b>, so the exact mid-game state is
-            reconstructable from the chain at any instant: no relay memory, no snapshots from the rail.
-            <b>Settle</b> still stores the finished game and credits the player account permanently, and
-            <b>recordLive + the Handover event + the session seed</b> let any device (or a restarted relay)
-            rebuild and continue a live session.
+            During play, NOTHING is written to Arc. Each move is computed free by the contract (eth_call),
+            hash-chained (<span class="ggi-mono">prevHash -> newHash</span>) and signed, and the signed log IS
+            the Foskaay GGI midchain. The relay is only an untrusted cache: any device replays the log and
+            verifies it client-side (chain continuity, every signature, and the on-chain anchors: the
+            Handover's startHash and participants, and the settle's finalHash). Arc sees exactly two
+            transactions per session: connect and settle. A per-move storage write on Arc (an on-chain
+            recordLive) would be a THIRD transaction, the fee regression this design forbids.
         </p>
         <div class="ggi-h3">The pattern a game dev adds (their contracts, never the rail)</div>
         <ul class="ggi-list">
-            <li><b>Record the live board.</b> After every move, write the board bytes to your game contract (<span class="ggi-mono">recordLive(sessionId, board)</span>, read with <span class="ggi-mono">liveBoard(sessionId)</span>). That is the GFG/MagicBlock board-PDA model: the game's contract is the store, and any page reconstructs the exact mid-game state from the chain.</li>
+            <li><b>Never write the board per move.</b> Moves are computed free, hash-chained and signed; the signed log is your midchain. Writing the live board to Arc on every move reintroduces a third fee and must not happen. Commit the finished game with <span class="ggi-mono">settleGame</span>, the single post-play write.</li>
             <li><b>Commit each game at game end.</b> Call <span class="ggi-mono">settleGame(sessionId, [game], seatPlayers, gameTag)</span>, which stores the finished board and credits the player account in one step.</li>
             <li><b>Index games per player.</b> Keep a small per-player record of which committed games belong to whom (the reference is <span class="ggi-mono">FoskaayGGIGames.playerGamesOf(sessionId, player)</span> with <span class="ggi-mono">gamesOf(sessionId)</span>), so a frontend rebuilds a player's history straight from the chain.</li>
             <li><b>Gate rejoin with the on-chain participants.</b> The core's Handover commits <span class="ggi-mono">players[]</span> and <span class="ggi-mono">sessionKeys[]</span>; only a participant's session-key signature may advance the session, so a stranger cannot hijack another player's game.</li>
         </ul>
         <p class="ggi-body">
-            The SDK exposes this to you: <span class="ggi-mono">liveBoard(sessionId)</span>,
-            <span class="ggi-mono">recordLive(sessionId, board)</span>, <span class="ggi-mono">gamesOf(sessionId)</span>,
+            The SDK exposes this to you: <span class="ggi-mono">verifyMoveLog(sessionId, log)</span> for the
+            client-side midchain verification, <span class="ggi-mono">gamesOf(sessionId)</span>,
             <span class="ggi-mono">playerGamesOf(sessionId, player)</span>, <span class="ggi-mono">pointsOf(player, tag)</span>,
-            <span class="ggi-mono">gameCount(sessionId)</span>. Same idea as MagicBlock's ER boards: the state lives in
-            the midchain (your contracts) and any device reads it to continue, refresh or rejoin.
+            <span class="ggi-mono">gameCount(sessionId)</span>. State lives in the midchain (your contracts) and any
+            device reads it, verifies it, and continues, refresh or rejoin. Nothing is invented in the browser.
         </p>
-        <div class="ggi-h3">The live board: your game contract is the store (GFG/MagicBlock style)</div>
+        <div class="ggi-h3">Refresh and rejoin work how?</div>
         <p class="ggi-body">
-            The reload-proof way to play is the same one GFG's multiplayer used: the game's own contract is
-            the store. Each move's <b>board bytes are committed to your game contract</b> (
-            <span class="ggi-mono">FoskaayGGIGames.recordLive(sessionId, board)</span>, read back with
-            <span class="ggi-mono">liveBoard(sessionId)</span>), so ANY device reconstructs and rejoins the
-            exact mid-game state from the chain, with no server memory and no snapshots from the rail. The
-            next state is still computed free via <span class="ggi-mono">eth_call</span>; only the record
-            write is a tiny real transaction. The relay can rebuild a cold session from on-chain (
-            <span class="ggi-mono">liveBoard</span> + the Handover event + the session seed) and continue it.
+            The live session URL (<span class="ggi-mono">?game=sessionId</span>) is the only handle, no storage.
+            On rejoin the device fetches the signed move log from the relay (untrusted) and VERIFIES it
+            client-side against the on-chain anchors before drawing one token, via the SDK's
+            <span class="ggi-mono">verifyMoveLog</span>. If the log is missing (a serverless relay restarted),
+            the page shows the on-chain truth (paid session, and the committed result once settled) instead of
+            fabricating a board. Mid-game sessions are midchain state, so they never left for Arc: resumable
+            while the log is alive, permanently reviewable once settled.
         </p>
-        <div class="ggi-note good">Persistent gameplay is game-side code, on top of Foskaay GGI. The rail stays game-agnostic: it only gave your contracts a free room; how long their data lives is your design, and the contracts above prove it can live forever.</div>
+        <div class="ggi-note good">Persistent gameplay is game-side code on top of Foskaay GGI. The rule everyone follows: connect and settle are the only Arc transactions; everything in between stays in the signed midchain and is verified against the chain. Move counts stay unbounded, fees stay at two.</div>
     </section>
 
     <section class="ggi-card" id="get-started">

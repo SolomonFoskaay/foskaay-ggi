@@ -461,6 +461,21 @@
             var j = await relay('demoRejoin', { sessionId: sessionId, wallet: evm });
             if (!j.ok) { setPrompt(j.reason || 'Cannot rejoin this session.'); return { ok: false, reason: j.reason }; }
             SID = j.sessionId; SEATS = j.seatCount; USERSEAT = j.userSeat;
+            // The relay is an untrusted cache: verify the signed midchain log
+            // CLIENT-SIDE before rendering, so a tampered server response is
+            // never drawn. All checks are free (reads + signature recovery).
+            if (j.moves && j.moves.length && window.GGI_SDK && typeof window.GGI_SDK.verifyMoveLog === 'function') {
+                var vr = await window.GGI_SDK.verifyMoveLog(SID, {
+                    startHash: j.startHash, moves: j.moves, sessionKeys: j.sessionKeys || [],
+                    sponsorAddress: j.sponsorAddress, finalHash: j.finalHash, settled: j.settled
+                });
+                if (!vr.valid) {
+                    setPrompt('Rejoin blocked: the relay returned a tampered midchain log (' + vr.reason + '). Start a new match.');
+                    if (ui().log) ui().log('MIDCHAIN VERIFY FAILED: ' + vr.reason, 0);
+                    return { ok: false, reason: 'verification failed: ' + vr.reason };
+                }
+                if (ui().log) ui().log('Midchain verified: ' + vr.checked + ' signed moves match the on-chain anchors', 0);
+            }
             for (var s = 0; s < 4; s++) {
                 var c = COLOR_OF[s];
                 window.playerProfiles[c] = { mode: s === j.userSeat ? 'human' : 'computer', isUser: s === j.userSeat };

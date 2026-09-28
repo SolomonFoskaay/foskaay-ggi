@@ -227,3 +227,11 @@ Add to index.html:
 
 After fixes, Ludo delegation flow is truly gasless for both player and sponsor: sponsor pays only handover + settlement, 2 txs, not 200.
 
+---
+
+**Proof link (this series):** when a per-move fee reappeared later via an on-chain live-board write
+(`recordLive`), the same fix was applied to persistence. See Section Two of
+`dotmd/foskaay-ggi-recordlive-room-fix-agent.md`: the write is removed, the signed move log is the
+midchain, rejoin verifies it client-side (`verifyMoveLog`), and Arc still sees exactly 2 transactions
+per session.
+
