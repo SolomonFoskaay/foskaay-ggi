@@ -69,6 +69,7 @@
         
         <a href="#quickstart">Quickstart</a>
         <a href="#ending">Ending a session</a>
+        <a href="#persistence">Persistent gameplay</a>
         <a href="#get-started">Get started</a>
         <a href="#demos">Demos</a>
         <a href="#usecases">Use cases</a>
@@ -472,6 +473,38 @@ const dev  = new GgiClient({ network: 'testnet' }); // build + test, free to run
             and signed instantly. A dev picks close-on-game-end (unbatched) or close-when-the-batch-is-full (batched).
             Numbers live on the <a href="/pricing/">pricing page</a>.
         </div>
+    </section>
+
+    <section class="ggi-card" id="persistence">
+        <h2 class="ggi-h2">Persistent gameplay (survive refresh, logout, rejoin)</h2>
+        <p class="ggi-body">
+            Foskaay GGI is the free room; your game and player contracts are the store. The moment a game
+            settles, <b>the game (with its board bytes) and the player's points are written on-chain
+            immediately, even while the session is still open.</b> We measured this live on testnet: 3 games
+            in one open session; after each game, reading the contracts from outside the session showed the
+            points and committed games already there, identical after the session closed.
+        </p>
+        <div class="ggi-h3">The only transient thing</div>
+        <p class="ggi-body">
+            The one thing that is not on-chain during play is the <b>currently-playing game's moves before
+            that game settles</b> (the signed, roll-by-roll midchain state). Everything before it is already
+            permanent. The honest fix: <b>settle each game when it ends</b> (<span class="ggi-mono">settleGame</span>)
+            rather than only at session close. Then at any moment the chain holds every finished game and
+            every point, and only the live game in progress is held by the relay.
+        </p>
+        <div class="ggi-h3">The pattern a game dev adds (their contracts, never the rail)</div>
+        <ul class="ggi-list">
+            <li><b>Commit each game at game end.</b> Call <span class="ggi-mono">settleGame(sessionId, [game], seatPlayers, gameTag)</span>, which stores the board and credits the player account in one step.</li>
+            <li><b>Index games per player.</b> In your game contract, keep a small per-player record of which committed games belong to whom (the reference is <span class="ggi-mono">FoskaayGGIGames.playerGamesOf(sessionId, player)</span> with <span class="ggi-mono">gamesOf(sessionId)</span>). A frontend then rebuilds a player's boards straight from the chain, with no relay memory and no localstorage.</li>
+            <li><b>Gate rejoin with the on-chain participants.</b> The core's Handover commits <span class="ggi-mono">players[]</span> and <span class="ggi-mono">sessionKeys[]</span>; only a participant's session-key signature may advance the session, so a stranger cannot hijack another player's game.</li>
+        </ul>
+        <p class="ggi-body">
+            The SDK exposes this to you: <span class="ggi-mono">gamesOf(sessionId)</span>,
+            <span class="ggi-mono">playerGamesOf(sessionId, player)</span>, <span class="ggi-mono">pointsOf(player, tag)</span>,
+            <span class="ggi-mono">gameCount(sessionId)</span>. This is the same idea as MagicBlock's ER boards: the
+            state lives in the midchain (your contracts) and any device reads it to continue, refresh or rejoin.
+        </p>
+        <div class="ggi-note good">Persistent gameplay is game-side code, on top of Foskaay GGI. The rail stays game-agnostic: it only gave your contracts a free room; how long their data lives is your design, and the contracts above prove it can live forever.</div>
     </section>
 
     <section class="ggi-card" id="get-started">

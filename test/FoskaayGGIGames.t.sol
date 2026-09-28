@@ -151,6 +151,25 @@ contract FoskaayGGIGamesTest {
         require(uint8(moved[24]) == 0, "seat 0 is 1st");
     }
 
+    function testPlayerGameIndexAccumulatesPerPlayer() public {
+        // game1: seat0=100 (P0 wins), game2: seat0=0 (P1 wins 0), game3: seat0=100 (P0 wins)
+        uint16[4] memory pts;
+        pts[0] = 100;
+        FoskaayGGIGames.Game[] memory list = new FoskaayGGIGames.Game[](3);
+        list[0] = _game(_board(2, pts), 2);
+        uint16[4] memory p0;
+        p0[0] = 0;
+        list[1] = _game(_board(2, p0), 2);
+        list[2] = _game(_board(2, pts), 2);
+        games.settle(SID, list, _two(P0, P1), TAG);
+        uint32[] memory idx = games.playerGamesOf(SID, P0);
+        require(idx.length == 2 && idx[0] == 0 && idx[1] == 2, "P0 games indexed at 0 and 2");
+        uint32[] memory idx2 = games.playerGamesOf(SID, P1);
+        require(idx2.length == 0, "P1 earned nothing (0 points)");
+        require(games.gameCount(SID) == 3, "three games committed");
+        require(players.pointsOf(P0, TAG) == 200, "P0 credited 200");
+    }
+
     function testPureRulesRunFree() public {
         bytes memory s0 = games.getInitialState(2, 0);
         require(s0.length == 36, "initial state");

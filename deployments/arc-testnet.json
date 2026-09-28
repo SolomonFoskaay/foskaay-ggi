@@ -21,7 +21,7 @@
   "implementations": {
     "FoskaayGGI": "0x6A7cF5Db0Df5d5Ae8D181A10BFfa9a0Eb2438017",
     "FoskaayGGILudo": "0xDC38f721C5918A0B2AC234768aaAee25A01ab7b7",
-    "FoskaayGGIGames": "0x83418a85B88a44859F95E321F2089fEd503f45d3",
+    "FoskaayGGIGames": "0xb2c1aE0Cce50801791Ab2ff3D0D846B074447378",
     "FoskaayGGIPlayers": "0xbEA1DE7d6F80f57C13e5840c8957a6C3Fd5BbACd"
   },
   "demoDeployedAt": "2026-09-24T15:05:23.630Z",
@@ -67,5 +67,10 @@
   "foskaayGGIGamesUpgradeTx": "0xea59f104c7b8838e90401c7df6f2fbddc9c159105171bbad064fae76a9a2910b",
   "foskaayGGIGamesUpgradeNote": "LOGIC-ONLY UUPS upgrade in place (same proxy 0x24e38ac2e80958782a8Bc5CD479bbe2e5D81EcDF, same data; version stays 1). FIXED the finish/crown rule: _recordFinish counted any token >= 57, but a token in the yard is stored as 0xFF (255), so yard tokens were counted as home and a seat was crowned while it still had tokens in its base. A token is now home only when it is exactly 57 (never YARD). Verified on-chain after the upgrade: yard scenario finishCount = 0, all-four-home scenario finishCount = 1; players() and version() unchanged. New forge regression tests: testYardTokensAreNeverCountedAsFinished, testAllFourHomeRecordsFinish.",
   "destination": "0x49A5A783fA200ad926A26552e2b3Dd3919033994",
-  "destinationNote": "Fee tracking wallet (separate from the sponsor/deployer). setDestination on 2026-09-28 so session fees are trackable."
+  "destinationNote": "Fee tracking wallet (separate from the sponsor/deployer). setDestination on 2026-09-28 so session fees are trackable.",
+  "foskaayGGIGamesIndexUpgrade": {
+    "impl": "0xb2c1aE0Cce50801791Ab2ff3D0D846B074447378",
+    "upgradeTx": "0xda0e5748e1496e3fefba6ca88a556b72f26060fc46e619fb2580f4ff35f75e4b",
+    "note": "Persistent-gameplay upgrade (version 2): append-only per-player game index (playerGameIndices) + playerGamesOf/gamesOf getters + setVersion. Same address, same data; version + us (append-only storage after __gap)."
+  }
 }
