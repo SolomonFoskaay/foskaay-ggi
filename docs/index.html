@@ -484,25 +484,28 @@ const dev  = new GgiClient({ network: 'testnet' }); // build + test, free to run
             in one open session; after each game, reading the contracts from outside the session showed the
             points and committed games already there, identical after the session closed.
         </p>
-        <div class="ggi-h3">The only transient thing</div>
+        <div class="ggi-h3">The live board closes the last gap</div>
         <p class="ggi-body">
-            The one thing that is not on-chain during play is the <b>currently-playing game's moves before
-            that game settles</b> (the signed, roll-by-roll midchain state). Everything before it is already
-            permanent. The honest fix: <b>settle each game when it ends</b> (<span class="ggi-mono">settleGame</span>)
-            rather than only at session close. Then at any moment the chain holds every finished game and
-            every point, and only the live game in progress is held by the relay.
+            With the live board (<span class="ggi-mono">recordLive</span>), even the <b>in-progress game's
+            board bytes are written on-chain after every move</b>, so the exact mid-game state is
+            reconstructable from the chain at any instant: no relay memory, no snapshots from the rail.
+            <b>Settle</b> still stores the finished game and credits the player account permanently, and
+            <b>recordLive + the Handover event + the session seed</b> let any device (or a restarted relay)
+            rebuild and continue a live session.
         </p>
         <div class="ggi-h3">The pattern a game dev adds (their contracts, never the rail)</div>
         <ul class="ggi-list">
-            <li><b>Commit each game at game end.</b> Call <span class="ggi-mono">settleGame(sessionId, [game], seatPlayers, gameTag)</span>, which stores the board and credits the player account in one step.</li>
-            <li><b>Index games per player.</b> In your game contract, keep a small per-player record of which committed games belong to whom (the reference is <span class="ggi-mono">FoskaayGGIGames.playerGamesOf(sessionId, player)</span> with <span class="ggi-mono">gamesOf(sessionId)</span>). A frontend then rebuilds a player's boards straight from the chain, with no relay memory and no localstorage.</li>
+            <li><b>Record the live board.</b> After every move, write the board bytes to your game contract (<span class="ggi-mono">recordLive(sessionId, board)</span>, read with <span class="ggi-mono">liveBoard(sessionId)</span>). That is the GFG/MagicBlock board-PDA model: the game's contract is the store, and any page reconstructs the exact mid-game state from the chain.</li>
+            <li><b>Commit each game at game end.</b> Call <span class="ggi-mono">settleGame(sessionId, [game], seatPlayers, gameTag)</span>, which stores the finished board and credits the player account in one step.</li>
+            <li><b>Index games per player.</b> Keep a small per-player record of which committed games belong to whom (the reference is <span class="ggi-mono">FoskaayGGIGames.playerGamesOf(sessionId, player)</span> with <span class="ggi-mono">gamesOf(sessionId)</span>), so a frontend rebuilds a player's history straight from the chain.</li>
             <li><b>Gate rejoin with the on-chain participants.</b> The core's Handover commits <span class="ggi-mono">players[]</span> and <span class="ggi-mono">sessionKeys[]</span>; only a participant's session-key signature may advance the session, so a stranger cannot hijack another player's game.</li>
         </ul>
         <p class="ggi-body">
-            The SDK exposes this to you: <span class="ggi-mono">gamesOf(sessionId)</span>,
+            The SDK exposes this to you: <span class="ggi-mono">liveBoard(sessionId)</span>,
+            <span class="ggi-mono">recordLive(sessionId, board)</span>, <span class="ggi-mono">gamesOf(sessionId)</span>,
             <span class="ggi-mono">playerGamesOf(sessionId, player)</span>, <span class="ggi-mono">pointsOf(player, tag)</span>,
-            <span class="ggi-mono">gameCount(sessionId)</span>. This is the same idea as MagicBlock's ER boards: the
-            state lives in the midchain (your contracts) and any device reads it to continue, refresh or rejoin.
+            <span class="ggi-mono">gameCount(sessionId)</span>. Same idea as MagicBlock's ER boards: the state lives in
+            the midchain (your contracts) and any device reads it to continue, refresh or rejoin.
         </p>
         <div class="ggi-h3">The live board: your game contract is the store (GFG/MagicBlock style)</div>
         <p class="ggi-body">
