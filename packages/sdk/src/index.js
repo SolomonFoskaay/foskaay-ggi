@@ -52,6 +52,8 @@ const registryAbi = parseAbi([
 const gamesAbi = parseAbi([
   'function settle(bytes32 sessionId, (uint8 turn, uint8 seats, uint32 step, bytes board, bytes32 boardHash, bool over)[] list, address[] seatPlayers, bytes32 gameTag) returns (uint256)',
   'function gameCount(bytes32 sessionId) view returns (uint256)',
+  'function gamesOf(bytes32 sessionId) view returns ((uint8 turn, uint8 seats, uint32 step, bytes board, bytes32 boardHash, bool over)[])',
+  'function playerGamesOf(bytes32 sessionId, address player) view returns (uint32[])',
   'function getInitialState(uint8 seatCount, uint8 userSeat) pure returns (bytes)',
   'function applyMove(bytes state, uint8 kind, uint8 seat, uint8 tokenIndex, uint8 value, bytes32[] seeds) pure returns (bytes)',
   'function hashState(bytes state) pure returns (bytes32)',
@@ -315,6 +317,19 @@ export class GgiClient {
   async gameCount(sessionId) {
     if (!this.addresses.Games) return 0n;
     return this.publicClient.readContract({ address: this.addresses.Games, abi: gamesAbi, functionName: 'gameCount', args: [sessionId] });
+  }
+
+  /// All committed games of a session (each has turn/seats/step/board/boardHash/over).
+  async gamesOf(sessionId) {
+    if (!this.addresses.Games) return [];
+    return this.publicClient.readContract({ address: this.addresses.Games, abi: gamesAbi, functionName: 'gamesOf', args: [sessionId] });
+  }
+
+  /// The indices of a player's games inside a session (persistent-gameplay index).
+  /// Pair with gamesOf(sessionId) to rebuild that player's committed boards.
+  async playerGamesOf(sessionId, player) {
+    if (!this.addresses.Games) return [];
+    return this.publicClient.readContract({ address: this.addresses.Games, abi: gamesAbi, functionName: 'playerGamesOf', args: [sessionId, player] });
   }
 
   // ---------------------------------------------------------------- game rules

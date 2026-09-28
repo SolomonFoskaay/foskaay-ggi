@@ -57,6 +57,15 @@ contract FoskaayGGIGames is Initializable, UUPSUpgradeable, OwnableUpgradeable {
     /// same count. DO NOT reorder or remove.
     uint256[20] private __gap;
 
+    /// PER-PLAYER PERSISTENT GAME INDEX (persistent-gameplay pattern): which game
+    /// indices belong to which player in a session. Written at settle for every
+    /// seat that earned points, so a frontend can ask "player X's games in session
+    /// Y" straight from the chain and rebuild their state with no relay memory.
+    /// The rail never interprets this; it is the game's own record.
+    /// APPEND-ONLY: declared AFTER __gap so the storage layout of all existing
+    /// fields is unchanged on upgrade.
+    mapping(bytes32 => mapping(address => uint32[])) public playerGameIndices;
+
     error BadSeat();
     error BadState();
     error NotYourTurn();
@@ -79,7 +88,7 @@ contract FoskaayGGIGames is Initializable, UUPSUpgradeable, OwnableUpgradeable {
         if (owner_ == address(0) || players_ == address(0)) revert ZeroAddress();
         __Ownable_init(owner_);
         players = players_;
-        version = 1;
+        version = 2;
         emit PlayersSet(players_);
     }
 
@@ -96,6 +105,12 @@ contract FoskaayGGIGames is Initializable, UUPSUpgradeable, OwnableUpgradeable {
         if (players_ == address(0)) revert ZeroAddress();
         players = players_;
         emit PlayersSet(players_);
+    }
+
+    /// @notice Layout marker bump (owner only). Called during an upgrade when a
+    ///         storage field is appended, so readers can detect the new layout.
+    function setVersion(uint8 v) external onlyOwner {
+        version = v;
     }
 
     // ---------------------------------------------------------------- init
@@ -253,8 +268,15 @@ contract FoskaayGGIGames is Initializable, UUPSUpgradeable, OwnableUpgradeable {
             d.board = g.board;
             d.boardHash = g.boardHash;
             d.over = g.over;
+            // Persistent-gameplay: index every game against the player(s) that
+            // earned points in it, so any device can rebuild a player's history
+            // from the chain (the index of a game in gamesOf is its id).
             for (uint8 s = 0; s < g.seats; s++) {
-                totals[s] += _seatPoints(g.board, s);
+                uint64 pts = _seatPoints(g.board, s);
+                totals[s] += pts;
+                if (pts > 0 && seatPlayers[s] != address(0)) {
+                    playerGameIndices[sessionId][seatPlayers[s]].push(uint32(i));
+                }
             }
         }
 
@@ -275,6 +297,13 @@ contract FoskaayGGIGames is Initializable, UUPSUpgradeable, OwnableUpgradeable {
 
     function gameCount(bytes32 sessionId) external view returns (uint256) {
         return _games[sessionId].length;
+    }
+
+    /// @notice The indices of a player's games inside a session (each index is the
+    ///         game's id in gamesOf). Persistent on-chain: rebuilt from this with
+    ///         gamesOf(sessionId) + the board/points, no relay memory needed.
+    function playerGamesOf(bytes32 sessionId, address player) external view returns (uint32[] memory) {
+        return playerGameIndices[sessionId][player];
     }
 
     function hashState(bytes calldata state) external pure returns (bytes32) {

@@ -13,7 +13,7 @@
   },
   "implementations": {
     "FoskaayGGI": "0xC0d3c82994e31d8C97A589aCCd480B2Cf36311eb",
-    "FoskaayGGIGames": "0xd013592aEFBf018695A4c402aBa664EB13719C69",
+    "FoskaayGGIGames": "0xcebA2d46ea6d30BC32f6A6dC336c9b8adb3F56cc",
     "FoskaayGGIPlayers": "0x7669a25DBF92C271F87657C16286992ad95Cd94E"
   },
   "upgradeable": true,
@@ -38,5 +38,12 @@
     "gamesProxy": "0x776f6c925973a5dc618aec9cf6d1bf3e1489b4f85db7f0cc2734bc69431b2905",
     "wireSetGame": "0xc44a25b6819282fc45feb991c27ef175311927d1bb6cbab7920998a0cd9ab9ab"
   },
-  "note": "Mainnet launch deploy. Same wire as testnet: players.game = games, games.players = players. Core version 2, game/player version 1. Single-owner upgrade authority for launch (game-agnostic, non-value core); a multisig/timelock is added after real usage."
+  "note": "Mainnet launch deploy. Same wire as testnet: players.game = games, games.players = players. Core version 2, game/player version 1. Single-owner upgrade authority for launch (game-agnostic, non-value core); a multisig/timelock is added after real usage.",
+  "destination": "0x49A5A783fA200ad926A26552e2b3Dd3919033994",
+  "destinationNote": "Fee tracking wallet (separate from the sponsor/deployer). setDestination on 2026-09-28 so session fees are trackable.",
+  "foskaayGGIGamesIndexUpgrade": {
+    "impl": "0xcebA2d46ea6d30BC32f6A6dC336c9b8adb3F56cc",
+    "upgradeTx": "0x2cc8b333e316e3ffab802fdff1d0dd38d63d6b83bb76c37afa3ca6aea8855f04",
+    "note": "Persistent-gameplay upgrade (version 2): append-only per-player game index (playerGameIndices) + playerGamesOf/gamesOf getters + setVersion. Same address, same data; version + us (append-only storage after __gap)."
+  }
 }

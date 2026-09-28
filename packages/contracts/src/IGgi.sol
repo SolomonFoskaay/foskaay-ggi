@@ -153,6 +153,14 @@ interface IFoskaayGGIGames {
     /// How many games a session has committed.
     function gameCount(bytes32 sessionId) external view returns (uint256);
 
+    /// All committed games of a session (the board bytes are stored on-chain at
+    /// settle, so any device can rebuild them with no relay memory).
+    function gamesOf(bytes32 sessionId) external view returns (Game[] memory);
+
+    /// The indices of a player's games inside a session (persistent-gameplay
+    /// index). Pair with gamesOf(sessionId) to rebuild that player's boards.
+    function playerGamesOf(bytes32 sessionId, address player) external view returns (uint32[] memory);
+
     /// Commit N games in one transaction and credit the players in the same step.
     /// `seatPlayers` maps seat => player (length must equal each game's seats).
     function settle(bytes32 sessionId, Game[] calldata list, address[] calldata seatPlayers, bytes32 gameTag)
