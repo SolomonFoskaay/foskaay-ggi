@@ -111,3 +111,43 @@ Notes:
 - Do NOT make `recordLive` pure/view or delete it. It is the correct persistence mechanism; only its target chain was wrong.
 - Do NOT move point crediting to per-move Arc transactions. Points stay as free room writes (`credit` on the room-attached player contract, or board-embedded points via `_recordFinish`); the single on-Arc credit happens inside `FoskaayGGIGames.settle`.
 - Do NOT add any new per-move transaction on Arc for any reason. The invariant is: move count is unbounded, Arc transaction count per session is exactly 2 (open + close).
+
+---
+
+## 8. Section Two: the correction that was actually built (approved)
+
+This file's original diagnosis had the right direction (a "gameplay write pointed at Arc" is the leak)
+but a wrong premise: it claimed Foskaay GGI runs a shadow EVM with its own RPC (`FOSKAAY_ROOM_RPC`),
+env var and chain ID. There is none. Foskaay GGI has exactly ONE chain (Arc) and NO sidechain, RPC or
+dedicated environment. The "midchain" is an OFF-CHAIN signed hash chain that replicates MagicBlock ER
+without any special validator: pure rules compute each move free via eth_call, each state is hashed
+(`prevHash -> newHash`) and signed, and the log anchors on-chain twice and only twice (Handover,
+Settle). Move counts are unbounded and Arc transaction count per session is exactly 2.
+
+Because of that misread, Fix A (bind a `gamesRoom` instance to a room RPC) and Part C (`block.chainid`
+guard) are NOT applicable: there is no second provider to target and no second chain id to check. The
+part of the doc that IS correct and was adopted is its invariant: never a per-move Arc transaction.
+
+What was built instead (owner-approved, verified on the live demo):
+
+1. **Removed the per-move `recordLive` write in the relay move path** (`api/index.mjs`). Moves are
+   again purely: eth_call + hash chain + signature. The move path has no Arc signer at all.
+2. **Rejoin returns the signed move log plus its on-chain anchors** (Handover startHash, seedCommit,
+   participants, sponsors); the CLIENT verifies it before drawing one token. The relay is an untrusted
+   cache, never the truth.
+3. **Client-side verification is now an SDK method** (`verifyMoveLog`) that checks chain continuity
+   (each move.prevHash == previous move.newHash, first == startHash), every signature against the seat's
+   session key or the sponsor over `midchainDigest`, and, if settled, the last hash against the on-chain
+   finalHash. Free (reads only). A tampered or truncated log is rejected loudly.
+4. **Cold-start rejoin tells the truth**: if the relay instance lost the log, the page reports the
+   on-chain facts (paid session, committed result once settled) instead of fabricating a board or
+   re-creating a per-move write.
+5. **No localStorage, no web2 database.** The session URL is the only handle. This is a full on-chain
+   game with a tamper-proof front end: the browser owns nothing, it displays only what the chain and the
+   verified midchain say.
+6. The SDK (0.2.6) dropped the `liveBoard`/`recordLive` client methods so no developer can accidentally
+   reintroduce the third fee, and documents the midchain rule in its README.
+
+Proof that this pattern already fixed moves once: see `dotmd/foskaay-ggi-agent-fix-v6.md` (v6 in the
+same series), which removed the per-roll/per-move SSTORE the same way, leaving only handover + settle
+as Arc transactions.

@@ -77,5 +77,10 @@
     "version": 3,
     "note": "Live-board store (recordLive/liveBoard): each move's board bytes commit to FoskaayGGIGames so any device reconstructs/rejoins the exact mid-game state from the chain (GFG board-PDA equivalent). Moves are computed free via eth_call; the per-move record is a tiny sponsor tx.",
     "txupgraded": "0x84f7a7cc21d86e60f8a47c8d4c048413acf017498e69833951557a7df4de1b35"
+  },
+  "foskaayGGIMidchainFeeFix": {
+    "version": 3,
+    "date": "2026-09-28",
+    "note": "Per-move Arc recordLive write REMOVED (it was a forbidden third transaction). The Foskaay GGI midchain is the signed off-chain hash chain (eth_call + signature + hash chain), anchored by Handover and Settle: exactly two Arc txs per session. The freely deployed v3 liveBoards storage stays unused, costs nothing, and is never written during play."
   }
 }

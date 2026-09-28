@@ -119,7 +119,7 @@ Or with a bundler, import normally.
 | `settleGame(sessionId, games, seatPlayers, gameTag)` | write the finished game(s) and credit the player |
 | `encodeGame({turn,seats,step,board,over})` | build a game tuple for `settleGame` (game-agnostic) |
 | `getInitialState` / `applyMove` / `hashState` | run your game's pure rules free via eth_call |
-| `recordLive(sessionId, board)` / `liveBoard(sessionId)` | write/read the live board (game contract is the store, so the exact mid-game state survives refresh, logout and relay restarts) |
+| `verifyMoveLog(sessionId, log)` | verify a signed move log (the midchain) client-side: chain continuity, every signature, and the on-chain anchors. Catch a tampered relay before it is rendered |
 | `pointsOf(player, gameTag)` / `gameCount(sessionId)` / `playerGamesOf(sessionId, player)` | read the player points and the games (and per-player games) committed |
 | `createSessionKey()` | fresh in-memory signer (silent moves, no popups) |
 | `signMove(key, sessionId, finalHash)` | sign the exact digest the core checks |
@@ -146,10 +146,11 @@ update nothing in your game, just reinstall the package.
 
 A session does not close itself. Your game decides when a game is over, then you close it:
 
-0. `recordLive(sessionId, board)` after every move, so the live board bytes live in your game contract
-   (read back with `liveBoard(sessionId)`). Any device, or a restarted relay, reconstructs and continues
-   the exact mid-game state from the chain: no relay memory, no snapshots from the rail. Moves are still
-   computed free via eth_call; only the record write is a tiny real transaction.
+0. **The midchain rule: no per-move Arc transactions, ever.** During play every move is computed free via
+   eth_call and hash-chained (`prevHash -> newHash`) and signed, and that signed log IS the midchain. The
+   relay is only an untrusted cache. `connect` and `settle` are the ONLY Arc transactions per session. Do
+   NOT write live state to Arc per move (no on-chain `recordLive`): that reintroduces a third fee per
+   session. Verify other people's relays with `verifyMoveLog` before rendering anything.
 1. `settleGame(sessionId, games, seatPlayers, gameTag)` records the game(s) on-chain and credits the
    player account in the same transaction. Call it when the match ends (unbatched) or when your batch
    is full (batched).

@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-26",
+  "updated": "2026-09-28",
   "note": "ADMIN TODO LEDGER. CURRENT is the live nested list; HISTORY keeps the most recent 10 archived lists (owner 2026-09-21, was 3), newest first; older ones are dropped so the file never grows unbounded. Rule: on every report/commit/push the agent archives the previous current to the front of history, caps history at 10, and writes the fresh full list as current. See .opencode/rules/todo-admin.md. This file is client-served, so it holds task text only, never secrets.",
   "statusLegend": {
     "DONE": "Completed and verified",
@@ -8,84 +8,134 @@
     "DEPRECATED": "Removed or replaced, kept for the record, do not build"
   },
   "current": {
-    "title": "Foskaay GGI - Phase 3 DONE: relay rewired (handoverWithAccounts + Games.settle credits Players); Phases 1-2 done",
-    "updated": "2026-09-26",
+    "title": "Foskaay GGI - third-fee regression reverted, verified midchain rejoin",
+    "updated": "2026-09-28",
     "items": [
       {
-        "t": "(1)-(4) DONE",
+        "t": "(1) Remove the third-fee regression from the move path. DONE",
         "s": "done"
       },
       {
-        "t": "(5) OPTIONAL patterns WORKING",
+        "t": "(1i) Delete the per-move Arc recordLive write; the move path has no Arc signer at all. DONE",
         "s": "done"
       },
       {
-        "t": "(6) GFG migration PENDING",
-        "s": "pending"
-      },
-      {
-        "t": "(7) Ludo scaffold DONE",
+        "t": "(1ii) Rejoin now returns the signed move log plus its on-chain anchors; cold path reports the on-chain truth, it never fabricates a board. DONE",
         "s": "done"
       },
       {
-        "t": "(8) On-chain game + non-opinionated core WORKING",
+        "t": "(2) Client-side midchain verification before anything renders. DONE",
+        "s": "done"
+      },
+      {
+        "t": "(2i) SDK verifyMoveLog (chain continuity, every signature, settle finalHash anchor); sandbox-tested: honest pass, tampered chain, bad sig, settle mismatch all rejected. DONE",
+        "s": "done"
+      },
+      {
+        "t": "(2ii) Ludo bridge verifies the rejoin log before drawing one token. DONE",
+        "s": "done"
+      },
+      {
+        "t": "(3) SDK + docs + dotmd reflect the fix so developers cannot reintroduce a per-move fee. DONE",
+        "s": "done"
+      },
+      {
+        "t": "(3i) @foskaay/ggi-sdk 0.2.6 dropped liveBoard/recordLive client methods and documents the midchain rule (README). DONE",
+        "s": "done"
+      },
+      {
+        "t": "(3ii) docs persistence section rewritten; dotmd recordlive-room-fix Section Two added (agent misread: no RPC/env/chain id) and v6 doc links to it as proof. DONE",
+        "s": "done"
+      },
+      {
+        "t": "(4) Verify: forge 49/49, node checks, npm build green, zero per-move Arc transactions in code. DONE",
+        "s": "done"
+      },
+      {
+        "t": "(5) Live mobile test to confirm only the existing start + settle Arc txs, no popups, rejoin verified. WORKING",
         "s": "in_progress"
-      },
-      {
-        "t": "(8i)-(8ix) proofs done (core additive, game+player UUPS, communicate, points persist, batching measured) DONE",
-        "s": "done"
-      },
-      {
-        "t": "(8x) Fee chosen: 0.0002/game; names locked (FoskaayGGI / FoskaayGGIGames / FoskaayGGIPlayers) DONE",
-        "s": "done"
-      },
-      {
-        "t": "(8y1) Phase 1: fresh FoskaayGGI core (rename + fee fields), UUPS, new address, update everywhere PENDING",
-        "s": "done"
-      },
-      {
-        "t": "(8y2) Phase 2: fresh FoskaayGGIGames + FoskaayGGIPlayers (UUPS), wired, new addresses PENDING",
-        "s": "done"
-      },
-      {
-        "t": "(8y3) Phase 3: relay rewired (accounts=Games,Players, games=N, 3-part fee; relay only signs) PENDING",
-        "s": "done"
-      },
-      {
-        "t": "(8y4) Phase 4: real player seat (Dynamic wallet + session key; house signs computer) PENDING",
-        "s": "pending"
-      },
-      {
-        "t": "(8y5) Phase 5: Ludo page + bridge (display only; tx links; Explorer link) PENDING",
-        "s": "pending"
-      },
-      {
-        "t": "(8y6) Phase 6: Explorer (sessions + midchain; points from Players) PENDING",
-        "s": "pending"
-      },
-      {
-        "t": "(8y7) Phase 7: one Pricing section + remove other pricing mentions PENDING",
-        "s": "pending"
-      },
-      {
-        "t": "(8y8) Phase 8: measure vs under 1 USDC per 1,000; no-regression check PENDING",
-        "s": "pending"
-      },
-      {
-        "t": "(8y1 note) Freshest core deployed to Arc testnet: FoskaayGGI proxy 0x793785CE66992211B7c60dFCf0318869678D33a4 (impl 0x6A7cF5Db0Df5d5Ae8D181A10BFfa9a0Eb2438017), version 2, fees 0.0004/0.0004/0.0002; address propagated (SDK, contracts pkg, explorer, docs, relay, deployments, architecture)",
-        "s": "done"
-      },
-      {
-        "t": "(8y2 note) Fresh game + player deployed to Arc testnet: FoskaayGGIGames 0x24e38ac2e80958782a8Bc5CD479bbe2e5D81EcDF (impl 0x83418a85B88a44859F95E321F2089fEd503f45d3) + FoskaayGGIPlayers 0x1614ebc72eA1cB3D31975b3976B5B474FAcE3b3C (impl 0xbEA1DE7d6F80f57C13e5840c8957a6C3Fd5BbACd), both UUPS/wired; addresses propagated (SDK, contracts pkg, relay, deployments, explorer, docs, architecture)",
-        "s": "done"
-      },
-      {
-        "t": "(8y3 note) Relay rewired + live smoke PASS: connect via handoverWithAccounts(accounts=[FoskaayGGIGames,FoskaayGGIPlayers], games=1) fee 0.0014 USDC; free roll/pass/board; settle through FoskaayGGIGames.settle (gameCount=1 on-chain) then core settle",
-        "s": "done"
       }
     ]
   },
   "history": [
+    {
+      "title": "Foskaay GGI - Phase 3 DONE: relay rewired (handoverWithAccounts + Games.settle credits Players); Phases 1-2 done",
+      "updated": "2026-09-26",
+      "items": [
+        {
+          "t": "(1)-(4) DONE",
+          "s": "done"
+        },
+        {
+          "t": "(5) OPTIONAL patterns WORKING",
+          "s": "done"
+        },
+        {
+          "t": "(6) GFG migration PENDING",
+          "s": "pending"
+        },
+        {
+          "t": "(7) Ludo scaffold DONE",
+          "s": "done"
+        },
+        {
+          "t": "(8) On-chain game + non-opinionated core WORKING",
+          "s": "in_progress"
+        },
+        {
+          "t": "(8i)-(8ix) proofs done (core additive, game+player UUPS, communicate, points persist, batching measured) DONE",
+          "s": "done"
+        },
+        {
+          "t": "(8x) Fee chosen: 0.0002/game; names locked (FoskaayGGI / FoskaayGGIGames / FoskaayGGIPlayers) DONE",
+          "s": "done"
+        },
+        {
+          "t": "(8y1) Phase 1: fresh FoskaayGGI core (rename + fee fields), UUPS, new address, update everywhere PENDING",
+          "s": "done"
+        },
+        {
+          "t": "(8y2) Phase 2: fresh FoskaayGGIGames + FoskaayGGIPlayers (UUPS), wired, new addresses PENDING",
+          "s": "done"
+        },
+        {
+          "t": "(8y3) Phase 3: relay rewired (accounts=Games,Players, games=N, 3-part fee; relay only signs) PENDING",
+          "s": "done"
+        },
+        {
+          "t": "(8y4) Phase 4: real player seat (Dynamic wallet + session key; house signs computer) PENDING",
+          "s": "pending"
+        },
+        {
+          "t": "(8y5) Phase 5: Ludo page + bridge (display only; tx links; Explorer link) PENDING",
+          "s": "pending"
+        },
+        {
+          "t": "(8y6) Phase 6: Explorer (sessions + midchain; points from Players) PENDING",
+          "s": "pending"
+        },
+        {
+          "t": "(8y7) Phase 7: one Pricing section + remove other pricing mentions PENDING",
+          "s": "pending"
+        },
+        {
+          "t": "(8y8) Phase 8: measure vs under 1 USDC per 1,000; no-regression check PENDING",
+          "s": "pending"
+        },
+        {
+          "t": "(8y1 note) Freshest core deployed to Arc testnet: FoskaayGGI proxy 0x793785CE66992211B7c60dFCf0318869678D33a4 (impl 0x6A7cF5Db0Df5d5Ae8D181A10BFfa9a0Eb2438017), version 2, fees 0.0004/0.0004/0.0002; address propagated (SDK, contracts pkg, explorer, docs, relay, deployments, architecture)",
+          "s": "done"
+        },
+        {
+          "t": "(8y2 note) Fresh game + player deployed to Arc testnet: FoskaayGGIGames 0x24e38ac2e80958782a8Bc5CD479bbe2e5D81EcDF (impl 0x83418a85B88a44859F95E321F2089fEd503f45d3) + FoskaayGGIPlayers 0x1614ebc72eA1cB3D31975b3976B5B474FAcE3b3C (impl 0xbEA1DE7d6F80f57C13e5840c8957a6C3Fd5BbACd), both UUPS/wired; addresses propagated (SDK, contracts pkg, relay, deployments, explorer, docs, architecture)",
+          "s": "done"
+        },
+        {
+          "t": "(8y3 note) Relay rewired + live smoke PASS: connect via handoverWithAccounts(accounts=[FoskaayGGIGames,FoskaayGGIPlayers], games=1) fee 0.0014 USDC; free roll/pass/board; settle through FoskaayGGIGames.settle (gameCount=1 on-chain) then core settle",
+          "s": "done"
+        }
+      ]
+    },
     {
       "title": "Foskaay GGI - core, SDK, game demo, cost ladder, storage + event-based Foskaay GGI Midchain + Ludo demo on the Foskaay GGI Midchain (on-chain rules, free moves) + v7 single-core midchain (event-only, $1/1000 target) + moved to its own repo (foskaay-ggi)",
       "updated": "2026-09-25",
@@ -1785,136 +1835,6 @@
         {
           "t": "(1viii) RENAME DONE - GlobalFolkGames Gasless Infrastructure -> Foskaay Gasless Games Infrastructure (short: Foskaay GGI). Folder foskaay-ggi/, URL /foskaay-ggi/demos/, npm @foskaay/ggi-*. arcv2m17 (GFG-BS) left untouched. 4 core contracts redeployed to Arc testnet; live proof PASS.",
           "s": "done"
-        },
-        {
-          "t": "(2) Foskaay GGI SDK - the one-line integration",
-          "s": "pending"
-        },
-        {
-          "t": "(2i) @foskaay/ggi-contracts-sdk - Solidity interfaces + deployed addresses per network",
-          "s": "pending"
-        },
-        {
-          "t": "(2ii) @foskaay/ggi-sdk - open/act/dispute/settle wrappers + session-key signing + read helpers",
-          "s": "pending"
-        },
-        {
-          "t": "(2iii) A README a stranger can follow: install, adapter, four calls, measured cost",
-          "s": "pending"
-        },
-        {
-          "t": "(3) FIRST DEMO - prove Foskaay GGI works for a real game",
-          "s": "pending"
-        },
-        {
-          "t": "(3i) Choose the first demo genre (owner pick: idle or casual). Decide before building.",
-          "s": "pending"
-        },
-        {
-          "t": "(3ii) Build the demo 50-line adapter (the only game-specific code)",
-          "s": "pending"
-        },
-        {
-          "t": "(3iii) Wire the demo to the SDK and prove it plays gasless end to end",
-          "s": "pending"
-        },
-        {
-          "t": "(3iv) Ship the demo live and playable from /foskaay-ggi/demos/ on a phone",
-          "s": "pending"
-        },
-        {
-          "t": "(4) Cost proof (the number that sells Foskaay GGI)",
-          "s": "pending"
-        },
-        {
-          "t": "(4i) Measure the real per-session sponsor cost on Arc and publish it vs MagicBlock ER",
-          "s": "pending"
-        },
-        {
-          "t": "(4ii) Prove the floor: heavy play costs the same as light play inside a session",
-          "s": "pending"
-        },
-        {
-          "t": "(5) OPTIONAL patterns - offered, never enforced (build only when a game asks)",
-          "s": "pending"
-        },
-        {
-          "t": "(5i) Batched Settlement - Merkle window flush, cadence chosen by the dev (never forced to 100/1h)",
-          "s": "pending"
-        },
-        {
-          "t": "(5ii) Managed Accounts - PlayerCore-style single account per player with slots (a cost optimisation)",
-          "s": "pending"
-        },
-        {
-          "t": "(5iii) Verifiers - per-game referee for disputes (Ludo first, when it matters)",
-          "s": "pending"
-        },
-        {
-          "t": "(5iv) Session reader/explorer - so sessions and receipts are visible (MagicBlock needed one too)",
-          "s": "pending"
-        },
-        {
-          "t": "(6) GFG itself migrates onto Foskaay GGI (later - after GI is proven)",
-          "s": "pending"
-        },
-        {
-          "t": "(6i) Decide how GFG maximises GI (owner call: account layout, cadence, patterns)",
-          "s": "pending"
-        },
-        {
-          "t": "(6ii) Ludo becomes the first real GFG game on GI",
-          "s": "pending"
-        },
-        {
-          "t": "(6iii) Then points, lives, premium as event/slot types",
-          "s": "pending"
-        },
-        {
-          "t": "(6iv) Then multiplayer, competitions, AGM, ERC-20 rewards",
-          "s": "pending"
-        },
-        {
-          "t": "(6v) Retire the old GFG settlement path (arcv2m17) once GI carries everything",
-          "s": "pending"
-        }
-      ]
-    },
-    {
-      "title": "Foskaay GGI build started (SessionRegistry + SessionState in progress)",
-      "updated": "2026-09-21",
-      "items": [
-        {
-          "t": "(1) Foskaay GGI CORE - 4 unopinionated contracts (the rail)",
-          "s": "in_progress"
-        },
-        {
-          "t": "(1i) SessionRegistry - open/close a session; participant authorities; session-key scope + expiry; 1..N participants",
-          "s": "pending"
-        },
-        {
-          "t": "(1ii) SessionState - accept signed session events (opaque payload + sequence number + digest); the rail never parses the payload",
-          "s": "pending"
-        },
-        {
-          "t": "(1iii) Session keys - silent signer + on-chain scope/expiry token, so players never see a popup",
-          "s": "pending"
-        },
-        {
-          "t": "(1iv) Randomness - commit-reveal seed(s), stored as a LIST for future extra streams; hash(seed, counter)",
-          "s": "pending"
-        },
-        {
-          "t": "(1v) FeeVault - per-session fee on open and settle; destination = owner wallet; charged on devnet too",
-          "s": "pending"
-        },
-        {
-          "t": "(1vi) Foundry tests for each core contract (local, no chain, no cost)",
-          "s": "pending"
-        },
-        {
-          "t": "(1vii) Live Arc testnet proof: one real session opened, acted on, settled, and verified on-chain",
-          "s": "pending"
         },
         {
           "t": "(2) Foskaay GGI SDK - the one-line integration",
