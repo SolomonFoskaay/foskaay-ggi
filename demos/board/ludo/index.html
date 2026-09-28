@@ -122,6 +122,12 @@
         </div>
 
         <div class="ld-panel">
+            <h2 style="color:#fff;font-size:1.05rem;margin:0 0 4px">Your sessions</h2>
+            <p class="ld-muted" style="margin:0 0 10px">Recent sessions for your wallet, read from the rail (check the status; open any to inspect on-chain).</p>
+            <div class="ld-sessions" id="ld-sessions"><span class="ld-muted">Loads after you sign in.</span></div>
+        </div>
+
+        <div class="ld-panel">
             <h2 style="color:#fff;font-size:1.05rem;margin:0 0 4px">Demo FAQ (for developers)</h2>
             <p class="ld-muted" style="margin:0 0 10px">Tap any question.</p>
             <div class="ld-faq" id="ld-faq"></div>
@@ -178,6 +184,12 @@
             el.settleBtn.disabled = true;
             el.passBtn.disabled = true;
             el.meterState.textContent = 'sealed';
+        },
+        sessionLost: function () {
+            el.newBtn.disabled = false;
+            el.settleBtn.disabled = true;
+            el.passBtn.disabled = true;
+            el.meterState.textContent = 'start new match';
         }
     };
 
@@ -220,6 +232,39 @@
 <script src="https://cdn.jsdelivr.net/npm/@foskaay/ggi-sdk@0.2.3/dist/ggi-sdk.browser.js"></script>
 <script src="/foskaay-ggi-assets/ludo-lab/bridge.js"></script>
 <script>
+(function () {
+    'use strict';
+    var RELAY = '/api/foskaay-ggi-sponsor';
+    function sh(h) { return h ? (h.slice(0, 10) + '...' + h.slice(-6)) : ''; }
+    function loadSessions() {
+        var host = document.getElementById('ld-sessions');
+        if (!host) return;
+        var evm = (typeof window.getDynamicEvmWallet === 'function') ? window.getDynamicEvmWallet() : null;
+        if (!(window.currentUser || evm)) { host.innerHTML = '<span class="ld-muted" style="color:#8f8fa0">Sign in to see your sessions.</span>'; return; }
+        host.innerHTML = '<span class="ld-muted" style="color:#8f8fa0">Loading your sessions...</span>';
+        fetch(RELAY, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'demoSessions', wallet: evm }) })
+            .then(function (r) { return r.json(); })
+            .then(function (j) {
+                var list = (j && j.sessions) || [];
+                if (!list.length) { host.innerHTML = '<span class="ld-muted" style="color:#8f8fa0">No sessions yet. Start a match.</span>'; return; }
+                host.innerHTML = list.map(function (s) {
+                    var pl = s.settled
+                        ? '<span style="color:#2ecc71;font-weight:800">completed</span>'
+                        : (s.paid
+                            ? '<span style="color:#f39c12;font-weight:800">active, ' + s.gamesCommitted + ' committed</span>'
+                            : '<span style="color:#999">starting</span>');
+                    return '<div style="padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:0.82rem">'
+                        + '<a href="/explorer/?session=' + s.sessionId + '" target="_blank" rel="noopener" style="color:#f39c12">' + sh(s.sessionId) + '</a>'
+                        + ' &nbsp; games ' + s.gamesCommitted + '/' + s.games + ' &nbsp; ' + pl
+                        + '</div>';
+                }).join('');
+            })
+            .catch(function () { host.innerHTML = '<span class="ld-muted" style="color:#8f8fa0">Could not load sessions.</span>'; });
+    }
+    try { window.addEventListener('gfg:auth-changed', loadSessions, false); } catch (e) {}
+    if (document.readyState !== 'loading') setTimeout(loadSessions, 300);
+    else document.addEventListener('DOMContentLoaded', function () { setTimeout(loadSessions, 300); });
+})();
 </script>
 </body>
 </html>

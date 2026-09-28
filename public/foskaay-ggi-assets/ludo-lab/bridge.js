@@ -49,6 +49,17 @@
 
     function ui() { return window.gfgLudoUI || {}; }
     function setPrompt(s) { if (ui().prompt) ui().prompt(s); }
+    // A relay cold start loses the in-memory session. Never freeze the page:
+    // tell the player to start a new match and re-arm the UI.
+    function handleLost(e) {
+        setPrompt('This session was lost on the server. Start a new match.');
+        window.matchOver = true;
+        window.isDiceRolled = false;
+        pendingDice = [];
+        if (ui().sessionLost) ui().sessionLost();
+        if (ui().log) ui().log('Session lost (relay restarted): ' + ((e && e.message) || e), 0);
+    }
+    function isLostError(e) { return (e && /unknown session/i.test(e.message || String(e))); }
 
     function relay(action, extra) {
         var body = Object.assign({ action: action }, extra || {});
@@ -146,6 +157,7 @@
             if (typeof window.showDiceTumble === 'function') window.showDiceTumble(r.dice1, r.dice2);
             setTimeout(afterDiceWindow, 3600);
         } catch (e) {
+            if (isLostError(e)) { handleLost(e); return; }
             setPrompt('Roll failed: ' + e.message);
         } finally {
             busy = false;
@@ -192,6 +204,7 @@
                 setTimeout(passTurn, 500);
             }
         } catch (e) {
+            if (isLostError(e)) { handleLost(e); return; }
             setPrompt('Move rejected: ' + e.message);
         } finally {
             busy = false;
@@ -217,6 +230,7 @@
             }
             setTimeout(passTurn, 500);
         } catch (e) {
+            if (isLostError(e)) { handleLost(e); return; }
             setPrompt('Computer move failed: ' + e.message);
         } finally {
             busy = false;
@@ -234,6 +248,7 @@
             applyBoard(r.view);
             beginTurn();
         } catch (e) {
+            if (isLostError(e)) { handleLost(e); return; }
             setPrompt('Pass failed: ' + e.message);
         } finally {
             busy = false;
@@ -273,6 +288,7 @@
             if (ui().log) ui().log((winnerColor ? winnerColor.toUpperCase() + ': ' : '') + 'on-chain record sealed', 0);
             if (ui().onSettled) ui().onSettled(won, r.tx);
         } catch (e) {
+            if (isLostError(e)) { handleLost(e); return; }
             setPrompt('Settle failed: ' + e.message);
         } finally {
             busy = false;

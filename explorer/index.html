@@ -113,7 +113,8 @@
                 <div class="gx-row"><span class="k">Session base</span><span class="v" id="gx-v-feebase"></span></div>
                 <div class="gx-row"><span class="k">Per delegated account</span><span class="v" id="gx-v-feeacct"></span></div>
                 <div class="gx-row"><span class="k">Per game</span><span class="v" id="gx-v-feegame"></span></div>
-                <div class="gx-row"><span class="k">Games committed on-chain</span><span class="v" id="gx-v-games"></span></div>
+                <div class="gx-row"><span class="k">Declared games (batch size)</span><span class="v" id="gx-v-declared"></span></div>
+                <div class="gx-row"><span class="k">Games committed on-chain (so far)</span><span class="v" id="gx-v-games"></span></div>
                 <div class="gx-note">
                     One fee per session, charged once at connect: a session base plus a per-delegated-account
                     part plus a per-game part. Nothing inside the session is charged. The exact numbers and the
@@ -161,8 +162,8 @@
                 Settlement is authorised by signatures over <span class="gx-mono">midchainDigest(sessionId,
                 finalHash)</span>. Read it here straight from the registry (a pure view call).
             </p>
-            <input id="gx-d-session" class="gx-input" placeholder="session id 0x..." style="margin-bottom:8px;">
-            <input id="gx-d-final" class="gx-input" placeholder="final hash 0x...">
+            <input id="gx-d-session" class="gx-input" placeholder="session id 0x... (shown when you start a match / Connect)" style="margin-bottom:8px;">
+            <input id="gx-d-final" class="gx-input" placeholder="final hash 0x... (Settled result, or last move's newHash in Midchain)">
             <button class="gx-btn" id="gx-digest">Read digest</button>
             <div id="gx-digest-out" class="gx-tiny" style="margin-top:8px;"></div>
         </div>
@@ -283,6 +284,7 @@
             document.getElementById('gx-v-feebase').textContent = usdc18(r.fees.base);
             document.getElementById('gx-v-feeacct').textContent = usdc18(r.fees.perAccount);
             document.getElementById('gx-v-feegame').textContent = usdc18(r.fees.perGame);
+            document.getElementById('gx-v-declared').textContent = r.declaredGames.toString();
             document.getElementById('gx-v-games').textContent = r.gamesCommitted.toString();
             status.textContent = 'Read at contract ' + X.NET.contracts.FoskaayGGI + ' on ' + X.NET.name + '.';
         }).catch(function (e) {
@@ -295,7 +297,7 @@
         var sid = document.getElementById('gx-d-session').value.trim();
         var fin = document.getElementById('gx-d-final').value.trim();
         var out = document.getElementById('gx-digest-out');
-        if (!/^0x[0-9a-fA-F]{64}$/.test(sid) || !/^0x[0-9a-fA-F]{64}$/.test(fin)) { out.textContent = 'Enter two 0x + 64 hex values.'; return; }
+        if (!/^0x[0-9a-fA-F]{64}$/.test(sid) || !/^0x[0-9a-fA-F]{64}$/.test(fin)) { out.innerHTML = 'Enter two 0x + 64 hex values. <b>Session id</b> = the bytes32 shown when you start a match (Connect). <b>Final hash</b> = the Session tab&apos;s "Final hash (or session root)" after settle, or the last row&apos;s newHash in the Midchain tab for a session still in play.'; return; }
         out.textContent = 'Reading...';
         X.midchainDigest(sid, fin).then(function (hex) { out.innerHTML = '<span class="gx-mono">' + hex + '</span>'; })
             .catch(function (e) { out.textContent = 'Could not read: ' + (e.message || e); });

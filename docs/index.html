@@ -539,148 +539,15 @@ await ggi.settle({ sessionId, finalHash, seedReveal, sigs, signers });</code></d
     </section>
 
     <section class="ggi-card" id="demos">
-        <h2 class="ggi-h2">The first demo: porting a real on-chain game</h2>
-        <p class="ggi-body">
-            The demo is a port of MagicBlock's open-source <b>solana-generals</b> game. We use their
-            model, their names and their graphics, and swap the rail underneath: MagicBlock's
-            Ephemeral Rollup becomes <b>Foskaay GGI</b>. This section is the build guide. If the build
-            ever needs to differ, THIS page is updated first, then the code follows.
-        </p>
-
-        <div class="ggi-h3">First, the model (get this right or everything drifts)</div>
+        <h2 class="ggi-h2">The demo: a real game on the rail</h2>
+        <p class="ggi-body">The best way to see Foskaay GGI is to play a game that runs on it. The Ludo demo is a complete on-chain match: the contract owns the rules, the dice, the capture rules, the crown and the points; the page only displays. Every roll and move runs free through the contract (eth_call) and the relay hash-chains + signs them; only the connect and the settle are real transactions.</p>
         <ul class="ggi-list">
-            <li><b>The board is the game's, not the player's.</b> One board is SHARED by every player.
-                In their game it is one account, <span class="ggi-mono">Game</span>, holding the grid
-                and the player seats.</li>
-            <li><b>A player owns, at most, one player account.</b> Everything about that player lives
-                in it (their score, their per-board holdings, their stats). One account, many slots,
-                so cost does not grow per feature. This is the same lesson we learned on Solana.</li>
-            <li><b>A player joins a board.</b> Joining records the player's authority in the board's
-                seat list. It does not create a board per player.</li>
-            <li><b>Only the game's own rules may change the board.</b> The rules live in the game's
-                contract, never in the browser.</li>
+            <li><b>Fully on-chain.</b> The match, the board bytes, the finish order and the points live in the game contract. No game state in the browser.</li>
+            <li><b>Free to play.</b> Sign in with your email, an embedded EVM + Solana wallet is created, and every move is free. The site sponsor pays only the connect and settle fees.</li>
+            <li><b>Provable dice.</b> The dice come from the core's free pure randomN(seed, counter); the seed is committed at connect and revealed at settle, so any roll can be replayed and verified.</li>
+            <li><b>Credits your player account.</b> At settle, the game writes the match and credits FoskaayGGIPlayers in the same transaction. Points persist forever.</li>
         </ul>
-        <div class="ggi-note">
-            <b>What is core and what is the game dev's.</b> MagicBlock's rail is only: an account is
-            delegated to a validator, executed for free inside, committed back. Everything else in
-            their sample (<span class="ggi-mono">Game</span>,
-            <span class="ggi-mono">GamePlayer</span>, <span class="ggi-mono">GameCell</span>, and the
-            systems) is the EXTERNAL GAME DEV's code, not the rail. A player account is the game
-            dev's choice, not rail core. Foskaay GGI is the same: our core is the room, the game owns
-            its world.
-        </div>
-
-        <div class="ggi-h3">The port, name for name</div>
-        <p class="ggi-body">
-            Their concept on the left, the Foskaay GGI equivalent on the right. Names are kept as-is
-            where possible so a developer reading their code can follow ours.
-        </p>
-        <table class="ggi-table">
-            <thead><tr><th>MagicBlock (SVM)</th><th>Foskaay GGI (Arc, EVM)</th><th>Status</th></tr></thead>
-            <tbody>
-                <tr><td><span class="ggi-mono">Game</span> component (the shared board, one account)</td><td>The game's OWN contract storage (e.g. <span class="ggi-mono">Game</span> struct in a Solidity contract). Not rail core.</td><td>Game builds it</td></tr>
-                <tr><td><span class="ggi-mono">GamePlayer</span> (seat inside the board)</td><td>A seat struct inside the game contract (authority + score).</td><td>Game builds it</td></tr>
-                <tr><td>Systems <span class="ggi-mono">join / start / command / tick / finish</span></td><td>Solidity functions on the game contract with the SAME rules, validated on-chain.</td><td>Game builds it</td></tr>
-                <tr><td>Delegate account to the ER</td><td>Connect a session: <span class="ggi-mono">ggi.handoverWithAccounts(...)</span>. The connect event carries the game link, so no separate link transaction is needed.</td><td>Rail: present</td></tr>
-                <tr><td>Free execute inside the ER</td><td>Moves run off the base chain through the Foskaay GGI Midchain: signed by the session key and tied by a hash chain, free. Only connect and settle are transactions.</td><td>Rail: present</td></tr>
-                <tr><td>Authorise a signer (delegation authority)</td><td>The players sign the final hash; the registry verifies every signature (OpenZeppelin <span class="ggi-mono">ECDSA.recover</span>) before it settles.</td><td>Rail: present and proven</td></tr>
-                <tr><td>ERC VRF</td><td>Free pure <span class="ggi-mono">random</span> / <span class="ggi-mono">randomN</span> on the registry (eth_call), so dice and cards cost nothing extra.</td><td>Rail: present</td></tr>
-                <tr><td>Commit / undelegate</td><td>Foskaay GGI <b>settle</b> (verify signatures, reveal seed) and, for batching, one settle carrying a session Merkle root.</td><td>Rail: present</td></tr>
-                <tr><td>Session + commit fees</td><td><span class="ggi-mono">FoskaayGGI</span> per-session fee (built in).</td><td>Rail: present</td></tr>
-                <tr><td>Two RPCs (base + ER) and its own explorer</td><td>One Arc RPC, plus the public Foskaay GGI <a href="/explorer/">Explorer</a> (the ER's own explorer exists because base explorers cannot see ER transactions; ours exists for the same reason).</td><td>Rail: present</td></tr>
-                <tr><td><span class="ggi-mono">@magicblock-labs/bolt-sdk</span> (contract side) + <span class="ggi-mono">ephemeral-rollups-sdk</span> (client side)</td><td><span class="ggi-mono">@foskaay/ggi-contracts-sdk</span> (contract side) + <span class="ggi-mono">@foskaay/ggi-sdk</span> (client side).</td><td>Published</td></tr>
-            </tbody>
-        </table>
-
-        <div class="ggi-h3">What this mapping proves is missing</div>
-        <ul class="ggi-list">
-            <li><b>Board and player accounts are NOT rail core.</b> They are the game's contract, exactly
-                as in their sample. We do not add them to core.</li>
-            <li><b>The authorisation hook is the signature check.</b> The registry verifies every player's
-                signature (OpenZeppelin <span class="ggi-mono">ECDSA.recover</span>) over the final hash, so
-                a tampered result cannot settle. That is the equivalent of delegation authority.</li>
-            <li><b>The session-to-game link (added):</b> MagicBlock can tell you which accounts are
-                delegated for a game. Foskaay GGI now does the same thing in one line: when a game opens a
-                session it can register its own state account address against that session. The rail
-                stores the address as an opaque value, it never learns what it is, and any reader
-                (including the <a href="/explorer/">Explorer</a>) can look up which game account
-                belongs to a session. This is the closest match to the delegation registry.</li>
-            <li><b>The EVM limit, stated plainly:</b> there is no side chain to mutate accounts for free.
-                Where MagicBlock is free in the ER, Foskaay GGI makes the SPONSOR pay per write, and
-                batching reduces the number of writes. We do not pretend otherwise.</li>
-        </ul>
-
-        <div class="ggi-h3">Two settlement modes, tested on the same game</div>
-        <table class="ggi-table">
-            <thead><tr><th>Mode</th><th>What happens</th><th>Best for</th></tr></thead>
-            <tbody>
-                <tr><td><b>Unbatched</b></td><td>Every action is anchored on-chain as it happens (sponsor paid). Final instantly, most expensive.</td><td>Games that need an instant on-chain result per action.</td></tr>
-                <tr><td><b>Batched</b></td><td>Action digests roll into a window; the window flushes into ONE Merkle root. Cheapest, final when the window flushes.</td><td>Most games. The default target.</td></tr>
-            </tbody>
-        </table>
-
-        <div class="ggi-h3">The ported game, a-z (this is the build spec)</div>
-        <p class="ggi-body">
-            We keep their structure and their names so anyone can follow both codebases side by side.
-            Their game is a 16x8 grid (128 cells) with two players, cell kinds and strengths, a tick
-            clock, and a finish step. Here is every piece and the exact Foskaay GGI call it uses.
-        </p>
-        <table class="ggi-table">
-            <thead><tr><th>Step</th><th>MagicBlock (their code)</th><th>Foskaay GGI (our port)</th></tr></thead>
-            <tbody>
-                <tr><td>Create the board</td><td><span class="ggi-mono">AddEntity</span> + <span class="ggi-mono">InitializeComponent(Game)</span> with <span class="ggi-mono">status=Generate</span></td><td>The game's own contract holds its rules. In the free path those rules are pure functions, run off-chain.</td></tr>
-                <tr><td>Make it live</td><td><span class="ggi-mono">createDelegateInstruction</span> (delegate the component to the ER)</td><td>Sponsor connects a session: <span class="ggi-mono">ggi.handoverWithAccounts({...})</span>. The fee is paid here and the connect event carries the game link, so no separate link transaction.</td></tr>
-                <tr><td>Generate the map</td><td>system <span class="ggi-mono">generate</span></td><td>The game's own rules, run free through the Foskaay GGI Midchain (eth_call).</td></tr>
-                <tr><td>Lobby, Join, Ready, Start</td><td>systems <span class="ggi-mono">join</span> / <span class="ggi-mono">start</span>, <span class="ggi-mono">players[i].ready</span></td><td>Part of the game's own rules, and part of the signed move log. No per-step rail call.</td></tr>
-                <tr><td>The move</td><td>system <span class="ggi-mono">command</span> (adjacency, ownership, strength, invade math)</td><td>The game's pure <span class="ggi-mono">applyMove</span> run via eth_call; each move is signed with the session key and tied by a hash chain. Free for the player and the sponsor.</td></tr>
-                <tr><td>The clock</td><td>system <span class="ggi-mono">tick</span> (strength grows over time)</td><td>Free as part of the session, or a permissionless on-chain call if the game wants it. Never a cron server.</td></tr>
-                <tr><td>Finish</td><td>system <span class="ggi-mono">finish</span> sets <span class="ggi-mono">status = Finished</span></td><td>The game's own terminal check.</td></tr>
-                <tr><td>Settle / commit back</td><td>commit + undelegate</td><td><span class="ggi-mono">ggi.settle({ sessionId, finalHash, seedReveal, sigs, signers })</span>: the registry verifies the players' signatures and emits the result. Batching = one settle carrying a session Merkle root.</td></tr>
-                <tr><td>Read the game</td><td>subscribe to the component on the ER, decode</td><td>Read the connect + settle events from Arc, and replay the signed move log. The frontend only renders; it owns nothing.</td></tr>
-            </tbody>
-        </table>
-
-        <div class="ggi-h3">The rules we copy exactly (from their code)</div>
-        <ul class="ggi-list">
-            <li>Board: <span class="ggi-mono">status</span> (Generate, Lobby, Playing, Finished), <span class="ggi-mono">size_x</span> 16, <span class="ggi-mono">size_y</span> 8, two <span class="ggi-mono">players</span>, 128 <span class="ggi-mono">cells</span>.</li>
-            <li>Cell kinds: Field, City, Capital, Mountain, Forest. Owner: Player(0/1) or Nobody.</li>
-            <li>Move rules: cells must be adjacent; the source must be owned by the mover; Mountains are not walkable; source needs more than 1 strength; strength moved is a chosen percent.</li>
-            <li>Invade: if the target is yours, add strength; otherwise apply damage, and Forest halves the damage; the target is conquered when damage exceeds its strength.</li>
-            <li>Tick growth: Capital +1 every 5s, City +1 every 10s, Field +1 every 60s.</li>
-        </ul>
-
-        <div class="ggi-note good">
-            <b>Why this port is the right test.</b> If the game's pure rules drive free signed moves, the
-            registry verifies the players' signatures at settle, and the whole thing settles through
-            Foskaay GGI with real measured costs, then Foskaay GGI is proven as the Arc equivalent of the
-            rail their sample uses. Anything the port cannot express is a real gap we fix in core or the
-            packages, and we will know exactly where.
-        </div>
-    </section>
-
-    <section class="ggi-card" id="usecases">
-        <h2 class="ggi-h2">Use cases</h2>
-        <p class="ggi-body">
-            If your game has lots of small actions, the per-session fee is where the saving shows up.
-            These genres benefit most:
-        </p>
-        <table class="ggi-table">
-            <thead><tr><th>Genre</th><th>Why it fits</th></tr></thead>
-            <tbody>
-                <tr><td><b>Idle and farming</b></td><td>Constant ticks and actions. A per-action fee would destroy the model; a per-session fee does not.</td></tr>
-                <tr><td><b>Board and turn games</b></td><td>Many moves, one result. Settle once when the match ends.</td></tr>
-                <tr><td><b>Card games</b></td><td>Each player draws from their own deck: declare one random stream per player.</td></tr>
-                <tr><td><b>Arcade and casual</b></td><td>Short rounds, instant fun. Cheap enough to let anyone play.</td></tr>
-                <tr><td><b>PvP arenas</b></td><td>Fast repeated actions, one provable outcome per match.</td></tr>
-                <tr><td><b>MMO and strategy</b></td><td>Persistent worlds with many players and constant state changes.</td></tr>
-                <tr><td><b>Simulations and training</b></td><td>Thousands of actions with a single settlement at the end.</td></tr>
-            </tbody>
-        </table>
-        <div class="ggi-callout">
-            <b>Building for web2 players?</b> That is the point. Your users keep the normal web2 flow
-            (sign in and play, no wallet setup, no gas, no popups) while you still get on-chain
-            transparency. Nothing about their experience changes; only the layer underneath does.
-        </div>
+        <p class="ggi-body"><a href="/demos/board/ludo/">Open the live Ludo demo</a>. It is an implementation example: a game developer can copy the shape (one game contract + one player account) and bring their own rules and economy.</p>
     </section>
 
     <section class="ggi-card" id="faq">
