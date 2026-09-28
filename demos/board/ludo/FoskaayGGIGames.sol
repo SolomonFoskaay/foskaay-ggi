@@ -53,17 +53,22 @@ contract FoskaayGGIGames is Initializable, UUPSUpgradeable, OwnableUpgradeable {
     /// Layout marker. Bump only on a layout change.
     uint8 public version;
 
-    /// Reserved slots for future variables. Consume from the top, shrink by the
+/// Reserved slots for future variables. Consume from the top, shrink by the
     /// same count. DO NOT reorder or remove.
     uint256[20] private __gap;
+
+    /// LIVE BOARD (the game's "program" store, like GFG's board PDA): the latest
+    /// on-chain board BYTES of each in-progress game. The relay writes it after
+    /// every move so ANY device reconstructs the exact game mid-session from the
+    /// chain, with no server memory and no snapshots from the rail. Overwriting =
+    /// one slot, so storage cost stays tiny. Finished history stays in gamesOf.
+    mapping(bytes32 => bytes) public liveBoards;
 
     /// PER-PLAYER PERSISTENT GAME INDEX (persistent-gameplay pattern): which game
     /// indices belong to which player in a session. Written at settle for every
     /// seat that earned points, so a frontend can ask "player X's games in session
     /// Y" straight from the chain and rebuild their state with no relay memory.
     /// The rail never interprets this; it is the game's own record.
-    /// APPEND-ONLY: declared AFTER __gap so the storage layout of all existing
-    /// fields is unchanged on upgrade.
     mapping(bytes32 => mapping(address => uint32[])) public playerGameIndices;
 
     error BadSeat();
@@ -88,7 +93,7 @@ contract FoskaayGGIGames is Initializable, UUPSUpgradeable, OwnableUpgradeable {
         if (owner_ == address(0) || players_ == address(0)) revert ZeroAddress();
         __Ownable_init(owner_);
         players = players_;
-        version = 2;
+        version = 3;
         emit PlayersSet(players_);
     }
 
@@ -297,6 +302,17 @@ contract FoskaayGGIGames is Initializable, UUPSUpgradeable, OwnableUpgradeable {
 
     function gameCount(bytes32 sessionId) external view returns (uint256) {
         return _games[sessionId].length;
+    }
+
+    /// @notice Record the latest live board bytes of an in-progress game (owner/
+    ///         relay calls it after every move). Overwrites, so it stays one slot.
+    function recordLive(bytes32 sessionId, bytes calldata board) external onlyOwner {
+        liveBoards[sessionId] = board;
+    }
+
+    /// @notice The latest on-chain board bytes of an in-progress game.
+    function liveBoard(bytes32 sessionId) external view returns (bytes memory) {
+        return liveBoards[sessionId];
     }
 
     /// @notice The indices of a player's games inside a session (each index is the

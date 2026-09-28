@@ -74,6 +74,8 @@ const gamesAbi = parseAbi([
   'function settle(bytes32 sessionId, (uint8 turn, uint8 seats, uint32 step, bytes board, bytes32 boardHash, bool over)[] list, address[] seatPlayers, bytes32 gameTag) returns (uint256)',
   'function gameCount(bytes32 sessionId) view returns (uint256)',
   'function gamesOf(bytes32 sessionId) view returns ((uint8 turn, uint8 seats, uint32 step, bytes board, bytes32 boardHash, bool over)[])',
+  'function liveBoard(bytes32 sessionId) view returns (bytes)',
+  'function recordLive(bytes32 sessionId, bytes board)',
 ]);
 
 // The demo's game tag (the same bucket the player points are stored under).
@@ -196,10 +198,12 @@ function needSession(body) {
   return s;
 }
 
-/// One free midchain step: apply a move via eth_call, hash the new state, and
-/// sign the hash with the session key. Returns the new view. NO transaction.
+/// A move is computed free via eth_call, hash-chained, and then the NEW board
+/// BYTES are committed to the game contract (recordLive) so the exact mid-game
+/// state is on-chain and ANY device can reconstruct/rejoin it, like GFG's board
+/// PDA. That record is a tiny transaction the sponsor pays.
 async function step(sess, kind, seat, tokenIndex, value, seeds) {
-  const { account, pub } = clients();
+  const { account, pub, wallet } = clients();
   const newState = await gameRead(pub, 'applyMove', [sess.state, kind, seat, tokenIndex, value, seeds || []]);
   const prevHash = sess.state === sess.startState ? sess.startHash : sess.lastHash;
   const newHash = await gameRead(pub, 'hashState', [newState]);
@@ -208,6 +212,13 @@ async function step(sess, kind, seat, tokenIndex, value, seeds) {
   sess.state = newState;
   sess.lastHash = newHash;
   if (!sess.startState) { sess.startState = newState; }
+  // Commit the live board on-chain (the game contract is the store).
+  if (ADDR.FoskaayGGIGames) {
+    try {
+      const rh = await wallet.writeContract({ address: ADDR.FoskaayGGIGames, abi: gamesAbi, functionName: 'recordLive', args: [sess.sessionId, newState], account });
+      await pub.waitForTransactionReceipt({ hash: rh });
+    } catch (e) { /* if recordLive is unavailable/reverts, the chain hash chain still anchors on settle */ }
+  }
   sess.moves.push({ kind, seat, seatLabel: ['green', 'yellow', 'blue', 'red'][seat] || ('seat' + seat), tokenIndex, value, seeds: seeds || [], prevHash, newHash, sig });
   return viewOf(sess);
 }
@@ -222,7 +233,9 @@ async function doDemoCreate(body) {
   const userSeat = Number(body.userSeat || 0);
   const user = body.user || account.address;
 
-  const seed = keccak256(toBytes('foskaay-ggi-ludo-' + sessionId + '-' + Date.now()));
+  // Session-derived seed: recoverable from the sessionId alone, so a cold relay
+  // can reconstruct this session from on-chain (seed must satisfy settled reveal).
+  const seed = keccak256(toBytes('ggi-ludo-' + sessionId));
   const seedCommit = keccak256(seed);
 
   const state0 = await gameRead(pub, 'getInitialState', [seatCount, userSeat]);
@@ -367,14 +380,44 @@ async function doDemoSessions(body) {
 /// REJOIN a live session: reconstruct its current board + meta so the creator's
 /// device can continue the SAME game (per-session URL). Gated: only the session's
 /// owner wallet may rejoin, so nobody hijacks another player's game.
+/// If the relay no longer holds it (cold start), it reconstructs the session from
+/// the CHAIN: the latest liveBoard bytes + the Handover event (players/sessionKeys)
+/// + the session-derived seed. That makes a mid-game session always resumable.
 async function doDemoRejoin(body) {
-  const sess = sessions.get(String(body.sessionId));
-  if (!sess) return { ok: false, reason: 'session not live on this relay' };
-  const wallet = String(body.wallet || '').toLowerCase();
-  if (wallet && sess.user && wallet !== String(sess.user).toLowerCase()) {
+  const { pub, wallet } = clients();
+  const sid = String(body.sessionId);
+  const walletAddr = String(body.wallet || '').toLowerCase();
+  let sess = sessions.get(sid);
+  if (!sess) {
+    try {
+      const board = await pub.readContract({ address: ADDR.FoskaayGGIGames, abi: gamesAbi, functionName: 'liveBoard', args: [sid] });
+      if (!board || !board.length) return { ok: false, reason: 'no live board on-chain for this session' };
+      const status = await pub.readContract({ address: ADDR.FoskaayGGI, abi: coreAbi, functionName: 'isPaid', args: [sid] });
+      if (!status) return { ok: false, reason: 'session not found on-chain' };
+      const logs = await pub.getLogs({ address: ADDR.FoskaayGGI, event: HANDOVER_EVENT, args: { sessionId: sid }, fromBlock: HANDOVER_FROM[NET_NAME] || 0n, toBlock: 'latest' });
+      const h = logs[0];
+      if (!h || !h.args.players) return { ok: false, reason: 'no on-chain handover' };
+      const players = h.args.players.map(String);
+      const sessionKeys = h.args.sessionKeys.map(String);
+      if (walletAddr && players.map((x) => x.toLowerCase()).indexOf(walletAddr) === -1) return { ok: false, reason: 'not your session' };
+      const seatCount = players.length;
+      const userSeat = Math.max(0, players.map((x) => x.toLowerCase()).indexOf(walletAddr));
+      const seed = keccak256(toBytes('ggi-ludo-' + sid));
+      const state0 = await gameRead(pub, 'getInitialState', [seatCount, userSeat]);
+      const startHash = await gameRead(pub, 'hashState', [state0]);
+      const boardBytes = typeof board === 'string' && board.startsWith('0x') ? board : ('0x' + Buffer.from(board).toString('hex'));
+      sess = { sessionId: sid, seed, seedCommit: keccak256(seed), state: boardBytes, startState: state0, startHash, lastHash: await gameRead(pub, 'hashState', [boardBytes]), players, sessionKeys, creditPlayers: new Array(seatCount).fill('0x0000000000000000000000000000000000000000'), accounts: [ADDR.FoskaayGGIGames, ADDR.FoskaayGGIPlayers], games: 1, seatCount, userSeat, user: h.args.players[userSeat], sessionKey: sessionKeys[userSeat], moves: [] };
+      sessions.set(sid, sess);
+      return { ok: true, sessionId: sid, seatCount, userSeat, players, view: viewOf(sess), moves: [], reconstructed: true };
+    } catch (e) {
+      return { ok: false, reason: (e && (e.shortMessage || e.message)) || String(e) };
+    }
+  }
+  // Warm path: relay still holds it.
+  if (walletAddr && sess.user && walletAddr !== String(sess.user).toLowerCase()) {
     return { ok: false, reason: 'not your session' };
   }
-  return { ok: true, sessionId: sess.sessionId, seatCount: sess.seatCount, userSeat: sess.userSeat, players: sess.players, view: viewOf(sess), moves: sess.moves };
+  return { ok: true, sessionId: sid, seatCount: sess.seatCount, userSeat: sess.userSeat, players: sess.players, view: viewOf(sess), moves: sess.moves, reconstructed: false };
 }
 
 async function doDemoDigest(body) {
