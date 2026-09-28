@@ -29,7 +29,7 @@
         .fg-btn.primary { background: linear-gradient(135deg,#f39c12,#e67e22); color: #111; }
         .fg-btn.ghost { background: rgba(255,255,255,0.06); color: #fff; border: 1px solid rgba(255,255,255,0.18); }
         .fg-chips { position: relative; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 18px; }
-        .fg-chip { font-size: 0.74rem; font-weight: 700; color: #dcdce6; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); border-radius: 999px; padding: 6px 11px; }
+        .fg-chip { font-size: 0.74rem; font-weight: 700; color: #dcdce6; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); border-radius: 999px; padding: 6px 11px; white-space: nowrap; }
         .fg-chip b { color: #2ecc71; }
         .fg-body { padding: 22px 16px 0; }
 
@@ -82,11 +82,13 @@
     <section class="fg-hero">
         <span class="fg-eyebrow">FOR GAME DEVELOPERS ON ARC</span>
         <h1 class="fg-h1">Make your on-chain game <span class="grad">gasless for players</span>, and cheap for you</h1>
-        <p class="fg-sub">Foskaay GGI is the rail that does for Arc what an ephemeral rollup does on Solana. You delegate your game and player contracts to one Foskaay GGI session, everything inside runs for free through your own rules, and one settlement closes it. Players never pay gas and never see a wallet popup. You pay a fraction of a cent per match, in USDC.</p>
+        <p class="fg-sub">Foskaay Gasless Games Infrastructure (Foskaay GGI) is the rail that empowers game devs to build fully on-chain gasless games with a web2-like flow without annoying wallet pop-ups mid-game or players paying for game-plays on the Arc Blockchain, similar to what ephemeral rollups like MagicBlock ER does on the Solana Blockchain. You delegate your game and player contracts to a session, everything inside runs free through your own rules including free access to provable randomness for dice, lootboxes and more, and settlement closes it. Players never pay gas and never see a wallet popup. You pay a fraction of a cent per match, in USDC.</p>
         <div class="fg-ctas">
-            <a class="fg-btn primary" href="/docs/#quickstart">Start with the SDK</a>
+            <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center">
+                <a class="fg-btn primary" href="/docs/#quickstart">Start with the SDK</a>
+                <a class="fg-btn ghost" href="/demos/board/ludo/">See the live demo</a>
+            </div>
             <a class="fg-btn ghost" href="/hire/">Hire me to integrate</a>
-            <a class="fg-btn ghost" href="/demos/board/ludo/">See the live demo</a>
         </div>
         <div class="fg-chips">
             <span class="fg-chip">⚡ <b>Players pay 0 gas</b></span>
@@ -131,6 +133,7 @@ await ggi.settle({ sessionId, finalHash, seedReveal, sigs, signers });</code></d
             </tbody>
         </table>
         <p class="fg-p" style="font-size:0.84rem;color:#8f8fa0">The fee is 0.0004 base + 0.0004 per delegated account + 0.0002 per game, charged once at connect. Batching more games into one session only grows the per-game part, so cost per game keeps dropping. At 5 Gwei the Arc gas column shrinks about 4x and total cost crosses under 1 USDC per 1,000 games at batch 4.</p>
+        <p class="fg-p"><a href="/pricing/" style="color:#f39c12">See full pricing details.</a></p>
 
         <div class="fg-section-title"><h2>How it works</h2></div>
         <ul class="fg-list">

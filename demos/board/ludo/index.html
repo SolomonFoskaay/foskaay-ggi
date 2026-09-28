@@ -65,7 +65,7 @@
     <div class="ld-body">
         <div class="ld-panel">
             <div class="ld-row">
-                <button class="ld-btn primary" id="ld-new">New match</button>
+                <button class="ld-btn primary" id="ld-new">Start new match</button>
                 <button class="ld-btn" id="ld-pass" disabled>Pass</button>
                 <button class="ld-btn" id="ld-settle" disabled>Settle</button>
                 <label class="ld-muted" style="margin-left:auto">Players
@@ -172,7 +172,7 @@
         },
         tx: function (hash, label) {
             if (!hash) return;
-            el.tx.innerHTML = '<a href="https://explorer.testnet.arc.io/tx/' + hash + '" target="_blank" rel="noopener" style="color:#f39c12">' + (label || 'tx') + ' ' + short(hash) + '</a>';
+            el.tx.innerHTML = '<a href="https://explorer.arc.io/tx/' + hash + '" target="_blank" rel="noopener" style="color:#f39c12">' + (label || 'tx') + ' ' + short(hash) + '</a>';
         },
         onSettled: function () {
             el.settleBtn.disabled = true;
@@ -201,14 +201,14 @@
     var FAQ = [
         { q: 'Is this really an on-chain game?', a: 'Yes. The rules, the dice, the board and the points live in the game contract as compact BYTES (no images on-chain); this page only renders what the chain returns. During play every roll and every move runs through the contract for free, and the result is settled on-chain in one transaction.' },
         { q: 'What exactly is the Foskaay GGI Midchain, and how is it not "off-chain"?', a: 'The contract is PURE, so the whole game runs through it (a free eth_call) without touching the base chain per move. The relay hash-chains every new state and signs it with the session key. If anything is tampered with, the hash chain and the signatures break and the settle is rejected on-chain. There is no replay: the final hash already commits to the board and the points.' },
-        { q: 'Where are the deployed contracts, and how do I verify them?', a: 'Arc Testnet. Core (FoskaayGGI, single contract, fee built in): <a href="' + E + CORE + '" target="_blank" rel="noopener">' + CORE + '</a>. Game, which holds the match and the rules (FoskaayGGIGames): <a href="' + E + GAMES + '" target="_blank" rel="noopener">' + GAMES + '</a>. Player account, which holds points (FoskaayGGIPlayers): <a href="' + E + PLAYERS + '" target="_blank" rel="noopener">' + PLAYERS + '</a>. Open the live session in the <a href="/explorer/" target="_blank" rel="noopener">Foskaay GGI Explorer</a>.' },
+        { q: 'Where are the deployed contracts?', a: 'Same contracts on both networks. Mainnet: core <a href="https://explorer.arc.io/address/0xb406295b4F7E5B513b656122AfFF29AF720E9E23" target="_blank" rel="noopener">FoskaayGGI 0xb406295b4F7E5B513b656122AfFF29AF720E9E23</a>, game <a href="https://explorer.arc.io/address/0xb2d5DfF81B076948f50dA2CcF01887f5ed6Ae2b2" target="_blank" rel="noopener">FoskaayGGIGames 0xb2d5DfF81B076948f50dA2CcF01887f5ed6Ae2b2</a>, player <a href="https://explorer.arc.io/address/0x9425c1d6bA7923D5C804c5e549E08629AbBe3165" target="_blank" rel="noopener">FoskaayGGIPlayers 0x9425c1d6bA7923D5C804c5e549E08629AbBe3165</a>. Testnet: core <a href="https://explorer.testnet.arc.io/address/' + CORE + '" target="_blank" rel="noopener">' + CORE + '</a>, game <a href="https://explorer.testnet.arc.io/address/' + GAMES + '" target="_blank" rel="noopener">' + GAMES + '</a>, player <a href="https://explorer.testnet.arc.io/address/' + PLAYERS + '" target="_blank" rel="noopener">' + PLAYERS + '</a>. Open a live session in the <a href="/explorer/" target="_blank" rel="noopener">Foskaay GGI Explorer</a>.' },
         { q: 'What does it cost to run?', a: 'Your players pay nothing. What you pay as a developer is a cheap per-session fee. The exact numbers live on the <a href="/pricing/" target="_blank" rel="noopener">pricing page</a> so they are never stale.' },
         { q: 'What does a match cost, and who pays?', a: 'The player pays nothing. The sponsor pays only the connect and the settle; every roll and move in between is free. Exact numbers move with Arc gas, so they live on the <a href="/pricing/" target="_blank" rel="noopener">pricing page</a>.' },
         { q: 'How do the points work?', a: 'Points live INSIDE the game state, so they are credited for free as the match plays and cost nothing extra at settle. 4 players: 1st 100, 2nd 50, 3rd 25, 4th 0. 2 players: 1st 100, 2nd 0.' },
         { q: 'How is the crown decided?', a: 'The crown comes from the contract state: when a seat finishes 1st the finish order records it, and this page draws the crown only for the seats the contract has actually finished. It never shows a crown before a match.' },
         { q: 'Why is there only one core contract?', a: 'The old design had a separate FeeVault; it is now merged into FoskaayGGI so a session costs one storage write at connect and no external call. The game itself is a separate pure contract.' },
         { q: 'Where do the dice come from?', a: 'From the core. A seed is committed at connect; the dice come from the core\'s pure randomN(seed, counter). The page never invents a number; it only shows what the contract derives.' },
-        { q: 'Does this use the main platform modules?', a: 'No. The demo is self contained: the pure game plus the Foskaay GGI core. It does not touch the main economy, so it can move to its own repo later.' }
+        { q: 'Which network is this demo running on?', a: 'Arc mainnet (chain 5042). The whole site runs on mainnet. The same contracts are also deployed on testnet, so as a developer you can build, test and confirm your game flow against testnet first, then connect to mainnet the exact same way when your game goes live. Both networks and how to pick one with the SDK are on the <a href="/docs/#networks" target="_blank" rel="noopener">Networks</a> page.' }
     ];
     FAQ.forEach(function (f) {
         var d = document.createElement('details');
