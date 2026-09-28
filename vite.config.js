@@ -28,6 +28,7 @@ export default defineConfig({
         hire: 'hire/index.html',
         pricing: 'pricing/index.html',
         profile: 'profile/index.html',
+        'arc-launch': 'arc-launch.html',
         'web/main.js': 'web/main.js'
       },
       output: {
