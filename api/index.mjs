@@ -306,6 +306,19 @@ async function doDemoSessions(body) {
   return { sessions: list };
 }
 
+/// REJOIN a live session: reconstruct its current board + meta so the creator's
+/// device can continue the SAME game (per-session URL). Gated: only the session's
+/// owner wallet may rejoin, so nobody hijacks another player's game.
+async function doDemoRejoin(body) {
+  const sess = sessions.get(String(body.sessionId));
+  if (!sess) return { ok: false, reason: 'session not live on this relay' };
+  const wallet = String(body.wallet || '').toLowerCase();
+  if (wallet && sess.user && wallet !== String(sess.user).toLowerCase()) {
+    return { ok: false, reason: 'not your session' };
+  }
+  return { ok: true, sessionId: sess.sessionId, seatCount: sess.seatCount, userSeat: sess.userSeat, players: sess.players, view: viewOf(sess), moves: sess.moves };
+}
+
 async function doDemoDigest(body) {
   const { pub } = clients();
   const sess = needSession(body);
@@ -401,6 +414,7 @@ export default async function handler(req, res) {
       case 'demoDigest': out = await doDemoDigest(body); break;
       case 'demoSession': out = await doDemoSession(body); break;
       case 'demoSessions': out = await doDemoSessions(body); break;
+      case 'demoRejoin': out = await doDemoRejoin(body); break;
       case 'demoGame': out = await doDemoGame(body); break;
       case 'demoSettle': out = await doDemoSettle(body); break;
       case 'sponsorAddress': {

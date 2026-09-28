@@ -386,12 +386,44 @@
 
     window.GFG_LUDO = {
         start: start,
+        rejoin: rejoin,
         pass: passTurn,
         settle: settle,
         userSeat: function () { return USERSEAT; },
         board: function () { return VIEW; },
         sessionId: function () { return SID; }
     };
+
+    // REJOIN a live session from its own URL (?game=). Reconstruct the SAME board
+    // from the relay and continue it (the session keeps its identity).
+    async function rejoin(sessionId, wallet) {
+        if (busy || !sessionId) return { ok: false, reason: 'no session' };
+        busy = true;
+        VIEW = null; pendingDice = [];
+        try {
+            var evm = wallet || ((typeof window.getDynamicEvmWallet === 'function') ? window.getDynamicEvmWallet() : null);
+            if (!(window.currentUser || evm)) { setPrompt('Sign in to rejoin your session.'); return { ok: false, reason: 'not signed in' }; }
+            var j = await relay('demoRejoin', { sessionId: sessionId, wallet: evm });
+            if (!j.ok) { setPrompt(j.reason || 'Cannot rejoin this session.'); return { ok: false, reason: j.reason }; }
+            SID = j.sessionId; SEATS = j.seatCount; USERSEAT = j.userSeat;
+            for (var s = 0; s < 4; s++) {
+                var c = COLOR_OF[s];
+                window.playerProfiles[c] = { mode: s === j.userSeat ? 'human' : 'computer', isUser: s === j.userSeat };
+            }
+            window.matchOver = false; window.displayDiceOnBoard = false; window.isDiceRolled = false; window.currentTurnMoves = [];
+            window.ggiSessionKey = (typeof window.ggiCreateSessionKey === 'function') ? window.ggiCreateSessionKey() : null;
+            applyBoard(j.view);
+            if (ui().ids) ui().ids(SID, j);
+            if (ui().log) ui().log('Rejoined session ' + String(SID).slice(0, 10) + '...', 0);
+            beginTurn();
+            return { ok: true };
+        } catch (e) {
+            setPrompt('Rejoin failed: ' + e.message);
+            return { ok: false, reason: e.message };
+        } finally {
+            busy = false;
+        }
+    }
 
     document.addEventListener('DOMContentLoaded', function () {
         wrapDraw();

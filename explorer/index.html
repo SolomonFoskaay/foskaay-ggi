@@ -141,17 +141,6 @@
                 <div id="gx-moves-list" class="gx-mono" style="margin-top:8px; max-height: 320px; overflow:auto;"></div>
             </div>
         </div>
-        <div class="gx-card">
-            <h2 class="gx-h2">The game contract</h2>
-            <div class="gx-row"><span class="k">Game (rules + match + settle)</span><span class="v gx-mono" id="gx-m-games"></span></div>
-            <div class="gx-row"><span class="k">Player account</span><span class="v gx-mono" id="gx-m-players"></span></div>
-            <div class="gx-note">
-                The rules are pure functions: the board and the points are compact bytes the contract
-                returns (no images on-chain), so the whole match runs with free calls. The game contract
-                holds the match and, at settle, writes the games and credits the player account in one step.
-                Only the connect and the settle are transactions.
-            </div>
-        </div>
     </section>
 
     <!-- ============================ PROOF ============================= -->
@@ -308,8 +297,6 @@
     });
 
     // Midchain tab: verify the signed move log against the on-chain anchor.
-    document.getElementById('gx-m-games').textContent = X.NET.contracts.FoskaayGGIGames;
-    document.getElementById('gx-m-players').textContent = X.NET.contracts.FoskaayGGIPlayers;
     document.getElementById('gx-verify').addEventListener('click', function () {
         var id = document.getElementById('gx-m-session').value.trim();
         var status = document.getElementById('gx-m-status');

@@ -93,6 +93,10 @@
         </div>
 
         <div class="ld-panel">
+            <div class="ld-row" style="justify-content:space-between;align-items:center;margin-bottom:10px">
+                <b id="ld-pointsboard" style="color:#2ecc71;font-size:1.1rem">Your points: <span id="ld-pointsboard-val">0</span></b>
+                <span class="ld-muted">ludo points, on-chain</span>
+            </div>
             <div class="ld-board-host">
                 <div id="board-frame">
                     <canvas id="ludoCanvas" width="600" height="600"></canvas>
@@ -245,40 +249,67 @@
     // goes up at every settle and persists (read from FoskaayGGIPlayers, on-chain).
     function updatePoints() {
         var host = document.getElementById('ld-points');
-        if (!host) return;
+        var hostBoard = document.getElementById('ld-pointsboard-val');
         var evm = (typeof window.getDynamicEvmWallet === 'function') ? window.getDynamicEvmWallet() : null;
-        if (!(window.currentUser || evm)) { host.innerHTML = 'Your ludo points: <b style="color:#f39c12">0</b> (sign in)'; return; }
+        if (!(window.currentUser || evm)) {
+            if (host) host.innerHTML = 'Your ludo points: <b style="color:#f39c12">0</b> (sign in)';
+            if (hostBoard) hostBoard.textContent = '0';
+            return;
+        }
         var sdk = window.GGI_SDK;
         if (!sdk) return;
         sdk.pointsOf(evm, LUDO_TAG).then(function (n) {
-            host.innerHTML = 'Your ludo points: <b style="color:#f39c12">' + n.toString() + '</b>';
-        }).catch(function () { host.innerHTML = 'Your ludo points: <b style="color:#f39c12">0</b>'; });
+            if (host) host.innerHTML = 'Your ludo points: <b style="color:#f39c12">' + n.toString() + '</b>';
+            if (hostBoard) hostBoard.textContent = n.toString();
+        }).catch(function () {
+            if (host) host.innerHTML = 'Your ludo points: <b style="color:#f39c12">0</b>';
+            if (hostBoard) hostBoard.textContent = '0';
+        });
     }
     window.updatePoints = updatePoints;
-    // Revisit a session via its share link: a settled session reconstructs from
-    // on-chain (the board bytes live in the Games contract). Active sessions are
-    // midchain state on the app server, so a browser refresh can rejoin them while
-    // it is warm; after settle they become fully on-chain.
-    function resumeQuery() {
+
+    // RESUME a live session: call the bridge to reconstruct the SAME board and
+    // continue it from its own session URL. Gated to the session's owner.
+    function resumeInto(sessionId) {
+        var evm = (typeof window.getDynamicEvmWallet === 'function') ? window.getDynamicEvmWallet() : null;
+        if (!(window.currentUser || evm)) { if (window.openDynamicLogin) window.openDynamicLogin(); return; }
+        if (!window.GFG_LUDO || typeof window.GFG_LUDO.rejoin !== 'function') { alert('Loading...'); return; }
+        window.GFG_LUDO.rejoin(sessionId, evm).then(function (r) {
+            document.getElementById('ld-sessions').innerHTML = r && r.ok
+                ? '<span style="color:#2ecc71;font-weight:800">✔ Resumed. This is your active session; keep playing at the top.</span>'
+                : '<span style="color:#f39c12">Resume: <b>' + (r && r.reason || 'unavailable') + '</b>. This session may have fallen off the app relay after a restart; the on-chain Handover still exists and the game becomes fully on-chain once settled. Open the session link to inspect.</span>';
+        });
+        try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) {}
+    }
+
+    // Revisit a session via ?game=<sessionId>: rejoin it live if the relay still
+    // holds it, otherwise show the on-chain state (settled games are permanent).
+    function resumeFromQuery() {
         var q = new URLSearchParams(location.search).get('game');
         var host = document.getElementById('ld-sessions');
         if (!q || !host) return;
-        var gid = q;
-        host.innerHTML = '<span class="ld-muted" style="color:#8f8fa0">Session ' + sh(gid) + '...</span>';
-        fetch(RELAY, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'demoGame', sessionId: gid }) })
-            .then(function (r) { return r.json(); })
-            .then(function (j) {
-                if (j && j.found) {
-                    host.innerHTML = '<span style="color:#2ecc71;font-weight:800">✔ Completed on-chain</span> &nbsp; games ' + j.gameCount
-                        + ' (points on the final board: ' + (j.points || []).join(', ') + ')'
-                        + ' &nbsp; <a href="/explorer/?session=' + gid + '" target="_blank" rel="noopener" style="color:#f39c12">open in Explorer</a>';
-                } else {
-                    host.innerHTML = '<span style="color:#8f8fa0">This session is active but its live midchain state is held by the app relay. '
-                        + 'Open it in the <a href="/explorer/?session=' + gid + '" target="_blank" rel="noopener" style="color:#f39c12">Explorer</a> '
-                        + 'to see the connect proof; the final board becomes fully on-chain once the session settles.</span>';
-                }
-            })
-            .catch(function () { host.innerHTML = '<span class="ld-muted" style="color:#8f8fa0">Could not read that session.</span>'; });
+        host.innerHTML = '<span class="ld-muted" style="color:#8f8fa0">Opening session ' + sh(q) + '...</span>';
+        var evm = (typeof window.getDynamicEvmWallet === 'function') ? window.getDynamicEvmWallet() : null;
+        var attempt = function () {
+            if (!(window.currentUser || evm)) { host.innerHTML = '<span class="ld-muted" style="color:#8f8fa0">Sign in to rejoin this session.</span>'; return; }
+            if (window.GFG_LUDO && typeof window.GFG_LUDO.rejoin === 'function') {
+                window.GFG_LUDO.rejoin(q, evm).then(function (r) {
+                    if (r && r.ok) { host.innerHTML = '<span style="color:#2ecc71;font-weight:800">✔ Resumed. Continue your game at the top.</span>'; return; }
+                    // Not live on the relay: is it settled on-chain?
+                    fetch(RELAY, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'demoGame', sessionId: q }) })
+                        .then(function (x) { return x.json(); })
+                        .then(function (j) {
+                            if (j && j.found) host.innerHTML = '<span style="color:#2ecc71;font-weight:800">✔ Completed on-chain</span> &nbsp; games ' + j.gameCount
+                                + ' (points on the final board: ' + (j.points || []).join(', ') + ')'
+                                + ' &nbsp; <a href="/explorer/?session=' + q + '" target="_blank" rel="noopener" style="color:#f39c12">open in Explorer</a>';
+                            else host.innerHTML = '<span style="color:#8f8fa0">' + (r && r.reason || 'Session unavailable on the relay')
+                                + '. The on-chain connect exists; once this session settles, the board is fully on-chain.</span>';
+                        }).catch(function () { host.innerHTML = '<span class="ld-muted" style="color:#8f8fa0">Could not read that session.</span>'; });
+                });
+            }
+        };
+        try { window.addEventListener('gfg:auth-changed', attempt, false); } catch (e) {}
+        attempt();
     }
     function loadSessions() {
         var host = document.getElementById('ld-sessions');
@@ -299,16 +330,20 @@
                             ? '<span style="color:#f39c12;font-weight:800">active, ' + s.gamesCommitted + ' committed</span>'
                             : '<span style="color:#999">starting</span>');
                     return '<div style="padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:0.82rem">'
+                        + (s.settled ? '' : '<a href="#" data-resume="' + s.sessionId + '" style="color:#2ecc71;font-weight:800">Resume</a> ')
                         + '<a href="/explorer/?session=' + s.sessionId + '" target="_blank" rel="noopener" style="color:#f39c12">' + sh(s.sessionId) + '</a>'
                         + ' &nbsp; games ' + s.gamesCommitted + '/' + s.games + ' &nbsp; ' + pl
                         + '</div>';
                 }).join('');
+                host.querySelectorAll('[data-resume]').forEach(function (b) {
+                    b.addEventListener('click', function (e) { e.preventDefault(); resumeInto(b.getAttribute('data-resume')); });
+                });
             })
             .catch(function () { host.innerHTML = '<span class="ld-muted" style="color:#8f8fa0">Could not load sessions.</span>'; });
     }
     try { window.addEventListener('gfg:auth-changed', loadSessions, false); } catch (e) {}
-    if (document.readyState !== 'loading') { setTimeout(loadSessions, 300); resumeQuery(); }
-    else document.addEventListener('DOMContentLoaded', function () { setTimeout(loadSessions, 300); resumeQuery(); });
+    if (document.readyState !== 'loading') { setTimeout(loadSessions, 300); resumeFromQuery(); }
+    else document.addEventListener('DOMContentLoaded', function () { setTimeout(loadSessions, 300); resumeFromQuery(); });
 })();
 </script>
 </body>
