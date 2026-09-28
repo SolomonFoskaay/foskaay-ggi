@@ -54,6 +54,14 @@
       {
         "t": "(5) Live mobile test to confirm only the existing start + settle Arc txs, no popups, rejoin verified. WORKING",
         "s": "in_progress"
+      },
+      {
+        "t": "(6) Arc community launch page created (arc-launch.html: 6 quick answers on top, full solo-dev pitch, measured cost story, link cards, copy-ready forum post; no em dashes, no we, no grant mentions). DONE",
+        "s": "done"
+      },
+      {
+        "t": "(6i) Homepage footer now links the launch page; page is live when the PR deploys. DONE",
+        "s": "done"
       }
     ]
   },

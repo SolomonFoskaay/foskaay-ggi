@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Foskaay GGI | The gasless rail Arc was missing for games</title>
+    <meta name="description" content="A solo smart contract developer built the gasless rail Arc was missing for games. Play a 200+ move Ludo for about a cent all-in. Live demo, open source, SDK on npm.">
+    <meta property="og:title" content="Foskaay GGI | The gasless rail Arc was missing for games">
+    <meta property="og:description" content="Every Arc game move used to be a transaction. Foskaay GGI makes an entire 200+ move game cost about 0.01 USDC (connect + settle only). Live demo, open source, SDK on npm.">
+    <meta property="og:url" content="https://foskaayggi.globalfolkgames.fun/arc-launch.html">
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        .fg-wrap { max-width: 980px; margin: 0 auto; padding: 0 0 80px; }
+        .fg-hero { position: relative; overflow: hidden; padding: 44px 18px 38px; text-align: center;
+            background: radial-gradient(900px 300px at 18% -10%, rgba(243,156,18,0.24), transparent 60%), radial-gradient(900px 320px at 86% 0%, rgba(155,89,182,0.24), transparent 60%), linear-gradient(180deg,#101018,#0f0f13);
+            border-bottom: 1px solid rgba(255,255,255,0.07); }
+        .fg-hero::after { content: ''; position: absolute; inset: 0; pointer-events: none;
+            background-image: linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px);
+            background-size: 34px 34px; mask-image: linear-gradient(180deg, rgba(0,0,0,0.85), transparent 85%); -webkit-mask-image: linear-gradient(180deg, rgba(0,0,0,0.85), transparent 85%); }
+        .fg-eyebrow { position: relative; display: inline-block; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em; color: #f39c12; border: 1px solid rgba(243,156,18,0.4); background: rgba(243,156,18,0.08); border-radius: 999px; padding: 5px 12px; margin-bottom: 14px; }
+        .fg-h1 { position: relative; margin: 0 0 12px; font-size: 2rem; line-height: 1.18; color: #fff; }
+        .fg-h1 .grad { background: linear-gradient(135deg,#f39c12,#9b59b6); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .fg-sub { position: relative; margin: 0 auto; max-width: 760px; color: #b9b9c6; font-size: 0.98rem; line-height: 1.7; }
+        .fg-ctas { position: relative; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 20px; }
+        .fg-btn { display: inline-block; padding: 12px 20px; border-radius: 999px; font-weight: 800; font-size: 0.9rem; text-decoration: none; }
+        .fg-btn.primary { background: linear-gradient(135deg,#f39c12,#e67e22); color: #111; }
+        .fg-btn.ghost { background: rgba(255,255,255,0.06); color: #fff; border: 1px solid rgba(255,255,255,0.18); }
+        .fg-chips { position: relative; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 18px; }
+        .fg-chip { font-size: 0.74rem; font-weight: 700; color: #dcdce6; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); border-radius: 999px; padding: 6px 11px; white-space: nowrap; }
+        .fg-chip b { color: #2ecc71; }
+        .fg-body { padding: 22px 16px 0; }
+        .fg-p { color: #b9b9c6; font-size: 0.92rem; line-height: 1.8; margin: 10px 0; }
+        .fg-h2 { margin: 26px 0 10px; font-size: 1.22rem; color: #fff; }
+        .fg-h2 .num { color: #f39c12; }
+        .fg-list { color: #b9b9c6; font-size: 0.9rem; line-height: 1.8; padding-left: 20px; }
+        .fg-list b { color: #fff; }
+        .fg-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+        @media (min-width: 640px) { .fg-grid { grid-template-columns: 1fr 1fr; } }
+        .fg-card { position: relative; display: block; text-decoration: none; color: inherit; background: linear-gradient(180deg,#191922,#15151c); border: 1px solid rgba(255,255,255,0.09); border-radius: 16px; padding: 16px; overflow: hidden; transition: transform 0.15s ease, border-color 0.15s ease; }
+        .fg-card.live { border-color: rgba(46,204,113,0.4); }
+        .fg-card.live:hover { box-shadow: 0 10px 30px rgba(46,204,113,0.12); border-color: rgba(46,204,113,0.7); }
+        .fg-card.gold { border-color: rgba(243,156,18,0.45); }
+        .fg-card.gold:hover { box-shadow: 0 10px 30px rgba(243,156,18,0.14); border-color: rgba(243,156,18,0.7); }
+        .fg-card-glow { position: absolute; top: -60px; right: -60px; width: 160px; height: 160px; border-radius: 50%; filter: blur(46px); pointer-events: none; background: rgba(243,156,18,0.16); }
+        .fg-card.live .fg-card-glow { background: rgba(46,204,113,0.20); }
+        .fg-card-top { position: relative; display: flex; align-items: center; gap: 12px; }
+        .fg-thumb { flex: 0 0 auto; width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; background: linear-gradient(135deg, rgba(243,156,18,0.2), rgba(155,89,182,0.2)); border: 1px solid rgba(255,255,255,0.1); }
+        .fg-card-name { position: relative; margin: 0; font-size: 1rem; color: #fff; }
+        .fg-card-tag { position: relative; margin: 3px 0 0; font-size: 0.76rem; color: #8f8fa0; }
+        .fg-badge { position: absolute; top: 14px; right: 14px; font-size: 0.66rem; font-weight: 800; letter-spacing: 0.04em; border-radius: 999px; padding: 4px 10px; text-transform: uppercase; }
+        .fg-badge.live { background: rgba(46,204,113,0.16); color: #2ecc71; border: 1px solid rgba(46,204,113,0.45); }
+        .fg-badge.gold { background: rgba(243,156,18,0.16); color: #f39c12; border: 1px solid rgba(243,156,18,0.45); }
+        .fg-card-desc { position: relative; margin: 12px 0 0; color: #b9b9c6; font-size: 0.86rem; line-height: 1.6; }
+        .fg-card-cta { position: relative; display: inline-block; margin-top: 12px; font-size: 0.84rem; font-weight: 800; color: #f39c12; }
+        .fg-faq details { border: 1px solid rgba(255,255,255,0.09); border-radius: 12px; margin-bottom: 8px; background: rgba(255,255,255,0.02); }
+        .fg-faq summary { cursor: pointer; padding: 13px 14px; font-weight: 800; color: #fff; font-size: 0.9rem; list-style: none; display: flex; justify-content: space-between; gap: 10px; }
+        .fg-faq summary::-webkit-details-marker { display: none; }
+        .fg-faq summary::after { content: '+'; color: #f39c12; font-weight: 900; }
+        .fg-faq details[open] summary::after { content: '-'; }
+        .fg-faq .fg-a { padding: 0 14px 13px; color: #b9b9c6; font-size: 0.86rem; line-height: 1.7; }
+        .fg-faq .fg-a a { color: #f39c12; }
+        .fg-faq .fg-a code { color: #cfe8ff; font-size: 0.78rem; word-break: break-all; }
+        .fg-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 16px 0; }
+        .fg-stat { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 14px; text-align: center; }
+        .fg-stat .v { color: #2ecc71; font-size: 1.35rem; font-weight: 900; }
+        .fg-stat .k { color: #8f8fa0; font-size: 0.74rem; margin-top: 4px; line-height: 1.4; }
+        .fg-code { background: rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px 16px; margin: 12px 0; overflow-x: auto; }
+        .fg-code code { color: #e8e8e8; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.8rem; line-height: 1.7; white-space: pre; }
+        .fg-note { border-left: 3px solid #9b59b6; background: rgba(155,89,182,0.08); border-radius: 0 10px 10px 0; padding: 12px 14px; margin: 14px 0; color: #e8e8e8; font-size: 0.86rem; line-height: 1.7; }
+        .fg-note.good { border-left-color: #2ecc71; background: rgba(46,204,113,0.08); }
+        .copy-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 6px 0 10px; }
+        .copy-btn { cursor: pointer; border: 1px solid rgba(243,156,18,0.45); background: rgba(243,156,18,0.1); color: #f39c12; font-weight: 800; font-size: 0.82rem; border-radius: 999px; padding: 8px 16px; font-family: inherit; }
+        .copy-btn:hover { background: rgba(243,156,18,0.2); }
+        #copyState { color: #2ecc71; font-size: 0.78rem; font-weight: 700; }
+        pre.post-text { max-height: 420px; overflow: auto; color: #c8c8d2; font-size: 0.78rem; line-height: 1.6; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; word-break: break-word; }
+    </style>
+</head>
+<body>
+<main class="fg-wrap">
+    <section class="fg-hero">
+        <span class="fg-eyebrow">ARC ECOSYSTEM SHOWCASE</span>
+        <h1 class="fg-h1">The gasless rail Arc was missing for games, <span class="grad">built by a solo dev</span></h1>
+        <p class="fg-sub">
+            Every Arc game move used to need a transaction. I built Foskaay GGI (Foskaay Gasless Games
+            Infrastructure) so an entire on-chain game runs free inside a session and settles twice: connect
+            and close. A full 2-player Ludo with 200+ moves comes to about <b>0.01 USDC all-in</b>, instead
+            of the 1 to 3 USDC the same game would cost move by move. Live demo, open source, SDK on npm.
+        </p>
+        <div class="fg-ctas">
+            <a class="fg-btn primary" href="https://foskaayggi.globalfolkgames.fun/demos/board/ludo/">Play the live Ludo demo</a>
+            <a class="fg-btn ghost" href="https://foskaayggi.globalfolkgames.fun/docs/#quickstart">Docs and quick start</a>
+            <a class="fg-btn ghost" href="https://www.npmjs.com/package/@foskaay/ggi-sdk">SDK on npm</a>
+            <a class="fg-btn ghost" href="https://github.com/solomonfoskaay/foskaay-ggi">Open source</a>
+        </div>
+        <div class="fg-chips">
+            <span class="fg-chip">Live on <b>Arc mainnet</b> + testnet</span>
+            <span class="fg-chip">Players <b>pay nothing</b>, no wallet popups</span>
+            <span class="fg-chip"><b>USDC</b> priced, cost predictable</span>
+            <span class="fg-chip"><b>2 Arc transactions</b> per game</span>
+            <span class="fg-chip"><b>80 to 100x</b> cheaper than move-by-move</span>
+        </div>
+    </section>
+
+    <section class="fg-body">
+        <h2 class="fg-h2">Quick answers (read these first)</h2>
+        <div class="fg-faq">
+            <details open>
+                <summary>(1) What is Foskaay GGI?</summary>
+                <div class="fg-a">
+                    Foskaay GGI is short for Foskaay Gasless Games Infrastructure. It lets a game open an
+                    on-chain session on Arc, run all moves, dice, timers and point credits for free inside
+                    that session, and settle once. Players never pay gas and never see a wallet popup. Your
+                    game contract stays the source of truth; the rail only provides the room.
+                </div>
+            </details>
+            <details>
+                <summary>(2) Is this on Arc Mainnet?</summary>
+                <div class="fg-a">
+                    Yes, and also on testnet. You can build and test on Arc testnet for free, then connect
+                    to mainnet when your game is ready. The same contracts and the same fee model on both.
+                </div>
+            </details>
+            <details>
+                <summary>(3) Is Foskaay GGI open source?</summary>
+                <div class="fg-a">
+                    Yes. The contracts, relay, SDK and demo are open at
+                    <a href="https://github.com/solomonfoskaay/foskaay-ggi">github.com/solomonfoskaay/foskaay-ggi</a>.
+                </div>
+            </details>
+            <details>
+                <summary>(4) Is there a demo ready?</summary>
+                <div class="fg-a">
+                    Yes. There is a live on-chain Ludo on the site, playable right now at
+                    <a href="https://foskaayggi.globalfolkgames.fun/demos/board/ludo/">the demo page</a>.
+                    More demo games are on the way.
+                </div>
+            </details>
+            <details>
+                <summary>(5) How do I integrate Foskaay GGI into a new or existing game?</summary>
+                <div class="fg-a">
+                    I published the SDKs on npm (<code>@foskaay/ggi-sdk</code> and
+                    <a href="https://www.npmjs.com/package/@foskaay/ggi-contracts-sdk"><code>@foskaay/ggi-contracts-sdk</code></a>),
+                    so you install them into your project like any package. The
+                    <a href="https://foskaayggi.globalfolkgames.fun/docs/#quickstart">docs quick start</a>
+                    gets you from zero to a gasless game, and the
+                    <a href="https://foskaayggi.globalfolkgames.fun/docs/#designing">designing guide</a>
+                    shows how to shape your smart contract to get the most out of the gasless features.
+                </div>
+            </details>
+            <details>
+                <summary>(6) Are you available to help integrate my game?</summary>
+                <div class="fg-a">
+                    Yes. I take your game, new or existing, and optimize it to get the most out of Foskaay
+                    GGI. As a solo developer I only take a few slots at a time, so the earlier you book the
+                    better. See the
+                    <a href="https://foskaayggi.globalfolkgames.fun/hire/">hire page</a>.
+                </div>
+            </details>
+        </div>
+
+        <h2 class="fg-h2"><span class="num">01</span> The problem: Arc games cost a fortune per move</h2>
+        <p class="fg-p">
+            Arc is cheap, fast and stablecoin-powered. USDC is the gas token, so costs are predictable in
+            dollars, which is exactly what game deals, day-one economies and micro-charges need. The thing
+            that stopped me from building on it was not the chain itself. It was the rail.
+        </p>
+        <p class="fg-p">
+            When I tried to put a proper game on Arc, I found there was no gasless rail like MagicBlock ER.
+            On Arc, every action had to be a transaction. A regular 2-player Ludo is roughly 100 moves per
+            player, so 200+ moves plus dice per game, and every one of those was a sponsor transaction that
+            somebody pays for. I priced the obvious path at about <b>1 to 3 USDC per single game</b>. No game
+            developer can subsidize that per player, per session. DeFi contracts are set once and left alone;
+            games change constantly, new modes, balance tuning, events. Expensive per-action play simply
+            does not work for games.
+        </p>
+
+        <h2 class="fg-h2"><span class="num">02</span> What I built: the missing rail, for everyone</h2>
+        <p class="fg-p">
+            I am a smart contract developer who works in Solidity (EVM) and Rust (SVM, the Solana world),
+            and I have shipped enough real games to know the blocker was never the game logic. It was the
+            cost of the plumbing around it. So instead of waiting for the rail to appear, I built
+            <b>Foskaay GGI</b> on Arc.
+        </p>
+        <ul class="fg-list">
+            <li><b>One session, two Arc transactions.</b> You connect a session (the fee is paid in USDC once)
+                and settle it when play finishes. That is it. Everything between is free for the player and for you.</li>
+            <li><b>Moves are not transactions.</b> Each move runs through your own pure contract logic via
+                eth_call, is hash-chained and signed with session keys, and commits to the chain only at settle.
+                A 200-move game costs the same as a 5-move game.</li>
+            <li><b>Players never touch gas.</b> No wallet popup per move, no signatures, no friction. When the
+                session settles, the player's wallet and points simply exist, on-chain.</li>
+            <li><b>Your contract stays the source of truth.</b> The rail only owns the room. The game keeps its
+                own economy, leaderboards, items and upgrades, behind upgradeable UUPS proxies so games can
+                iterate without stranded accounts.</li>
+        </ul>
+        <div class="fg-note good">
+            The Foskaay GGI midchain is not a sidechain and not a separate validator or RPC. It is a signed,
+            off-chain, hash-chained move log that is anchored on Arc twice, at connect and at settle, so
+            anyone can replay a session and verify every move against the on-chain result. Games stay fully
+            on-chain, just unbelievably cheaper to play.
+        </div>
+
+        <h2 class="fg-h2"><span class="num">03</span> Measured, not promised</h2>
+        <div class="fg-stats">
+            <div class="fg-stat"><div class="v">0.01 USDC</div><div class="k">a full 2-player Ludo, 200+ moves, connect + settle, tested end to end</div></div>
+            <div class="fg-stat"><div class="v">2</div><div class="k">Arc transactions per game, no matter how many moves</div></div>
+            <div class="fg-stat"><div class="v">0</div><div class="k">USDC paid by the player, ever, and no popups</div></div>
+            <div class="fg-stat"><div class="v">80 to 100x</div><div class="k">cheaper than the move-by-move route at 1 to 3 USDC a game</div></div>
+            <div class="fg-stat"><div class="v">80+</div><div class="k">games I have run in testing for about 1 USDC all-in</div></div>
+        </div>
+        <p class="fg-p">
+            The full measured table, unbatched and batched, is on the
+            <a style="color:#f39c12" href="https://foskaayggi.globalfolkgames.fun/pricing/">pricing page</a>.
+            Batching pushes even harder: one session can cover many matches, so the per-game cost keeps
+            falling. Fees are charged on testnet too, so what I quote is real Arc economics, not an estimate.
+        </p>
+
+        <h2 class="fg-h2"><span class="num">04</span> Provably fair, fully on-chain</h2>
+        <ul class="fg-list">
+            <li><b>Dice.</b> The seed is committed on-chain at connect and revealed at settle. Every roll is
+                derived from it through your own pure rules, and anyone can re-run it in the
+                <a style="color:#f39c12" href="https://foskaayggi.globalfolkgames.fun/explorer/">Explorer</a>.</li>
+            <li><b>Crown and points.</b> Winners, placements and points are written straight into the state and
+                landed on-chain at settle. No replay, no he-said-she-said.</li>
+            <li><b>The frontend only displays.</b> Nothing is invented in the browser, nothing trusted from a
+                server database. The chain and the signed, verifiable session are the only truth.</li>
+        </ul>
+
+        <h2 class="fg-h2"><span class="num">05</span> What is live right now</h2>
+        <div class="fg-grid">
+            <a class="fg-card live" href="https://foskaayggi.globalfolkgames.fun/demos/board/ludo/">
+                <span class="fg-badge live">Live</span>
+                <div class="fg-card-top"><div class="fg-thumb">🎲</div>
+                    <div><h4 class="fg-card-name">On-chain Ludo demo</h4>
+                        <p class="fg-card-tag">Play it now on mainnet or testnet, no wallet needed per move</p></div>
+                </div>
+                <div class="fg-card-glow"></div>
+                <p class="fg-card-desc">Connect once, play the whole match free, see the crown and points land on-chain at settlement.</p>
+                <span class="fg-card-cta">Play the demo →</span>
+            </a>
+            <a class="fg-card gold" href="https://foskaayggi.globalfolkgames.fun/docs/#quickstart">
+                <span class="fg-badge gold">Docs</span>
+                <div class="fg-card-top"><div class="fg-thumb">📚</div>
+                    <div><h4 class="fg-card-name">Docs and quick start</h4>
+                        <p class="fg-card-tag">Zero to a gasless game in four steps</p></div>
+                </div>
+                <div class="fg-card-glow"></div>
+                <p class="fg-card-desc">Architecture, the designing guide, the persistence model and the fee pages. Built for a game dev.</p>
+                <span class="fg-card-cta">Read the docs →</span>
+            </a>
+            <a class="fg-card live" href="https://www.npmjs.com/package/@foskaay/ggi-sdk">
+                <span class="fg-badge live">npm</span>
+                <div class="fg-card-top"><div class="fg-thumb">📦</div>
+                    <div><h4 class="fg-card-name">SDK on npm</h4>
+                        <p class="fg-card-tag">@foskaay/ggi-sdk, published and versioned</p></div>
+                </div>
+                <div class="fg-card-glow"></div>
+                <p class="fg-card-desc">connect, settle, pure rules, session keys, randomness and client-side session verification, one install.</p>
+                <span class="fg-card-cta">See it live on npm →</span>
+            </a>
+            <a class="fg-card live" href="https://github.com/solomonfoskaay/foskaay-ggi">
+                <span class="fg-badge live">Open</span>
+                <div class="fg-card-top"><div class="fg-thumb">🐙</div>
+                    <div><h4 class="fg-card-name">Open source</h4>
+                        <p class="fg-card-tag">Contracts, relay, SDK, demo, all public</p></div>
+                </div>
+                <div class="fg-card-glow"></div>
+                <p class="fg-card-desc">Deployed addresses, upgradeable proxies and the midchain logic, readable and auditable by anyone.</p>
+                <span class="fg-card-cta">Browse the code →</span>
+            </a>
+            <a class="fg-card" href="https://foskaayggi.globalfolkgames.fun/pricing/">
+                <span class="fg-badge">Pricing</span>
+                <div class="fg-card-top"><div class="fg-thumb">🧾</div>
+                    <div><h4 class="fg-card-name">Honest pricing</h4>
+                        <p class="fg-card-tag">Real measured numbers, no marketing gas</p></div>
+                </div>
+                <div class="fg-card-glow"></div>
+                <p class="fg-card-desc">Per-session fee in USDC and the measured gas table, unbatched and batched, so you see exactly what you pay.</p>
+                <span class="fg-card-cta">See the numbers →</span>
+            </a>
+            <a class="fg-card gold" href="https://foskaayggi.globalfolkgames.fun/hire/">
+                <span class="fg-badge gold">Help</span>
+                <div class="fg-card-top"><div class="fg-thumb">🤝</div>
+                    <div><h4 class="fg-card-name">Hire me to integrate</h4>
+                        <p class="fg-card-tag">Take your game from idea to gasless</p></div>
+                </div>
+                <div class="fg-card-glow"></div>
+                <p class="fg-card-desc">New game or existing contract, I optimize it for Foskaay GGI and ship it with you. Solo dev, limited slots.</p>
+                <span class="fg-card-cta">Book a slot →</span>
+            </a>
+        </div>
+
+        <h2 class="fg-h2"><span class="num">06</span> Why Arc needs this now</h2>
+        <p class="fg-p">
+            Arc is known as a finance chain, and beneath great games that is exactly the right foundation.
+            USDC gives stable, predictable matching and payout for game deals and in-game economies, the
+            chain is cheap and fast enough for real play, and the network is building fast. The one thing
+            holding game developers back was the cost of running a game action by action. That door is what
+            Foskaay GGI opens. Games on Arc can now be played cheap, be provably fair, and let developers
+            stop burning subsidy on gas.
+        </p>
+
+        <h2 class="fg-h2"><span class="num">07</span> What I am building next</h2>
+        <ul class="fg-list">
+            <li>More on-chain demo games beyond Ludo, shipped as public references.</li>
+            <li>Richer SDK surface and more design patterns for multiplayer and matchmaking games.</li>
+            <li>More tooling so a developer can move from idea to gasless game in a single session.</li>
+        </ul>
+
+        <div class="fg-note good">
+            If you are a game developer on Arc, or you have been watching this space hoping the rail would
+            show up, it is here. Try the demo, read the code, and if you want it inside your own game, book a
+            slot early, as a solo developer I can only take on a few custom integrations at a time.
+        </div>
+
+        <h2 class="fg-h2">Copy this post for the Arc forum (or anywhere)</h2>
+        <div class="copy-row">
+            <button class="copy-btn" id="copyBtn">Copy the post</button>
+            <span id="copyState"></span>
+        </div>
+        <div class="fg-code"><pre class="post-text" id="postText">TITLE: Foskaay GGI, the gasless rail Arc was missing for games (live demo, open source, built by a solo dev)
+
+QUICK ANSWERS:
+(1) What is Foskaay GGI? Foskaay Gasless Games Infrastructure. A game opens an on-chain session on Arc, everything inside the session (moves, dice, timers, points) runs free, and it settles once. Players never pay gas and never see a wallet popup. Your game contract stays the source of truth.
+(2) Is this on Arc mainnet? Yes, plus testnet, so you build and test for free and switch to mainnet when ready.
+(3) Open source? Yes: github.com/solomonfoskaay/foskaay-ggi
+(4) Demo? Yes, a live on-chain Ludo at foskaayggi.globalfolkgames.fun/demos/board/ludo/ with more demos coming.
+(5) How to integrate? The SDKs are published on npm (@foskaay/ggi-sdk, @foskaay/ggi-contracts-sdk) and install like any package. Docs quick start at foskaayggi.globalfolkgames.fun/docs/#quickstart, plus a designing guide for gasless-shaped contracts.
+(6) Can you help integrate my game? Yes, via the hire page: foskaayggi.globalfolkgames.fun/hire/ (solo dev, limited slots, so book early).
+
+WHY I BUILT IT:
+Arc is cheap, fast and stablecoin-powered. USDC is the gas token, so every cost is predictable in dollars, ideal for game deals and micro economies, not just finance. But when I tried to put a real game on Arc I found no gasless rail (like MagicBlock ER) existed. Every action had to be a transaction. A normal 2-player Ludo is roughly 100 moves per player, over 200 moves plus dice per game, and every one of those was a payable transaction, about 1 to 3 USDC per single game. No game developer can subsidize that per player. DeFi contracts are deployed once and left alone; games change constantly, new modes, balance tuning, events. Per-action gas does not work for games.
+
+WHAT FOSKAAY GGI DOES:
+Delegate your game and player contracts into a session, play the whole match free inside, settle once. Exactly two Arc transactions per game: connect (fee paid once in USDC) and close. A 200-move game costs the same as a 5-move game. Moves run through your own pure contract logic via eth_call, are hash-chained and signed with session keys, and commit to the chain at settle. The midchain is not a sidechain, not a validator, not a separate RPC: it is a signed off-chain hash chain anchored on Arc at connect and settle, so anyone can replay and verify every move against the on-chain result. Contracts stay upgradeable (UUPS) so games can iterate without stranding accounts.
+
+MEASURED, NOT PROMISED:
+I played a full 2-player Ludo with over 200 moves and it cost about 0.01 USDC all-in (connect plus settle, both paid by me). Move by move on Arc the same game would be 200+ transactions and 1 to 3 USDC. That is roughly 80 to 100x cheaper. I have run 80+ games in testing for about 1 USDC all-in, and the measured table (foskaayggi.globalfolkgames.fun/pricing/) shows batching takes it much further. Fees are charged on testnet too, so these are real Arc economics. Provably fair: seed committed at connect, revealed at settle, every roll derived from it, winners and points landed on-chain at settle, frontend only displays.
+
+LINKS:
+Demo: foskaayggi.globalfolkgames.fun/demos/board/ludo/
+Docs: foskaayggi.globalfolkgames.fun/docs/#quickstart
+SDK: npmjs.com/package/@foskaay/ggi-sdk
+Open source: github.com/solomonfoskaay/foskaay-ggi
+Pricing: foskaayggi.globalfolkgames.fun/pricing/
+Explorer: foskaayggi.globalfolkgames.fun/explorer/
+Hire me: foskaayggi.globalfolkgames.fun/hire/
+
+Built by a solo smart contract developer working in Solidity (EVM) and Rust (SVM). Try the demo, read the code, and if you want the rail inside your own game, book a slot early, as I take a limited number of custom integrations at a time.</pre></div>
+    </section>
+</main>
+<script>
+    var btn = document.getElementById('copyBtn');
+    var state = document.getElementById('copyState');
+    if (btn) btn.addEventListener('click', function () {
+        var t = document.getElementById('postText').innerText || document.getElementById('postText').textContent;
+        function done() { state.textContent = 'Copied. Paste it anywhere.'; setTimeout(function () { state.textContent = ''; }, 3000); }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(t).then(done, function () { fallback(t, done); });
+        } else { fallback(t, done); }
+    });
+    function fallback(t, done) {
+        var ta = document.createElement('textarea');
+        ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); done(); } catch (e) { state.textContent = 'Copy failed, select the text manually.'; }
+        document.body.removeChild(ta);
+    }
+</script>
+<script src="/global_header.js"></script>
+</body>
+</html>
