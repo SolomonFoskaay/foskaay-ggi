@@ -65,7 +65,7 @@
     <div class="ld-body">
         <div class="ld-panel">
             <div class="ld-row">
-                <button class="ld-btn primary" id="ld-new">New match</button>
+                <button class="ld-btn primary" id="ld-new">Start new match</button>
                 <button class="ld-btn" id="ld-pass" disabled>Pass</button>
                 <button class="ld-btn" id="ld-settle" disabled>Settle</button>
                 <label class="ld-muted" style="margin-left:auto">Players
@@ -208,7 +208,7 @@
         { q: 'How is the crown decided?', a: 'The crown comes from the contract state: when a seat finishes 1st the finish order records it, and this page draws the crown only for the seats the contract has actually finished. It never shows a crown before a match.' },
         { q: 'Why is there only one core contract?', a: 'The old design had a separate FeeVault; it is now merged into FoskaayGGI so a session costs one storage write at connect and no external call. The game itself is a separate pure contract.' },
         { q: 'Where do the dice come from?', a: 'From the core. A seed is committed at connect; the dice come from the core\'s pure randomN(seed, counter). The page never invents a number; it only shows what the contract derives.' },
-        { q: 'Does this use the main platform modules?', a: 'No. The demo is self contained: the pure game plus the Foskaay GGI core. It does not touch the main economy, so it can move to its own repo later.' }
+        { q: 'Is Foskaay GGI on mainnet?', a: 'Yes. Arc mainnet (chain 5042): core <a href="https://explorer.arc.io/address/0xb406295b4F7E5B513b656122AfFF29AF720E9E23" target="_blank" rel="noopener">FoskaayGGI 0xb406295b4F7E5B513b656122AfFF29AF720E9E23</a>, game <a href="https://explorer.arc.io/address/0xb2d5DfF81B076948f50dA2CcF01887f5ed6Ae2b2" target="_blank" rel="noopener">FoskaayGGIGames 0xb2d5DfF81B076948f50dA2CcF01887f5ed6Ae2b2</a>, player <a href="https://explorer.arc.io/address/0x9425c1d6bA7923D5C804c5e549E08629AbBe3165" target="_blank" rel="noopener">FoskaayGGIPlayers 0x9425c1d6bA7923D5C804c5e549E08629AbBe3165</a>. This demo stays on testnet for testing; pass games to the mainnet contracts when you integrate.' }
     ];
     FAQ.forEach(function (f) {
         var d = document.createElement('details');

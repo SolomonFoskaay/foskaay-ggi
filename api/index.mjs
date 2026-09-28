@@ -30,7 +30,7 @@ import { NETWORKS as GGI_NETS } from '../deployments/addresses.mjs';
 
 const accountFor = evmKeys['private' + 'KeyToAccount'];
 
-const NET_NAME = process.env.GFG_GGI_NETWORK || 'mainnet';
+const NET_NAME = process.env.GFG_GGI_NETWORK || 'testnet';
 const NETWORK = GGI_NETS[NET_NAME] || GGI_NETS.testnet;
 const RPC = process.env.GFG_Arc_RPC || NETWORK.rpc; // env override only for a private RPC
 const SPONSOR_KEY = process.env.GFG_Arc_Gasless_Sponsor_Key || '';

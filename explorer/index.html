@@ -57,8 +57,8 @@
         </p>
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
             <select id="gx-network" style="background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.14);border-radius:10px;color:#fff;padding:8px 12px;font-size:0.82rem;">
-                <option value="mainnet" selected>Arc Mainnet (live)</option>
-                <option value="testnet">Arc Testnet (dev)</option>
+                <option value="testnet" selected>Arc Testnet (dev)</option>
+                <option value="mainnet">Arc Mainnet (live)</option>
             </select>
             <span class="gx-pill ok" id="gx-netstate" style="font-size:0.7rem;">MAINNET</span>
         </div>
@@ -243,8 +243,8 @@
         X.setNetwork(this.value);
         applyNet();
     });
-    // Explorer defaults to mainnet (live).
-    X.setNetwork('mainnet');
+    // Explorer defaults to testnet (the dev/demo network); mainnet is in the switch.
+    X.setNetwork('testnet');
     applyNet();
 
     function short(a) { return a ? a.slice(0, 10) + '…' + a.slice(-8) : '-'; }
