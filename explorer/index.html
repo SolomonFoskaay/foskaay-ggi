@@ -227,8 +227,8 @@
         var playersEl = document.getElementById('gx-m-players');
         if (gamesEl) gamesEl.textContent = X.NET.contracts.FoskaayGGIGames;
         if (playersEl) playersEl.textContent = X.NET.contracts.FoskaayGGIPlayers;
-        document.getElementById('gx-netstate').textContent = X.NET.name.toUpperCase().replace('ARC ', '');
-        document.getElementById('gx-netstate').className = 'gx-pill ok';
+        document.getElementById('gx-netstate').textContent = X.NET.name.indexOf('Mainnet') >= 0 ? 'MAINNET' : 'TESTNET';
+        document.getElementById('gx-netstate').className = X.NET.name.indexOf('Mainnet') >= 0 ? 'gx-pill ok' : 'gx-pill warn';
         // Re-read the core fee rows for the selected network.
         if (typeof X.callView === 'function' && X.NET.contracts.FoskaayGGI) {
             X.callView(X.NET.contracts.FoskaayGGI, 'feeBase()').then(function (hex) { var el = document.getElementById('gx-fv-fee'); if (el) el.textContent = usdc18(BigInt(hex)); }).catch(function () {});
@@ -266,7 +266,11 @@
             document.getElementById('gx-result').classList.remove('gx-hide');
             var h = r.handover, s = r.settled;
             document.getElementById('gx-v-connected').innerHTML = pill(r.connected, 'YES', 'not found');
-            document.getElementById('gx-v-gamelogic').textContent = h ? h.gameLogic : '-';
+            var gameEl = document.getElementById('gx-v-gamelogic');
+            if (h && h.gameLogic) gameEl.textContent = h.gameLogic;
+            else gameEl.textContent = h ? h.gameLogic : '-';
+            var gxGames = document.getElementById('gx-m-games');
+            if (gxGames && h && h.gameLogic) gxGames.textContent = h.gameLogic;
             document.getElementById('gx-v-hpayer').textContent = h ? h.payer : '-';
             document.getElementById('gx-v-start').textContent = h ? h.startHash : '-';
             document.getElementById('gx-v-seedcommit').textContent = h ? h.seedCommit : '-';

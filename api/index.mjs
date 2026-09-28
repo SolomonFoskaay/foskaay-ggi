@@ -73,6 +73,7 @@ const coreAbi = parseAbi([
 const gamesAbi = parseAbi([
   'function settle(bytes32 sessionId, (uint8 turn, uint8 seats, uint32 step, bytes board, bytes32 boardHash, bool over)[] list, address[] seatPlayers, bytes32 gameTag) returns (uint256)',
   'function gameCount(bytes32 sessionId) view returns (uint256)',
+  'function gamesOf(bytes32 sessionId) view returns ((uint8 turn, uint8 seats, uint32 step, bytes board, bytes32 boardHash, bool over)[])',
 ]);
 
 // The demo's game tag (the same bucket the player points are stored under).
@@ -313,6 +314,22 @@ async function doDemoDigest(body) {
   return { sessionId: sess.sessionId, finalHash, digest };
 }
 
+/// Reconstruct a SETTLED game fully from on-chain (the board bytes live in the
+/// Games contract after settle), so a session can be reviewed forever with no
+/// relay cache. Active (mid-play) sessions are midchain state and need the relay.
+async function doDemoGame(body) {
+  const { pub } = clients();
+  const sessionId = String(body.sessionId);
+  try {
+    const count = Number(await pub.readContract({ address: ADDR.FoskaayGGIGames, abi: gamesAbi, functionName: 'gameCount', args: [sessionId] }));
+    if (!count) return { found: false };
+    const list = await pub.readContract({ address: ADDR.FoskaayGGIGames, abi: gamesAbi, functionName: 'gamesOf', args: [sessionId] });
+    const last = list[list.length - 1];
+    const dec = await pub.readContract({ address: ADDR.FoskaayGGIGames, abi: gamesRulesAbi, functionName: 'decodeState', args: [last.board] });
+    return { found: true, gameCount: count, over: last.over, turn: dec.turn, finishCount: dec.finishCount, seatCount: dec.seatCount, steps: dec.steps, order: dec.order, points: dec.points, board: last.board, boardHash: last.boardHash };
+  } catch (e) { return { found: false, error: (e && (e.shortMessage || e.message)) || String(e) }; }
+}
+
 /// SETTLE: the LAST transactions. First FoskaayGGIGames.settle writes the match
 /// on-chain and credits FoskaayGGIPlayers in the same step; then the core settle
 /// verifies the players' signatures and closes the session. No replay: the final
@@ -384,6 +401,7 @@ export default async function handler(req, res) {
       case 'demoDigest': out = await doDemoDigest(body); break;
       case 'demoSession': out = await doDemoSession(body); break;
       case 'demoSessions': out = await doDemoSessions(body); break;
+      case 'demoGame': out = await doDemoGame(body); break;
       case 'demoSettle': out = await doDemoSettle(body); break;
       case 'sponsorAddress': {
         const { account } = clients();
