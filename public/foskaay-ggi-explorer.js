@@ -63,6 +63,7 @@
         'feePerAccount()': '0x50b7c6e7',
         'feePerGame()': '0xd6ae481e',
         'gameCount(bytes32)': '0x892b48e6',
+        'sessionGames(bytes32)': '0x83f5c065',
         'destination()': '0xb269681d',
         'midchainDigest(bytes32,bytes32)': '0x00918792',
         'commitments(bytes32)': '0x839df945'
@@ -141,57 +142,103 @@
     }
 
     // ---- Public API -----------------------------------------------------------
+
+    function findLogInReceipt(rc, addr, topic0) {
+        try {
+            var logs = (rc && rc.logs) || [];
+            for (var i = 0; i < logs.length; i++) {
+                var L = logs[i];
+                if (L.address && L.address.toLowerCase() === String(addr).toLowerCase() &&
+                    L.topics && L.topics[0] === topic0) return L;
+            }
+        } catch (e) { /* soft */ }
+        return null;
+    }
+
+    function handoverFromLog(hLog) {
+        if (!hLog) return null;
+        var d = decodeHandover(hLog.data) || {};
+        return {
+            gameLogic: hLog.topics[2] ? addrFromTopic(hLog.topics[2]) : null,
+            payer: hLog.topics[3] ? addrFromTopic(hLog.topics[3]) : null,
+            startHash: d.startHash, seedCommit: d.seedCommit,
+            players: d.players || [], sessionKeys: d.sessionKeys || [],
+            randomCount: d.randomCount || 0, counter: d.counter,
+            block: Number(BigInt(hLog.blockNumber)),
+            tx: hLog.transactionHash
+        };
+    }
+    function settledFromLog(sLog) {
+        if (!sLog) return null;
+        var sd = decodeSettled(sLog.data) || {};
+        return {
+            finalHash: sd.finalHash, seedReveal: sd.seedReveal,
+            payer: sLog.topics[2] ? addrFromTopic(sLog.topics[2]) : null,
+            block: Number(BigInt(sLog.blockNumber)),
+            tx: sLog.transactionHash
+        };
+    }
+
     function loadSession(sessionId) {
         var C = NET.contracts;
         var idArg = sessionId.replace(/^0x/, '');
-        return Promise.all([
-            getLogs(C.FoskaayGGI, TOPIC.Handover, sessionId).catch(function () { return []; }),
-            getLogs(C.FoskaayGGI, TOPIC.Settled, sessionId).catch(function () { return []; }),
-            callView(C.FoskaayGGI, 'isPaid(bytes32)', idArg).catch(function () { return '0x'; }),
-            callView(C.FoskaayGGI, 'fee()').catch(function () { return '0x'; }),
-            callView(C.FoskaayGGI, 'destination()').catch(function () { return '0x'; }),
-            callView(C.FoskaayGGI, 'feeBase()').catch(function () { return '0x'; }),
-            callView(C.FoskaayGGI, 'feePerAccount()').catch(function () { return '0x'; }),
-            callView(C.FoskaayGGI, 'feePerGame()').catch(function () { return '0x'; }),
-            C.FoskaayGGIGames ? callView(C.FoskaayGGIGames, 'gameCount(bytes32)', idArg).catch(function () { return '0x'; }) : Promise.resolve('0x')
-        ]).then(function (r) {
-            var hLog = r[0][0], sLog = r[1][0];
-            var handover = null, settled = null;
-            if (hLog) {
-                var d = decodeHandover(hLog.data) || {};
-                handover = {
-                    gameLogic: hLog.topics[2] ? addrFromTopic(hLog.topics[2]) : null,
-                    payer: hLog.topics[3] ? addrFromTopic(hLog.topics[3]) : null,
-                    startHash: d.startHash, seedCommit: d.seedCommit,
-                    players: d.players || [], sessionKeys: d.sessionKeys || [],
-                    randomCount: d.randomCount || 0, counter: d.counter,
-                    block: Number(BigInt(hLog.blockNumber)),
-                    tx: hLog.transactionHash
-                };
+        // The relay knows the session's connect/settle txs; decode the events from
+        // the transaction receipts (robust, no block-0 scan). Fall back to logs.
+        return fetch(NET.relay, {
+            method: 'POST', headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ action: 'demoSession', sessionId: sessionId })
+        }).then(function (r) { return r.json().catch(function () { return {}; }); })
+          .then(function (meta) {
+            function decodeFrom(topic0, tx) {
+                if (!tx) return Promise.resolve(null);
+                return rpc('eth_getTransactionReceipt', [tx]).then(function (rc) {
+                    return findLogInReceipt(rc, C.FoskaayGGI, topic0);
+                }).catch(function () { return null; });
             }
-            if (sLog) {
-                var sd = decodeSettled(sLog.data) || {};
-                settled = {
-                    finalHash: sd.finalHash, seedReveal: sd.seedReveal,
-                    payer: sLog.topics[2] ? addrFromTopic(sLog.topics[2]) : null,
-                    block: Number(BigInt(sLog.blockNumber)),
-                    tx: sLog.transactionHash
+            return Promise.all([decodeFrom(TOPIC.Handover, meta && meta.connectTx), decodeFrom(TOPIC.Settled, meta && meta.settleTx)]).then(function (got) {
+                // If the relay could not supply a tx, fall back to eth_getLogs.
+                var p = [];
+                p.push(got[0] ? Promise.resolve(got[0]) : getLogs(C.FoskaayGGI, TOPIC.Handover, sessionId).then(function (x) { return x[0] || null; }).catch(function () { return null; }));
+                p.push(got[1] ? Promise.resolve(got[1]) : getLogs(C.FoskaayGGI, TOPIC.Settled, sessionId).then(function (x) { return x[0] || null; }).catch(function () { return null; }));
+                return Promise.all(p);
+            });
+          })
+          .then(function (r) {
+            return Promise.all([
+                Promise.resolve(r[0]), Promise.resolve(r[1]),
+                callView(C.FoskaayGGI, 'isPaid(bytes32)', idArg).catch(function () { return '0x'; }),
+                callView(C.FoskaayGGI, 'fee()').catch(function () { return '0x'; }),
+                callView(C.FoskaayGGI, 'destination()').catch(function () { return '0x'; }),
+                callView(C.FoskaayGGI, 'feeBase()').catch(function () { return '0x'; }),
+                callView(C.FoskaayGGI, 'feePerAccount()').catch(function () { return '0x'; }),
+                callView(C.FoskaayGGI, 'feePerGame()').catch(function () { return '0x'; }),
+                callView(C.FoskaayGGI, 'sessionGames(bytes32)', idArg).catch(function () { return '0x'; }),
+                C.FoskaayGGIGames ? callView(C.FoskaayGGIGames, 'gameCount(bytes32)', idArg).catch(function () { return '0x'; }) : Promise.resolve('0x')
+            ]).then(function (v) {
+                return {
+                    hLog: v[0], sLog: v[1], isPaidHex: v[2], feeHex: v[3], destHex: v[4],
+                    feeBaseHex: v[5], feeAcctHex: v[6], feeGameHex: v[7], declaredHex: v[8], countHex: v[9]
                 };
-            }
+            });
+          })
+          .then(function (v) {
+            var handover = handoverFromLog(v.hLog);
+            var settled = settledFromLog(v.sLog);
             return {
                 sessionId: sessionId,
                 connected: Boolean(handover),
                 handover: handover,
                 settled: settled,
-                paid: boolFromHex(r[2]),
-                fee: numFromWord(r[3] || '0x0'),
-                destination: r[4] && r[4] !== '0x' ? addrFromWord(r[4].slice(2)) : null,
+                paid: boolFromHex(v.isPaidHex),
+                fee: numFromWord(v.feeHex || '0x0'),
+                destination: v.destHex && v.destHex !== '0x' ? addrFromWord(v.destHex.slice(2)) : null,
                 fees: {
-                    base: r[5] && r[5] !== '0x' ? numFromWord(r[5]) : 0n,
-                    perAccount: r[6] && r[6] !== '0x' ? numFromWord(r[6]) : 0n,
-                    perGame: r[7] && r[7] !== '0x' ? numFromWord(r[7]) : 0n
+                    base: v.feeBaseHex && v.feeBaseHex !== '0x' ? numFromWord(v.feeBaseHex) : 0n,
+                    perAccount: v.feeAcctHex && v.feeAcctHex !== '0x' ? numFromWord(v.feeAcctHex) : 0n,
+                    perGame: v.feeGameHex && v.feeGameHex !== '0x' ? numFromWord(v.feeGameHex) : 0n
                 },
-                gamesCommitted: r[8] && r[8] !== '0x' ? numFromWord(r[8]) : 0n
+                declaredGames: v.declaredHex && v.declaredHex !== '0x' ? numFromWord(v.declaredHex) : 0n,
+                gamesCommitted: v.countHex && v.countHex !== '0x' ? numFromWord(v.countHex) : 0n
             };
         });
     }
@@ -229,7 +276,7 @@
             out.ok = true;
             out.reason = session.settled
                 ? 'Every move links to the next and the chain ends at the on-chain settled final hash.'
-                : 'Every move links to the next. Settle to anchor the chain on-chain.';
+                : 'Every move links to the next. Settle to re-anchor the game session from the Foskaay GGI Midchain back to the Arc blockchain.';
             return out;
         });
     }

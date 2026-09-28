@@ -227,7 +227,7 @@ async function doDemoCreate(body) {
     args: [sessionId, ADDR.FoskaayGGIGames, startHash, seedCommit, players, sessionKeys, 2, accounts, games],
     value: fee, account,
   });
-  const sess = { sessionId, matchRef, seed, seedCommit, state: state0, startState: state0, startHash, lastHash: startHash, players, sessionKeys, creditPlayers, accounts, games, seatCount, userSeat, user, sessionKey, moves: [] };
+  const sess = { sessionId, matchRef, seed, seedCommit, state: state0, startState: state0, startHash, lastHash: startHash, players, sessionKeys, creditPlayers, accounts, games, seatCount, userSeat, user, sessionKey, moves: [], connectTx: r.hash, settleTx: null, createdAt: Date.now() };
   sessions.set(sessionId, sess);
   const total = BigInt(r.costUsdc6) + (fee / 1_000_000_000_000n);
   return { sessionId, matchRef, userSeat, seatCount, user, sessionKey, connectTx: r.hash, costUsdc6: total.toString(), fee: fee.toString(), accounts, games, view: viewOf(sess) };
@@ -277,6 +277,34 @@ async function doDemoMoves(body) {
 
 /// The digest + final hash for the current state, so the client's session key
 /// can sign the settle hash (Phase 4 real player seat).
+
+/// The on-chain txs for a session the relay knows (for the explorer to decode the
+/// Handover/Settled events from receipts instead of scanning from block 0).
+async function doDemoSession(body) {
+  const sess = sessions.get(String(body.sessionId));
+  return { found: !!sess, sessionId: body.sessionId, connectTx: sess ? sess.connectTx : null, settleTx: sess ? sess.settleTx : null };
+}
+
+/// A logged-in account's recent sessions (in this relay instance), with on-chain
+/// status: does the core see it paid/committed. Serverless memory is per-instance,
+/// so this is a best-effort history, never localstorage.
+async function doDemoSessions(body) {
+  const { pub } = clients();
+  const wallet = String(body.wallet || '');
+  const list = [];
+  for (const [sid, s] of sessions) {
+    if (wallet && s.user !== wallet) continue;
+    let paid = false, gamesCommitted = 0;
+    try {
+      paid = await pub.readContract({ address: ADDR.FoskaayGGI, abi: coreAbi, functionName: 'isPaid', args: [sid] });
+      if (ADDR.FoskaayGGIGames) gamesCommitted = Number(await pub.readContract({ address: ADDR.FoskaayGGIGames, abi: gamesAbi, functionName: 'gameCount', args: [sid] }));
+    } catch (e) { /* one bad read must not break the list */ }
+    list.push({ sessionId: sid, createdAt: s.createdAt, games: s.games, seatCount: s.seatCount, paid, gamesCommitted, settled: !!s.settleTx, user: s.user });
+  }
+  list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  return { sessions: list };
+}
+
 async function doDemoDigest(body) {
   const { pub } = clients();
   const sess = needSession(body);
@@ -335,6 +363,7 @@ async function doDemoSettle(body) {
   } catch (e) {
     coreSettleError = (e && (e.shortMessage || e.message)) || String(e);
   }
+  sess.settleTx = rGame.hash;
   return { tx: rGame.hash, coreTx, finalHash, costUsdc6: (BigInt(rGame.costUsdc6) + coreCost).toString(), coreSettleError };
 }
 
@@ -353,6 +382,8 @@ export default async function handler(req, res) {
       case 'demoBoard': out = await doDemoBoard(body); break;
       case 'demoMoves': out = await doDemoMoves(body); break;
       case 'demoDigest': out = await doDemoDigest(body); break;
+      case 'demoSession': out = await doDemoSession(body); break;
+      case 'demoSessions': out = await doDemoSessions(body); break;
       case 'demoSettle': out = await doDemoSettle(body); break;
       case 'sponsorAddress': {
         const { account } = clients();
