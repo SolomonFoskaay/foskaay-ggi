@@ -119,7 +119,8 @@ Or with a bundler, import normally.
 | `settleGame(sessionId, games, seatPlayers, gameTag)` | write the finished game(s) and credit the player |
 | `encodeGame({turn,seats,step,board,over})` | build a game tuple for `settleGame` (game-agnostic) |
 | `getInitialState` / `applyMove` / `hashState` | run your game's pure rules free via eth_call |
-| `pointsOf(player, gameTag)` / `gameCount(sessionId)` | read the player points and games committed |
+| `recordLive(sessionId, board)` / `liveBoard(sessionId)` | write/read the live board (game contract is the store, so the exact mid-game state survives refresh, logout and relay restarts) |
+| `pointsOf(player, gameTag)` / `gameCount(sessionId)` / `playerGamesOf(sessionId, player)` | read the player points and the games (and per-player games) committed |
 | `createSessionKey()` | fresh in-memory signer (silent moves, no popups) |
 | `signMove(key, sessionId, finalHash)` | sign the exact digest the core checks |
 | `random(seed, counter)` / `randomN(...)` | free randomness via eth_call |
@@ -145,6 +146,10 @@ update nothing in your game, just reinstall the package.
 
 A session does not close itself. Your game decides when a game is over, then you close it:
 
+0. `recordLive(sessionId, board)` after every move, so the live board bytes live in your game contract
+   (read back with `liveBoard(sessionId)`). Any device, or a restarted relay, reconstructs and continues
+   the exact mid-game state from the chain: no relay memory, no snapshots from the rail. Moves are still
+   computed free via eth_call; only the record write is a tiny real transaction.
 1. `settleGame(sessionId, games, seatPlayers, gameTag)` records the game(s) on-chain and credits the
    player account in the same transaction. Call it when the match ends (unbatched) or when your batch
    is full (batched).
