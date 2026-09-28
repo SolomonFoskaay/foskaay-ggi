@@ -331,7 +331,7 @@
             var sdk = window.GGI_SDK;
             if (!sdk && window.FoskaayGGI) {
                 var Klass = window.FoskaayGGI.GgiClient || window.FoskaayGGI.default;
-                if (Klass) { try { sdk = new Klass({ network: window.GGI_NETWORK || 'testnet' }); } catch (e) {} }
+                if (Klass) { try { sdk = new Klass({ network: window.GGI_NETWORK || 'mainnet' }); } catch (e) {} }
             }
             window.GGI_SDK = sdk;
             var sk = null;

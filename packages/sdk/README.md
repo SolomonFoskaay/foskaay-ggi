@@ -126,6 +126,21 @@ Or with a bundler, import normally.
 | `feeBase()` / `feePerAccount()` / `feePerGame()` / `sessionFee(accounts, games)` | read the 3-part fee |
 | `isPaid(sessionId)` | whether a session is paid |
 
+### Networks
+
+Foskaay GGI is deployed on **both Arc mainnet and Arc testnet**, with the same contracts and the same
+fee model. Pick the network you want the client to talk to:
+
+```js
+const live = new GgiClient({ network: 'mainnet' }); // production
+const dev  = new GgiClient({ network: 'testnet' }); // build + test, free to run
+```
+
+The default is `mainnet`. The addresses are always read from `@foskaay/ggi-contracts-sdk`, never
+pasted into your code. The single source of truth is the site's
+[Networks page](https://foskaayggi.globalfolkgames.fun/docs/#networks): if addresses ever change, you
+update nothing in your game, just reinstall the package.
+
 ### How a session ends (read this)
 
 A session does not close itself. Your game decides when a game is over, then you close it:

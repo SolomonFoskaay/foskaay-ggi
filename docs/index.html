@@ -64,6 +64,7 @@
         <a href="#upgradeable">Upgradeable or not</a>
         <a href="#unopinionated">Built to fit your game</a>
         <a href="#contracts">Contracts</a>
+        <a href="#networks">Networks</a>
         <a href="#fees">Fees</a>
         
         <a href="#quickstart">Quickstart</a>
@@ -387,6 +388,45 @@ await ggi.settle({
         </p>
     </section>
 
+
+    <section class="ggi-card" id="networks">
+        <h2 class="ggi-h2">Networks</h2>
+        <p class="ggi-body">
+            The whole Foskaay GGI site runs on <b>Arc mainnet</b>. The exact same contracts are also
+            deployed on <b>Arc testnet</b>, so game developers can build, test and confirm their game
+            flow against testnet first (the fees are paid there too, for a full experience), then point
+            their game at mainnet the exact same way when it goes live.
+        </p>
+        <div class="ggi-h3">Picking a network with the SDK</div>
+        <div class="ggi-code"><code>import GgiClient from '@foskaay/ggi-sdk';
+
+const live = new GgiClient({ network: 'mainnet' }); // production
+const dev  = new GgiClient({ network: 'testnet' }); // build + test, free to run</code></div>
+        <ul class="ggi-list">
+            <li>The default is <b>mainnet</b>. Passing <span class="ggi-mono">network</span> is how a developer chooses which network to talk to.</li>
+            <li>The addresses are always read from <span class="ggi-mono">@foskaay/ggi-contracts-sdk</span>, never pasted into your code.</li>
+            <li>This page is the site's single place for the current addresses. If they ever change, update nothing in your game, just reinstall the package.</li>
+        </ul>
+        <div class="ggi-h3"><span class="ggi-pill mainnet">MAINNET</span> Arc Mainnet (chain id 5042)</div>
+        <table class="ggi-table">
+            <thead><tr><th>Contract</th><th>Address</th></tr></thead>
+            <tbody>
+                <tr><td>FoskaayGGI</td><td class="ggi-mono">0xb406295b4F7E5B513b656122AfFF29AF720E9E23</td></tr>
+                <tr><td>FoskaayGGIGames</td><td class="ggi-mono">0xb2d5DfF81B076948f50dA2CcF01887f5ed6Ae2b2</td></tr>
+                <tr><td>FoskaayGGIPlayers</td><td class="ggi-mono">0x9425c1d6bA7923D5C804c5e549E08629AbBe3165</td></tr>
+            </tbody>
+        </table>
+        <div class="ggi-h3"><span class="ggi-pill testnet">TESTNET</span> Arc Testnet (chain id 5042002)</div>
+        <table class="ggi-table">
+            <thead><tr><th>Contract</th><th>Address</th></tr></thead>
+            <tbody>
+                <tr><td>FoskaayGGI</td><td class="ggi-mono">0x793785CE66992211B7c60dFCf0318869678D33a4</td></tr>
+                <tr><td>FoskaayGGIGames</td><td class="ggi-mono">0x24e38ac2e80958782a8Bc5CD479bbe2e5D81EcDF</td></tr>
+                <tr><td>FoskaayGGIPlayers</td><td class="ggi-mono">0x1614ebc72eA1cB3D31975b3976B5B474FAcE3b3C</td></tr>
+            </tbody>
+        </table>
+        <p class="ggi-tiny">Same contracts, same fee model on both networks. Developers keep using testnet while building, then switch <span class="ggi-mono">network: 'mainnet'</span> when they ship.</p>
+    </section>
 
     <section class="ggi-card" id="fees">
         <h2 class="ggi-h2">Fees</h2>
