@@ -75,6 +75,24 @@
         });
     }
 
+    // Vercel serves multiple relay instances, each with its own in-memory session.
+    // A request that lands on the "wrong" instance says unknown session; retrying
+    // a few times usually reaches the warm instance that still holds the match, so
+    // new games no longer freeze after a few moves.
+    function relayRetry(action, extra) {
+        var tries = 4;
+        var attempt = function (i) {
+            return relay(action, extra).catch(function (e) {
+                var msg = (e && e.message) || String(e);
+                if (i < tries && /unknown session/i.test(msg)) {
+                    return new Promise(function (res) { setTimeout(res, 250 * i + 150); }).then(function () { return attempt(i + 1); });
+                }
+                throw e;
+            });
+        };
+        return attempt(0);
+    }
+
     function tokenCR(seat, stepsWalked) {
         var color = COLOR_OF[seat];
         if (stepsWalked >= 52) {
@@ -148,7 +166,7 @@
         if (busy || !VIEW) return;
         busy = true;
         try {
-            var r = await relay('demoRoll', { sessionId: SID });
+            var r = await relayRetry('demoRoll', { sessionId: SID });
             applyBoard(r.view);
             pendingDice = [r.dice1, r.dice2];
             window.currentTurnMoves = [r.dice1, r.dice2];
@@ -194,7 +212,7 @@
         var die = pendingDice[pick];
         busy = true;
         try {
-            var r = await relay('demoMove', { sessionId: SID, seat: seat, tokenIndex: tokenIndex, value: die });
+            var r = await relayRetry('demoMove', { sessionId: SID, seat: seat, tokenIndex: tokenIndex, value: die });
             pendingDice.splice(pick, 1);
             applyBoard(r.view);
             if (ui().log) ui().log('You moved token ' + (tokenIndex + 1) + ' by ' + die + ' (free)', 0);
@@ -211,6 +229,47 @@
         }
     }
 
+    // The computer's strategy, ported from GFG ludo-lab: prefer a capture, then
+// release from the yard on a 6, then score into the centre, else advance the
+// furthest piece. It re-evaluates after every move, so it coordinates tokens.
+    function computerTokenFor(seat, value) {
+        var base = seat * 4;
+        // Strategy 1: capture (land on an opponent on the common track, off a safe box).
+        var absOf = function (seatId, steps) { return (seatId * 13 + steps) % 52; };
+        for (var i = 0; i < 4; i++) {
+            var st = VIEW.steps[base + i];
+            if (st < 0 || st >= 52) continue;
+            var ne = st + value;
+            if (ne > 57 || ne >= 52) continue; // stays on the common track
+            var land = absOf(seat, ne);
+            if (land % 13 === 0) continue; // safe start boxes
+            for (var s2 = 0; s2 < VIEW.seatCount; s2++) {
+                if (s2 === seat) continue;
+                for (var t2 = 0; t2 < 4; t2++) {
+                    var o = VIEW.steps[s2 * 4 + t2];
+                    if (o >= 0 && o < 52 && absOf(s2, o) === land) return i;
+                }
+            }
+        }
+        // Strategy 2: on a 6, bring a yard token out.
+        if (value === 6) {
+            for (var j = 0; j < 4; j++) { if (VIEW.steps[base + j] < 0) return j; }
+        }
+        // Strategy 3: score a piece into the centre.
+        for (var k = 0; k < 4; k++) {
+            var sc = VIEW.steps[base + k];
+            if (sc >= 0 && sc < 57 && sc + value === 57) return k;
+        }
+        // Strategy 4: advance the furthest movable piece.
+        var best = -1, bestSteps = -1;
+        for (var m = 0; m < 4; m++) {
+            var sm = VIEW.steps[base + m];
+            var movable = (sm < 0) ? (value === 6) : (sm < 57 && sm + value <= 57);
+            if (movable && sm > bestSteps) { bestSteps = sm; best = m; }
+        }
+        return best;
+    }
+
     async function computerPlay() {
         if (busy || !VIEW) return;
         busy = true;
@@ -218,14 +277,9 @@
             var seat = VIEW.turn;
             for (var d = 0; d < pendingDice.length; d++) {
                 var val = pendingDice[d];
-                var t = -1;
-                for (var i = 0; i < 4; i++) {
-                    var s = VIEW.steps[seat * 4 + i];
-                    if (s < 0) { if (val === 6) { t = i; break; } }
-                    else if (s < 57 && s + val <= 57) { t = i; break; }
-                }
+                var t = computerTokenFor(seat, val);
                 if (t < 0) continue;
-                var r = await relay('demoMove', { sessionId: SID, seat: seat, tokenIndex: t, value: val });
+                var r = await relayRetry('demoMove', { sessionId: SID, seat: seat, tokenIndex: t, value: val });
                 applyBoard(r.view);
             }
             setTimeout(passTurn, 500);
@@ -241,7 +295,7 @@
         if (busy || !VIEW) return;
         busy = true;
         try {
-            var r = await relay('demoPass', { sessionId: SID });
+            var r = await relayRetry('demoPass', { sessionId: SID });
             pendingDice = [];
             window.currentTurnMoves = [];
             window.isDiceRolled = false;
@@ -271,7 +325,7 @@
                 if (dg && dg.digest && typeof window.ggiSignDigest === 'function') sig = await window.ggiSignDigest(dg.digest);
                 else if (dg && dg.digest && window.GGI_SDK && typeof window.GGI_SDK.signMove === 'function' && window.ggiSessionKey) sig = await window.GGI_SDK.signMove(window.ggiSessionKey, SID, dg.finalHash);
             } catch (e) { /* fall back to the relay signing the user seat */ }
-            var r = await relay('demoSettle', { sessionId: SID, sig: sig });
+            var r = await relayRetry('demoSettle', { sessionId: SID, sig: sig });
             if (ui().log) ui().log('GREEN: match committed on-chain, points credited', r.costUsdc6);
             if (ui().gas) ui().gas(r.costUsdc6, 'sealed');
             if (ui().tx) ui().tx(r.tx, 'settled');
