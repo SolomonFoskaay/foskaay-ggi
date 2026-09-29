@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ludo multiplayer testnet (Foskaay GGI) | GlobalFolkGames</title>
+    <meta name="description" content="Multiplayer Ludo on Foskaay Gasless Games Infrastructure, Arc testnet only. Real players, one session, free moves inside, settle once. This page only displays what the chain says.">
+    <meta property="og:title" content="Ludo multiplayer testnet (Foskaay GGI)">
+    <meta property="og:description" content="Multiplayer Ludo on Foskaay GGI, Arc testnet only. The contract owns the game; the page only displays.">
+    <meta property="og:type" content="website">
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/foskaay-ggi-assets/ludo-lab/board.css">
+    <style>
+        .ld-wrap { max-width: 900px; margin: 0 auto; padding: 0 0 80px; }
+        .ld-hero { padding: 26px 16px 20px; text-align: center; background: radial-gradient(900px 260px at 15% -10%, rgba(243,156,18,0.22), transparent 60%), radial-gradient(900px 300px at 88% 0%, rgba(155,89,182,0.22), transparent 60%), linear-gradient(180deg,#101018,#0f0f13); border-bottom: 1px solid rgba(255,255,255,0.07); }
+        .ld-eyebrow { display: inline-block; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.12em; color: #f39c12; border: 1px solid rgba(243,156,18,0.4); background: rgba(243,156,18,0.08); border-radius: 999px; padding: 5px 12px; margin-bottom: 12px; }
+        .ld-h1 { margin: 0 0 8px; font-size: 1.6rem; color: #fff; }
+        .ld-h1 .grad { background: linear-gradient(135deg,#f39c12,#9b59b6); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .ld-sub { margin: 0 auto; max-width: 640px; color: #b9b9c6; font-size: 0.9rem; line-height: 1.6; }
+        .ld-body { padding: 16px 14px 0; }
+        .ld-panel { background: linear-gradient(180deg,#191922,#15151c); border: 1px solid rgba(255,255,255,0.09); border-radius: 16px; padding: 14px; margin-bottom: 14px; }
+        .ld-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+        .ld-btn { appearance: none; border: 1px solid rgba(255,255,255,0.14); background: rgba(255,255,255,0.05); color: #fff; font-weight: 800; font-size: 0.84rem; border-radius: 12px; padding: 10px 14px; cursor: pointer; }
+        .ld-btn.primary { background: linear-gradient(135deg,#f39c12,#9b59b6); border-color: transparent; }
+        .ld-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+        .ld-status { color: #dcdce6; font-size: 0.9rem; line-height: 1.5; }
+        .ld-muted { color: #8f8fa0; font-size: 0.78rem; line-height: 1.5; word-break: break-all; }
+        .ld-board-host { display: flex; justify-content: center; }
+        .ld-legend { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: 10px; font-size: 0.76rem; color: #b9b9c6; }
+        .ld-dot { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: middle; }
+        .ld-log { max-height: 150px; overflow-y: auto; margin-top: 8px; }
+        .ld-log div { font-size: 0.75rem; color: #9a9aa8; padding: 3px 0; border-bottom: 1px dashed rgba(255,255,255,0.06); }
+        .ld-log b { color: #dcdce6; }
+        .ld-faq details { border: 1px solid rgba(255,255,255,0.09); border-radius: 12px; margin-bottom: 8px; background: rgba(255,255,255,0.02); }
+        .ld-faq summary { cursor: pointer; padding: 12px 14px; font-weight: 800; color: #fff; font-size: 0.9rem; list-style: none; display: flex; justify-content: space-between; gap: 10px; }
+        .ld-faq summary::-webkit-details-marker { display: none; }
+        .ld-faq summary::after { content: '+'; color: #f39c12; font-weight: 900; }
+        .ld-faq details[open] summary::after { content: '-'; }
+        .ld-faq .ld-a { padding: 0 14px 12px; color: #b9b9c6; font-size: 0.84rem; line-height: 1.65; }
+        .ld-faq .ld-a a { color: #f39c12; }
+        .ld-faq .ld-a code { color: #cfe8ff; font-size: 0.78rem; word-break: break-all; }
+        .ld-addr { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.78rem; color: #cfe8ff; word-break: break-all; }
+    </style>
+</head>
+<body>
+
+<main class="ld-wrap">
+    <section class="ld-hero">
+        <span class="ld-eyebrow">FOSKAAY GGI MULTIPLAYER TESTNET</span>
+        <h1 class="ld-h1">Ludo multiplayer, <span class="grad">fully on-chain</span></h1>
+        <p class="ld-sub">Real players in one session on Arc testnet. Every move runs free inside the Foskaay GGI Midchain, only the connect and the settle are transactions. The sponsor pays those two, never you. This page only displays what the chain says. Single-player Ludo is untouched: this build lives in its own contracts and never shares a session with it.</p>
+        <p class="ld-sub" style="margin-top:10px"><a href="/explorer/" style="color:#f39c12;font-weight:800">Open the Foskaay GGI Explorer</a> to verify the session, the seed and the midchain moves.</p>
+    </section>
+
+    <div class="ld-body">
+        <div class="ld-panel">
+            <div class="ld-row">
+                <button class="ld-btn primary" id="mp-new">Start multiplayer match</button>
+                <button class="ld-btn" id="mp-join">Join with code</button>
+                <button class="ld-btn" id="mp-pass">Pass</button>
+                <button class="ld-btn" id="mp-timeout">Timeout seat</button>
+                <button class="ld-btn" id="mp-settle">Settle</button>
+                <label class="ld-muted" style="margin-left:auto">Players
+                    <select id="mp-seats" class="ld-btn" style="padding:8px 10px">
+                        <option value="2" selected>2</option>
+                        <option value="4">4</option>
+                    </select>
+                </label>
+            </div>
+            <div class="ld-status" id="mp-status" style="margin-top:12px">Press Start for a solo test, or fill the seats and start a real match. Join from a second phone with the session code.</div>
+            <div class="ld-muted" id="mp-ids" style="margin-top:6px"></div>
+        </div>
+
+        <div class="ld-panel">
+            <b style="color:#fff;font-size:0.9rem">Start: who sits at the board</b>
+            <p class="ld-muted" style="margin:6px 0 10px">Solo test holds every seat on this phone. Real match: each opponent shares their wallet plus their session key address first (they get the key address from the Join panel below).</p>
+            <div class="ld-row" style="margin-bottom:10px">
+                <label class="ld-muted"><input type="checkbox" id="mp-solo" checked> Solo test (I hold every seat)</label>
+            </div>
+            <div id="mp-opponents"></div>
+            <div class="ld-muted" style="margin-top:8px">Session code to share: <span class="ld-addr" id="mp-code">appears after Start</span></div>
+            <div class="ld-muted" style="margin-top:6px" id="mp-points">Your ludo-mp points: <b style="color:#f39c12">0</b> (sign in)</div>
+        </div>
+
+        <div class="ld-panel">
+            <b style="color:#fff;font-size:0.9rem">Join: bring your own seat</b>
+            <p class="ld-muted" style="margin:6px 0 10px">On your phone: sign in, press Key, share the key address plus your wallet with the host. When the host shares the session code, paste it and press Join.</p>
+            <div class="ld-row" style="margin-bottom:10px">
+                <button class="ld-btn" id="mp-key">Generate my key</button>
+                <span class="ld-muted" id="mp-mykey">no key yet</span>
+            </div>
+            <div class="ld-row">
+                <input id="mp-code-in" class="ld-btn" style="flex:1;min-width:200px" placeholder="paste session code">
+                <button class="ld-btn primary" id="mp-join-go">Join</button>
+            </div>
+        </div>
+
+        <div class="ld-panel">
+            <b style="color:#fff;font-size:0.9rem">Settle: every seat signs</b>
+            <p class="ld-muted" style="margin:6px 0 10px">Press Settle at the top. Your signature appears here for the host to collect. Paste the other seats signatures below (one per line) and press Settle again. Nothing settles until every seat has signed.</p>
+            <div class="ld-muted">My signature: <span class="ld-addr" id="mp-mysig">appears at settle time</span></div>
+            <textarea id="mp-sigs" rows="3" style="width:100%;box-sizing:border-box;margin-top:8px;background:rgba(0,0,0,0.4);color:#cfe8ff;border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px;font-size:0.75rem" placeholder="other seats signatures, one per line"></textarea>
+        </div>
+
+        <div class="ld-panel">
+            <div class="ld-row" style="justify-content:space-between;align-items:center;margin-bottom:10px">
+                <b style="color:#fff;font-size:0.9rem">Contracts (testnet, permanent proxies)</b>
+                <span class="ld-muted">check them out on the explorer</span>
+            </div>
+            <div class="ld-muted">Game (GFGGames): <span class="ld-addr" id="mp-game-addr"><a href="https://explorer.testnet.arc.io/address/0x1016B29A147a9b2f84ecF3ca31Ac825A01Af2a22" target="_blank" rel="noopener" style="color:#f39c12">0x1016B29A147a9b2f84ecF3ca31Ac825A01Af2a22</a></span></div>
+            <div class="ld-muted" style="margin-top:6px">Player (GFGPlayers): <span class="ld-addr" id="mp-player-addr"><a href="https://explorer.testnet.arc.io/address/0xE85fC6f002830E10bd446668A72236Bd952F6834" target="_blank" rel="noopener" style="color:#f39c12">0xE85fC6f002830E10bd446668A72236Bd952F6834</a></span></div>
+            <div class="ld-muted" style="margin-top:6px">Core (FoskaayGGI testnet): <span class="ld-addr">0x793785CE66992211B7c60dFCf0318869678D33a4</span></div>
+        </div>
+
+        <div class="ld-panel">
+            <div class="ld-board-host">
+                <div id="board-frame">
+                    <canvas id="ludoCanvas" width="600" height="600"></canvas>
+                </div>
+            </div>
+            <div class="ld-legend">
+                <span><span class="ld-dot" style="background:#2ecc71"></span>Green</span>
+                <span><span class="ld-dot" style="background:#f1c40f"></span>Yellow</span>
+                <span><span class="ld-dot" style="background:#3498db"></span>Blue</span>
+                <span><span class="ld-dot" style="background:#e74c3c"></span>Red</span>
+                <span>You are seat 0 (green). Opponents join by code.</span>
+            </div>
+            <p class="ld-muted" style="margin-top:10px">Tap the centre of the board to roll on your turn, then tap a blinking token to move it. The board is drawn from the chain: the contract holds every token position, decides the dice and the crown.</p>
+        </div>
+
+        <div class="ld-panel">
+            <div class="ld-row" style="justify-content:space-between">
+                <b style="color:#fff;font-size:0.9rem">On-chain activity</b>
+                <span class="ld-muted" id="mp-tx"></span>
+            </div>
+            <div class="ld-log" id="mp-log"></div>
+        </div>
+
+        <div class="ld-panel">
+            <h2 style="color:#fff;font-size:1.05rem;margin:0 0 4px">Demo FAQ (for developers)</h2>
+            <p class="ld-muted" style="margin:0 0 10px">Tap any question.</p>
+            <div class="ld-faq" id="mp-faq"></div>
+        </div>
+    </div>
+</main>
+
+<script src="/global_header.js"></script>
+<script src="/foskaay-ggi-assets/ludo-lab/paths.js"></script>
+<script src="/foskaay-ggi-assets/ludo-lab/board.js"></script>
+<script src="/foskaay-ggi-assets/ludo-lab/physics.js"></script>
+<script>
+(function () {
+    var E = 'https://explorer.testnet.arc.io/address/';
+    var CORE = '0x793785CE66992211B7c60dFCf0318869678D33a4';
+    var GAME = document.getElementById('mp-game-addr').textContent.trim();
+    var PLAYER = document.getElementById('mp-player-addr').textContent.trim();
+    var FAQ = [
+        { q: 'Is this really an on-chain game?', a: 'Yes. The rules, the dice, the board and the points live in the game contract as compact BYTES (no images on-chain); this page only renders what the chain returns. During play every roll and every move runs through the contract for free, and the result is settled on-chain in one transaction.' },
+        { q: 'How is multiplayer different from single-player?', a: 'The rules are identical. The session holds N real players plus N session keys instead of one human plus house seats. The relay runs each move through the contract and signs the move log, but it cannot settle: every seat signs the final result with its own key, and the signed move log is verified client-side before anything is drawn. Single-player sessions and multiplayer sessions never meet.' },
+        { q: 'Where are the deployed contracts?', a: 'Testnet only for now. Core <a href="' + E + CORE + '" target="_blank" rel="noopener">' + CORE + '</a>. Game and player proxy addresses appear at the top of this page the moment the testnet deploy lands. Mainnet comes only after this page is confirmed working.' },
+        { q: 'What does it cost to run?', a: 'Your players pay nothing. What you pay as a developer is a cheap per-session fee (base plus per-account times 2 plus per-game), charged once at connect. Nothing inside the session is charged.' },
+        { q: 'How do the points work?', a: 'Points live INSIDE the game state, so they are credited for free as the match plays and cost nothing extra at settle. 4 players: 1st 100, 2nd 50, 3rd 25, 4th 0. 2 players: 1st 100, 2nd 0. Every seat that earns is credited, not just seat 0.' },
+        { q: 'Where do the dice come from?', a: 'From the core. A seed is committed at connect; the dice come from the core pure randomN(seed, counter). The page never invents a number; it only shows what the contract derives.' },
+        { q: 'Which network is this demo running on?', a: 'Arc testnet (chain 5042002) only. The single-player demo runs on mainnet; this multiplayer build stays here until it is proven, then mainnet is a separate decision.' }
+    ];
+    var host = document.getElementById('mp-faq');
+    FAQ.forEach(function (f) {
+        var d = document.createElement('details');
+        d.innerHTML = '<summary>' + f.q + '</summary><div class="ld-a">' + f.a + '</div>';
+        host.appendChild(d);
+    });
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@foskaay/ggi-sdk@0.2.4/dist/ggi-sdk.browser.js"></script>
+<script src="./bridge-mp.js"></script>
+<script>
+(function () {
+    'use strict';
+    function $(id) { return document.getElementById(id); }
+    function sh(h) { return h ? (h.slice(0, 10) + '...' + h.slice(-6)) : ''; }
+
+    window.gfgLudoUI = {
+        status: function (s) { $('mp-status').innerHTML = s; },
+        prompt: function (s) { $('mp-status').innerHTML = s; },
+        log: function (msg, cost) {
+            var d = document.createElement('div');
+            d.innerHTML = '<b>' + msg + '</b>';
+            var log = $('mp-log');
+            log.insertBefore(d, log.firstChild);
+            while (log.childNodes.length > 60) log.removeChild(log.lastChild);
+        },
+        ids: function (sessionId) {
+            $('mp-ids').innerHTML = 'Session ' + sh(sessionId) +
+                '  |  <a href="/explorer/?session=' + sessionId + '" target="_blank" rel="noopener" style="color:#f39c12">open in Explorer</a>' +
+                '  |  <a href="/gfgnew/board/ludo-mp/?game=' + sessionId + '" target="_blank" rel="noopener" style="color:#f39c12">share this session</a>';
+        },
+        tx: function (hash, label) {
+            if (!hash) return;
+            $('mp-tx').innerHTML = '<a href="https://explorer.testnet.arc.io/tx/' + hash + '" target="_blank" rel="noopener" style="color:#f39c12">' + (label || 'tx') + ' ' + sh(hash) + '</a>';
+        },
+        onSettled: function () { updatePoints(); },
+        sessionLost: function () {}
+    };
+
+    function opponents() {
+        var solo = $('mp-solo').checked;
+        var n = Number($('mp-seats').value);
+        if (solo) return { solo: true, list: [] };
+        var list = [];
+        for (var i = 1; i < n; i++) {
+            var w = ($('mp-opp-w' + i) || {}).value || '';
+            var k = ($('mp-opp-k' + i) || {}).value || '';
+            list.push({ wallet: w.trim(), key: k.trim() });
+        }
+        return { solo: false, list: list };
+    }
+
+    function renderOppInputs() {
+        var host = $('mp-opponents');
+        var n = Number($('mp-seats').value);
+        if ($('mp-solo').checked) { host.innerHTML = '<span class="ld-muted">Solo test: every seat is held here.</span>'; return; }
+        var html = '';
+        for (var i = 1; i < n; i++) {
+            html += '<div class="ld-row" style="margin-bottom:8px">'
+                + '<span class="ld-muted">Seat ' + i + '</span>'
+                + '<input id="mp-opp-w' + i + '" class="ld-btn" style="flex:1;min-width:140px" placeholder="opponent wallet">'
+                + '<input id="mp-opp-k' + i + '" class="ld-btn" style="flex:1;min-width:140px" placeholder="opponent session key">'
+                + '</div>';
+        }
+        host.innerHTML = html;
+    }
+
+    function updatePoints() {
+        var evm = (typeof window.getDynamicEvmWallet === 'function') ? window.getDynamicEvmWallet() : null;
+        if (!evm) return;
+        fetch('/api/foskaay-ggi-sponsor', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'mpPoints', player: evm }) })
+            .then(function (r) { return r.json(); })
+            .then(function (j) { if (j && j.points != null) $('mp-points').innerHTML = 'Your ludo-mp points: <b style="color:#f39c12">' + j.points + '</b>'; })
+            .catch(function () {});
+    }
+    window.updatePoints = updatePoints;
+
+    $('mp-solo').addEventListener('change', renderOppInputs);
+    $('mp-seats').addEventListener('change', renderOppInputs);
+    renderOppInputs();
+
+    $('mp-new').addEventListener('click', async function () {
+        var o = opponents();
+        await window.GFG_MP.start(Number($('mp-seats').value), o.list, o.solo);
+    });
+    $('mp-pass').addEventListener('click', function () { window.GFG_MP.pass(); });
+    $('mp-timeout').addEventListener('click', function () { window.GFG_MP.timeout(); });
+    $('mp-settle').addEventListener('click', function () { window.GFG_MP.settle(); });
+    $('mp-join').addEventListener('click', function () {
+        var el = $('mp-code-in');
+        if (el) el.focus();
+        try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) {}
+    });
+    $('mp-join-go').addEventListener('click', async function () {
+        var code = ($('mp-code-in').value || '').trim();
+        if (!code) return;
+        var evm = (typeof window.getDynamicEvmWallet === 'function') ? window.getDynamicEvmWallet() : null;
+        var r = await window.GFG_MP.rejoin(code, evm);
+        if (r && !r.ok) alert('Join: ' + (r.reason || 'failed'));
+    });
+    $('mp-key').addEventListener('click', function () {
+        try {
+            var s = window.GGI_SDK;
+            if (!s && window.FoskaayGGI) {
+                var Klass = window.FoskaayGGI.GgiClient || window.FoskaayGGI.default;
+                if (Klass) s = new Klass({ network: 'testnet' });
+            }
+            if (!s) { alert('SDK still loading, try again'); return; }
+            window.GGI_SDK = s;
+            var k = s.createSessionKey();
+            window.ggiSessionKey = k;
+            $('mp-mykey').textContent = k.address + ' (share this plus your wallet with the host)';
+        } catch (e) { alert('Key failed: ' + e.message); }
+    });
+
+    function resumeFromQuery() {
+        var q = new URLSearchParams(location.search).get('game');
+        if (!q) return;
+        var attempt = function () {
+            var evm = (typeof window.getDynamicEvmWallet === 'function') ? window.getDynamicEvmWallet() : null;
+            if (!evm) return;
+            window.GFG_MP.rejoin(q, evm).then(function (r) {
+                if (!(r && r.ok)) $('mp-status').innerHTML = 'Join: <b>' + ((r && r.reason) || 'unavailable') + '</b>';
+            });
+        };
+        try { window.addEventListener('gfg:auth-changed', attempt, false); } catch (e) {}
+        setTimeout(attempt, 1200);
+    }
+    try { window.addEventListener('gfg:auth-changed', updatePoints, false); } catch (e) {}
+    if (document.readyState !== 'loading') { resumeFromQuery(); }
+    else document.addEventListener('DOMContentLoaded', resumeFromQuery);
+})();
+</script>
+</body>
+</html>

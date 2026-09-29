@@ -82,5 +82,24 @@
     "version": 3,
     "date": "2026-09-28",
     "note": "Per-move Arc recordLive write REMOVED (it was a forbidden third transaction). The Foskaay GGI midchain is the signed off-chain hash chain (eth_call + signature + hash chain), anchored by Handover and Settle: exactly two Arc txs per session. The freely deployed v3 liveBoards storage stays unused, costs nothing, and is never written during play."
+  },
+  "ludoMp": {
+    "deployedAt": "2026-09-29",
+    "note": "Isolated multiplayer copy for gfgnew/board/ludo-mp (testnet only until proven; single-player untouched). GFGGames + GFGPlayers, both UUPS proxies, wired (players.game = games, games.players = players). Future features are upgrades, never new addresses.",
+    "proxies": {
+      "GFGGames": "0x1016B29A147a9b2f84ecF3ca31Ac825A01Af2a22",
+      "GFGPlayers": "0xE85fC6f002830E10bd446668A72236Bd952F6834"
+    },
+    "implementations": {
+      "GFGGames": "0x14f76041461ce9a2b78006c8107f3bb33f140e96",
+      "GFGPlayers": "0xee4fb096005449cbab33365d41f5e117c7bac24a"
+    },
+    "txs": {
+      "playersImplementation": "0x7b86158836a30dd6a6259f53a3f87c7c2c390d30f457d7c7565227a583b893d1",
+      "playersProxy": "0x1fe0b299cabfbec76347e0b3df57ee4797c1cddcd99f0ef6d47afb8791d44dae",
+      "gamesImplementation": "0x1de7877eefbaca09bcbfd3e408ff948cdd27786c64317aa97e428fc440093dd5",
+      "gamesProxy": "0x1ceee80d4eeaa995709251979c8dd8427bfd0e76b123fbb1ba568d228983a40a",
+      "wireSetGame": "0xd97a4af07d47bc23fd0912f4cf136f58829f558177ee906d8a929aaf7c64a62c"
+    }
   }
 }

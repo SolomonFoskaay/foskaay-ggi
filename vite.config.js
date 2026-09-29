@@ -29,6 +29,7 @@ export default defineConfig({
         pricing: 'pricing/index.html',
         profile: 'profile/index.html',
         'arc-launch': 'arc-launch.html',
+        'gfgnew-board-ludo-mp': 'gfgnew/board/ludo-mp/index.html',
         'web/main.js': 'web/main.js'
       },
       output: {
