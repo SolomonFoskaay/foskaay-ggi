@@ -22,6 +22,7 @@
 
     var SID = null, MY_WALLET = null, MY_KEY = null, MY_SEAT = -1, SEATS = 2;
     var VIEW = null, PLAYERS = [], SKEYS = [];
+    var SOLO = false, SPONSOR_ADDR = '';
     var pendingDice = [];
     var busy = false, pollTimer = null;
 
@@ -63,10 +64,27 @@
             body: JSON.stringify(body)
         }).then(function (r) {
             return r.json().then(function (j) {
-                if (!j.ok) throw new Error(j.error || ('relay ' + r.status));
+                if (!j.ok) throw new Error((j && (j.error || j.reason)) || ('relay ' + r.status));
                 return j;
             });
         });
+    }
+
+    // Join retries: serverless relays each hold their own lobby memory, so a
+    // fresh lobby may need a few taps to meet the warm instance. Retry on
+    // not-found only; anything else fails fast with human words.
+    function relayJoin(action, extra, tries) {
+        tries = (typeof tries === 'number') ? tries : 8;
+        var attempt = function (i) {
+            return relay(action, extra).catch(function (e) {
+                var msg = (e && e.message) || String(e);
+                if (i < tries && /not found|lobby/i.test(msg)) {
+                    return new Promise(function (res) { setTimeout(res, 700); }).then(function () { return attempt(i + 1); });
+                }
+                throw e;
+            });
+        };
+        return attempt(0);
     }
 
     function myWallet() {
@@ -161,7 +179,10 @@
         if (typeof window.ensureBoardAnimationLoop === 'function') window.ensureBoardAnimationLoop();
         stopPoll();
         if (SID) relay('mpBoard', { sessionId: SID }).then(function (j) { tickCountdown(j.lastTs, j.turnSecs); }).catch(function () {});
+        var turnEl = document.getElementById('mp-turn');
+        if (turnEl) turnEl.textContent = (VIEW.turn === MY_SEAT ? 'Your turn' : COLOR_OF[VIEW.turn] + ' to play') + ' (' + SEATS + 'P)';
         if (VIEW.turn === MY_SEAT) setPrompt('Your turn (' + COLOR_OF[MY_SEAT] + '): tap the centre of the board to roll.');
+        else if (SOLO) { setPrompt(COLOR_OF[VIEW.turn] + ' (computer) is playing...'); setTimeout(function () { houseTakeTurn(VIEW.turn); }, 900); }
         else { setPrompt(COLOR_OF[VIEW.turn] + ' is playing... you watch.'); startPoll(); }
     }
 
@@ -257,6 +278,87 @@
             else setTimeout(passTurn, 500);
         } catch (e) {
             setPrompt('Move rejected: ' + e.message);
+        } finally {
+            busy = false;
+        }
+    }
+
+    // SOLO computer (same rules, same chain, signed by the relay sponsor key
+    // like single-player house seats; earns nothing). Strategy: capture, then
+    // yard release on 6, then score to centre, else furthest movable piece.
+    function housePickToken(seat, dice) {
+        var base = seat * 4;
+        var absOf = function (s, st) { return (s * 13 + st) % 52; };
+        for (var d = 0; d < dice.length; d++) {
+            var val = dice[d];
+            for (var i = 0; i < 4; i++) {
+                var st = VIEW.steps[base + i];
+                if (st < 0 || st >= 52) continue;
+                var ne = st + val;
+                if (ne > 57 || ne >= 52) continue;
+                var land = absOf(seat, ne);
+                if (land % 13 === 0) continue;
+                for (var s2 = 0; s2 < SEATS; s2++) {
+                    if (s2 === seat) continue;
+                    for (var t2 = 0; t2 < 4; t2++) {
+                        var o = VIEW.steps[s2 * 4 + t2];
+                        if (o >= 0 && o < 52 && absOf(s2, o) === land) return { token: i, die: val };
+                    }
+                }
+            }
+        }
+        for (var d2 = 0; d2 < dice.length; d2++) {
+            var v2 = dice[d2];
+            if (v2 === 6) {
+                for (var j = 0; j < 4; j++) { if (VIEW.steps[base + j] < 0) return { token: j, die: v2 }; }
+            }
+            for (var k = 0; k < 4; k++) {
+                var sc = VIEW.steps[base + k];
+                if (sc >= 0 && sc < 57 && sc + v2 === 57) return { token: k, die: v2 };
+            }
+        }
+        var best = -1, bestSteps = -2, bestDie = 0;
+        for (var d3 = 0; d3 < dice.length; d3++) {
+            var v3 = dice[d3];
+            for (var m = 0; m < 4; m++) {
+                var sm = VIEW.steps[base + m];
+                var movable = (sm < 0) ? (v3 === 6) : (sm < 57 && sm + v3 <= 57);
+                if (movable && sm > bestSteps) { bestSteps = sm; best = m; bestDie = v3; }
+            }
+        }
+        if (best < 0) return null;
+        return { token: best, die: bestDie };
+    }
+
+    async function houseTakeTurn(seat) {
+        if (busy || !VIEW || VIEW.matchOver || seat === MY_SEAT) return;
+        if (String(PLAYERS[seat] || '').toLowerCase() !== String(SPONSOR_ADDR).toLowerCase()) return;
+        busy = true;
+        try {
+            var wallet = PLAYERS[seat];
+            var r = await relay('mpRoll', { sessionId: SID, wallet: wallet });
+            applyBoard(r.view);
+            var dice = [r.dice1, r.dice2];
+            if (ui().log) ui().log(COLOR_OF[seat] + ' rolled <b>' + r.dice1 + '</b> and <b>' + r.dice2 + '</b> (free)', 0);
+            var guard = 0;
+            while (dice.length && guard++ < 4) {
+                var pick = housePickToken(seat, dice);
+                if (!pick) break;
+                var mv = await relay('mpMove', { sessionId: SID, wallet: wallet, seat: seat, tokenIndex: pick.token, value: pick.die });
+                applyBoard(mv.view);
+                var di = dice.indexOf(pick.die);
+                if (di >= 0) dice.splice(di, 1);
+            }
+            var p = await relay('mpPass', { sessionId: SID, wallet: wallet });
+            applyBoard(p.view);
+            beginTurn();
+        } catch (e) {
+            setPrompt('Computer move failed: ' + e.message);
+            try {
+                var j = await relay('mpBoard', { sessionId: SID });
+                applyBoard(j.view);
+                beginTurn();
+            } catch (e2) {}
         } finally {
             busy = false;
         }
@@ -428,12 +530,15 @@
             if (s) window.GGI_SDK = s;
             var players = [evm];
             var keys = [MY_KEY.address];
+            SOLO = !!soloTest;
             if (soloTest) {
+                // House seats are the relay sponsor (like single-player
+                // computers): relay-signed, on-chain, earning nothing.
+                var sp = await relay('mpSponsor', {});
+                SPONSOR_ADDR = sp.address;
                 for (var i = 1; i < SEATS; i++) {
-                    var k = makeKey();
-                    players.push(k.address);
-                    keys.push(k.address);
-                    window['mpSoloKey' + i] = k;
+                    players.push(SPONSOR_ADDR);
+                    keys.push(SPONSOR_ADDR);
                 }
             }
             MY_SEAT = 0;
@@ -447,7 +552,7 @@
             if (ui().log) ui().log('Lobby open: share the session link below', 0);
             if (ui().ids) ui().ids(SID, '');
             var code = document.getElementById('mp-code');
-            if (code) code.textContent = SID;
+            if (code) code.textContent = created.code + '  ' + location.origin + lobbyLink();
             if (soloTest && PLAYERS.length >= SEATS) {
                 var b = await relay('mpBegin', { sessionId: SID, wallet: MY_WALLET });
                 if (ui().tx) ui().tx(b.connectTx, 'connected');
@@ -482,11 +587,11 @@
             if (!window.ggiSessionKey) {
                 try { window.ggiSessionKey = makeKey(); } catch (e) { return { ok: false, reason: 'key engine loading, try again' }; }
             }
-            var j = await relay('mpRejoin', { sessionId: sessionId, wallet: evm });
+            var j = await relayJoin('mpRejoin', { sessionId: sessionId, wallet: evm });
             if (!j.ok) { setPrompt(j.reason || 'Cannot rejoin this session.'); return { ok: false, reason: j.reason }; }
             var seated = (j.players || []).some(function (w) { return String(w).toLowerCase() === String(evm).toLowerCase(); });
             if (!seated && j.status === 0) {
-                var jj = await relay('mpJoin', { sessionId: sessionId, wallet: evm, sessionKey: window.ggiSessionKey.address });
+                var jj = await relayJoin('mpJoin', { sessionId: sessionId, wallet: evm, sessionKey: window.ggiSessionKey.address });
                 if (!jj || jj.seat == null || jj.seat < 0) { setPrompt((jj && jj.error) || 'Join failed (seats may be full).'); return { ok: false, reason: (jj && jj.error) || 'join failed' }; }
                 if (ui().log) ui().log('Joined as ' + COLOR_OF[jj.seat] + ' (seat ' + jj.seat + ')', 0);
                 j = await relay('mpRejoin', { sessionId: sessionId, wallet: evm });
@@ -509,6 +614,7 @@
                 }
             }
             SID = j.sessionId;
+            try { if (history && history.replaceState) history.replaceState(null, '', lobbyLink()); } catch (e) {}
             SEATS = j.seatCount;
             PLAYERS = j.players || [];
             SKEYS = j.sessionKeys || [];
