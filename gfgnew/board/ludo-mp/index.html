@@ -48,8 +48,6 @@
     <section class="ld-hero">
         <span class="ld-eyebrow">FOSKAAY GGI MULTIPLAYER TESTNET</span>
         <h1 class="ld-h1">Ludo multiplayer, <span class="grad">fully on-chain</span></h1>
-        <p class="ld-sub">Real players in one session on Arc testnet. Every move runs free inside the Foskaay GGI Midchain, only the connect and the settle are transactions. The sponsor pays those two, never you. This page only displays what the chain says. Single-player Ludo is untouched: this build lives in its own contracts and never shares a session with it.</p>
-        <p class="ld-sub" style="margin-top:10px"><a href="/explorer/" style="color:#f39c12;font-weight:800">Open the Foskaay GGI Explorer</a> to verify the session, the seed and the midchain moves.</p>
     </section>
 
     <div class="ld-body">
@@ -67,15 +65,13 @@
                     </select>
                 </label>
             </div>
-            <div class="ld-status" id="mp-status" style="margin-top:12px">Press Start for a solo test, or fill the seats and start a real match. Join from a second phone with the session code.</div>
-            <div class="ld-muted" id="mp-ids" style="margin-top:6px"></div>
         </div>
 
         <div class="ld-panel">
             <b style="color:#fff;font-size:0.9rem">Start: open a lobby</b>
-            <p class="ld-muted" style="margin:6px 0 10px">Solo test holds every seat on this phone. Real match: press Start, share the session link, opponents tap it and join by themselves. The match begins automatically when every seat is filled.</p>
+            <p class="ld-muted" style="margin:6px 0 10px">Solo test plays you against the computer. Real match: press Start, share the session link, opponents tap it and join by themselves. The match begins automatically when every seat is filled.</p>
             <div class="ld-row" style="margin-bottom:10px">
-                <label class="ld-muted"><input type="checkbox" id="mp-solo" checked> Solo test (I hold every seat)</label>
+                <label class="ld-muted"><input type="checkbox" id="mp-solo"> Solo test (computer seats)</label>
             </div>
             <div class="ld-muted" id="mp-lobby">No lobby yet.</div>
             <div class="ld-muted" style="margin-top:8px">Session link to share: <span class="ld-addr" id="mp-code">appears after Start</span></div>
@@ -99,13 +95,14 @@
         </div>
 
         <div class="ld-panel">
-            <div class="ld-row" style="justify-content:space-between;align-items:center;margin-bottom:10px">
-                <b style="color:#fff;font-size:0.9rem">Contracts (testnet, permanent proxies)</b>
-                <span class="ld-muted">check them out on the explorer</span>
+            <div class="ld-row" style="justify-content:space-between;align-items:center;gap:8px">
+                <b style="color:#fff;font-size:0.9rem" id="mp-turn">No match yet</b>
+                <span style="color:#2ecc71;font-size:0.9rem;font-weight:800" id="mp-countdown"></span>
             </div>
-            <div class="ld-muted">Game (GFGGames): <span class="ld-addr" id="mp-game-addr"><a href="https://explorer.testnet.arc.io/address/0x1016B29A147a9b2f84ecF3ca31Ac825A01Af2a22" target="_blank" rel="noopener" style="color:#f39c12">0x1016B29A147a9b2f84ecF3ca31Ac825A01Af2a22</a></span></div>
-            <div class="ld-muted" style="margin-top:6px">Player (GFGPlayers): <span class="ld-addr" id="mp-player-addr"><a href="https://explorer.testnet.arc.io/address/0xE85fC6f002830E10bd446668A72236Bd952F6834" target="_blank" rel="noopener" style="color:#f39c12">0xE85fC6f002830E10bd446668A72236Bd952F6834</a></span></div>
-            <div class="ld-muted" style="margin-top:6px">Core (FoskaayGGI testnet): <span class="ld-addr">0x793785CE66992211B7c60dFCf0318869678D33a4</span></div>
+            <div class="ld-row" style="margin-top:8px">
+                <button class="ld-btn" id="mp-copy">Copy session link</button>
+                <span class="ld-muted" id="mp-ids"></span>
+            </div>
         </div>
 
         <div class="ld-panel">
@@ -119,9 +116,10 @@
                 <span><span class="ld-dot" style="background:#f1c40f"></span>Yellow</span>
                 <span><span class="ld-dot" style="background:#3498db"></span>Blue</span>
                 <span><span class="ld-dot" style="background:#e74c3c"></span>Red</span>
-                <span>You are seat 0 (green). Opponents join by code.</span>
+                <span>Your seat shows as you. Opponents join by link or code.</span>
             </div>
-            <p class="ld-muted" style="margin-top:10px">Tap the centre of the board to roll on your turn, then tap a blinking token to move it. The board is drawn from the chain: the contract holds every token position, decides the dice and the crown.</p>
+            <div class="ld-status" id="mp-status" style="margin:10px 0 2px">Press Start for a solo test, or open a lobby and share the link.</div>
+            <p class="ld-muted" style="margin:6px 0 0">Tap the centre of the board to roll on your turn, then tap a blinking token to move it.</p>
         </div>
 
         <div class="ld-panel">
@@ -148,12 +146,12 @@
 (function () {
     var E = 'https://explorer.testnet.arc.io/address/';
     var CORE = '0x793785CE66992211B7c60dFCf0318869678D33a4';
-    var GAME = document.getElementById('mp-game-addr').textContent.trim();
-    var PLAYER = document.getElementById('mp-player-addr').textContent.trim();
+    var GAME = '0x1016B29A147a9b2f84ecF3ca31Ac825A01Af2a22';
+    var PLAYER = '0xE85fC6f002830E10bd446668A72236Bd952F6834';
     var FAQ = [
         { q: 'Is this really an on-chain game?', a: 'Yes. The rules, the dice, the board and the points live in the game contract as compact BYTES (no images on-chain); this page only renders what the chain returns. During play every roll and every move runs through the contract for free, and the result is settled on-chain in one transaction.' },
-        { q: 'How is multiplayer different from single-player?', a: 'The rules are identical. The session holds N real players plus N session keys instead of one human plus house seats. The relay runs each move through the contract and signs the move log, but it cannot settle: every seat signs the final result with its own key, and the signed move log is verified client-side before anything is drawn. Single-player sessions and multiplayer sessions never meet.' },
-        { q: 'Where are the deployed contracts?', a: 'Testnet only for now. Core <a href="' + E + CORE + '" target="_blank" rel="noopener">' + CORE + '</a>. Game and player proxy addresses appear at the top of this page the moment the testnet deploy lands. Mainnet comes only after this page is confirmed working.' },
+        { q: 'How is multiplayer different from single-player?', a: 'The rules are identical. The session holds N real players plus N session keys instead of one human plus house seats. The relay runs each move through the contract and signs the move log, but it cannot settle alone: the winner device signs automatically and the relay seals it, so the loser does nothing and the game never waits on them. Solo test plays you against relay-signed computer seats that earn nothing. Single-player sessions and multiplayer sessions never meet.' },
+        { q: 'Where are the deployed contracts?', a: 'Testnet only for now, all permanent upgradeable proxies. Core <a href="' + E + CORE + '" target="_blank" rel="noopener">' + CORE + '</a>. Game <a href="' + E + GAME + '" target="_blank" rel="noopener">' + GAME + '</a>. Player <a href="' + E + PLAYER + '" target="_blank" rel="noopener">' + PLAYER + '</a>. Every match also links its own connect and settle transactions in the session bar above the board, and the <a href="/explorer/" target="_blank" rel="noopener">Foskaay GGI Explorer</a> verifies any session.' },
         { q: 'What does it cost to run?', a: 'Your players pay nothing. What you pay as a developer is a cheap per-session fee (base plus per-account times 2 plus per-game), charged once at connect. Nothing inside the session is charged.' },
         { q: 'How do the points work?', a: 'Points live INSIDE the game state, so they are credited for free as the match plays and cost nothing extra at settle. 4 players: 1st 100, 2nd 50, 3rd 25, 4th 0. 2 players: 1st 100, 2nd 0. Every seat that earns is credited, not just seat 0.' },
         { q: 'Where do the dice come from?', a: 'From the core. A seed is committed at connect; the dice come from the core pure randomN(seed, counter). The page never invents a number; it only shows what the contract derives.' },
@@ -219,6 +217,15 @@
         var el = $('mp-code-in');
         if (el) el.focus();
         try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) {}
+    });
+    var copyBtn = $('mp-copy');
+    if (copyBtn) copyBtn.addEventListener('click', function () {
+        var sid = (window.GFG_MP && window.GFG_MP.sessionId && window.GFG_MP.sessionId()) || '';
+        if (!sid) { alert('Start or join a match first'); return; }
+        var link = location.origin + '/gfgnew/board/ludo-mp/?game=' + sid;
+        var done = function () { copyBtn.textContent = 'Copied'; setTimeout(function () { copyBtn.textContent = 'Copy session link'; }, 2000); };
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(link).then(done).catch(function () { prompt('Copy this link:', link); });
+        else prompt('Copy this link:', link);
     });
     $('mp-join-go').addEventListener('click', async function () {
         var code = ($('mp-code-in').value || '').trim();

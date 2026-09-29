@@ -542,6 +542,29 @@ function mpNeedSession(body) {
   return s;
 }
 
+/// Resolve a session by full id, shared link (?game=), or short callable code.
+/// Same relay instance only; callers retry while the host lobby is fresh.
+function mpResolveSession(body) {
+  let sid = String(body.sessionId || body.code || '');
+  const m = sid.match(/game=([^&#]+)/);
+  if (m) sid = m[1];
+  if (!sid) throw new Error('no session code');
+  let sess = mpSessions.get(sid);
+  if (!sess) {
+    const up = sid.toUpperCase();
+    for (const s of mpSessions.values()) {
+      if (s.code === up || String(s.sessionId).toLowerCase() === sid.toLowerCase()) { sess = s; break; }
+    }
+  }
+  if (!sess) throw new Error('Lobby not found on this server. Keep the host page open, then tap Join again.');
+  return sess;
+}
+
+/// MPSPONSOR: free read of the relay address (fills house seats in solo test).
+async function doMpSponsor() {
+  return { ok: true, address: mpClients().account.address };
+}
+
 /// SEAT GATE (anti-impersonation): the wallet calling a turn action must own
 /// the acting seat from the on-chain-committed players list. The pure contract
 /// enforces whose TURN it is; this enforces WHO may act for that seat, so one
@@ -615,7 +638,7 @@ async function doMpCreate(body) {
 /// silently-generated session key address. No wallet copying: the code/link is
 /// the only thing shared. Joins lock once the match begins.
 async function doMpJoin(body) {
-  const sess = mpNeedSession(body);
+  const sess = mpResolveSession(body);
   if (sess.status !== 0) throw new Error('match already started, no new joins');
   const wallet = String(body.wallet || '');
   const key = String(body.sessionKey || '');
@@ -632,7 +655,7 @@ async function doMpJoin(body) {
 
 /// MPLOBBY: free read of who is seated (for the host + joiners to watch fill).
 async function doMpLobby(body) {
-  const sess = mpNeedSession(body);
+  const sess = mpResolveSession(body);
   return { sessionId: sess.sessionId, code: sess.code, status: sess.status, players: sess.players, seatCount: sess.seatCount, connectTx: sess.connectTx, settleTx: sess.settleTx };
 }
 
@@ -718,7 +741,7 @@ async function doMpPass(body) {
 
 async function doMpBoard(body) {
   const { pub } = mpClients();
-  const sess = mpNeedSession(body);
+  const sess = mpResolveSession(body);
   const v = mpViewOf(sess);
   let turnSecs = 45;
   try { turnSecs = Number(await pub.readContract({ address: MP_ADDR.GFGGames, abi: mpGamesAbi, functionName: 'turnSecs' })); } catch (e) { /* default */ }
@@ -727,7 +750,8 @@ async function doMpBoard(body) {
 }
 
 async function doMpMoves(body) {
-  const sess = mpSessions.get(String(body.sessionId));
+  let sess = null;
+  try { sess = mpResolveSession(body); } catch (e) { /* not found */ }
   if (!sess) return { found: false, sessionId: body.sessionId };
   return {
     found: true, sessionId: sess.sessionId, gameLogic: MP_ADDR.GFGGames,
@@ -739,33 +763,46 @@ async function doMpMoves(body) {
 
 async function doMpDigest(body) {
   const { pub } = mpClients();
-  const sess = mpNeedSession(body);
+  const sess = mpResolveSession(body);
   const finalHash = await mpGameRead(pub, 'hashState', [sess.state]);
   const digest = await pub.readContract({ address: MP_ADDR.FoskaayGGI, abi: coreAbi, functionName: 'midchainDigest', args: [sess.sessionId, finalHash] });
   return { sessionId: sess.sessionId, finalHash, digest };
 }
 
 async function doMpSession(body) {
-  const sess = mpSessions.get(String(body.sessionId));
+  const sess = mpResolveSession(body);
   return { found: !!sess, sessionId: body.sessionId, status: sess ? sess.status : -1, connectTx: sess ? sess.connectTx : null, settleTx: sess ? sess.settleTx : null };
 }
 
 /// MPREJOIN: same untrusted-cache rule as the demo. Verify client-side.
+/// Accepts a full id, a shared link (?game=), or the short callable code.
+/// Every failure carries both reason and error so phones show human words.
 async function doMpRejoin(body) {
   const { pub } = mpClients();
-  const sid = String(body.sessionId);
+  let sid = String(body.sessionId || body.code || '');
+  const lm = sid.match(/game=([^&#]+)/);
+  if (lm) sid = lm[1];
   const walletAddr = String(body.wallet || '').toLowerCase();
-  const sess = mpSessions.get(sid);
+  let sess = mpSessions.get(sid);
+  if (!sess) {
+    const up = sid.toUpperCase();
+    for (const s of mpSessions.values()) {
+      if (s.code === up) { sess = s; break; }
+    }
+  }
+  const notYours = 'not your session';
   if (sess && walletAddr && sess.players.map(String).map((x) => x.toLowerCase()).indexOf(walletAddr) === -1) {
-    return { ok: false, reason: 'not your session' };
+    return { ok: false, reason: notYours, error: notYours };
   }
   if (!sess) {
+    const miss = 'Lobby not found on this server. Keep the host page open, then tap Join again.';
     try {
       const paid = await pub.readContract({ address: MP_ADDR.FoskaayGGI, abi: coreAbi, functionName: 'isPaid', args: [sid] });
-      if (!paid) return { ok: false, reason: 'session not found on-chain' };
-      return { ok: false, reason: 'mid-game moves are midchain state and never on Arc. This relay instance restarted and lost the signed log, so start a new match; if it was settled, the result is committed on-chain.' };
+      if (!paid) return { ok: false, reason: miss, error: miss };
+      const cold = 'mid-game moves are midchain state and never on Arc. This relay instance restarted and lost the signed log, so start a new match; if it was settled, the result is committed on-chain.';
+      return { ok: false, reason: cold, error: cold };
     } catch (e) {
-      return { ok: false, reason: (e && (e.shortMessage || e.message)) || String(e) };
+      return { ok: false, reason: miss, error: miss };
     }
   }
   return {
@@ -800,6 +837,16 @@ async function mpFireSettle(sess, pairs) {
   const sigs = [];
   const signers = [];
   const seen = {};
+  // House seats (solo-test computers) are signed automatically: the relay
+  // owns the sponsor key, exactly like single-player house rolls. Real seats
+  // can only be signed on their own phones, and the winner-alone rule means a
+  // missing loser never blocks the seal.
+  for (let hs = 0; hs < sess.seatCount; hs++) {
+    if (String(sess.sessionKeys[hs] || '').toLowerCase() === String(account.address).toLowerCase()) {
+      const hsig = await account.sign({ hash: digest });
+      pairs.push({ seat: hs, sig: hsig });
+    }
+  }
   for (const p of pairs) {
     const seat = Number(p.seat);
     if (!(seat >= 0 && seat < sess.seatCount) || seen[seat]) continue;
@@ -813,6 +860,11 @@ async function mpFireSettle(sess, pairs) {
   if (!sigs.length) throw new Error('no valid seat signature');
   const d = decodeState(sess.state);
   const need = d.seatCount === 2 ? 1 : 3;
+  // House seats (relay sponsor address, e.g. solo-test computers) earn nothing:
+  // they settle as the zero address so the game skips them, exactly like the
+  // single-player demo credits only the logged-in seat.
+  const ZERO = '0x0000000000000000000000000000000000000000';
+  const seatPlayers = sess.players.map((w) => String(w).toLowerCase() === String(account.address).toLowerCase() ? ZERO : w);
   const game = {
     turn: d.turn,
     seats: d.seatCount,
@@ -824,7 +876,7 @@ async function mpFireSettle(sess, pairs) {
   const moveTss = [BigInt(sess.handoverTs || 0)].concat(sess.tss.map((t) => BigInt(t)));
   const rGame = await send(wallet, pub, {
     address: MP_ADDR.GFGGames, abi: mpGamesAbi, functionName: 'settle',
-    args: [sess.sessionId, [game], sess.players, MP_GAME_TAG, moveTss],
+    args: [sess.sessionId, [game], seatPlayers, MP_GAME_TAG, moveTss],
     account,
   });
   let coreTx = null;
@@ -849,9 +901,11 @@ async function mpFireSettle(sess, pairs) {
 
 /// MPSIGN: a seat posts its final-hash signature (signed silently on its own
 /// device with its own in-memory key). Stored after verification. When the
-/// WINNER signature arrives on a terminal board, the relay auto-fires settle
-/// immediately, so the loser does nothing and the game never waits on them.
+/// WINNER signature arrives on a terminal board (or the winner is a house
+/// seat the relay signs for), the relay auto-fires settle immediately, so the
+/// loser does nothing and the game never waits on them.
 async function doMpSign(body) {
+  const { account } = mpClients();
   const sess = mpNeedSession(body);
   if (sess.status === 2) return { stored: true, settled: true, tx: sess.settleTx };
   const seat = Number(body.seat);
@@ -861,7 +915,9 @@ async function doMpSign(body) {
   const d = decodeState(sess.state);
   const need = d.seatCount === 2 ? 1 : 3;
   const over = d.finishCount >= need;
-  if (over && d.order[0] === seat) {
+  const winner = d.order[0];
+  const winnerIsHouse = String(sess.sessionKeys[winner] || '').toLowerCase() === String(account.address).toLowerCase();
+  if (over && (winner === seat || winnerIsHouse)) {
     const pairs = Object.keys(sess.sigs).map((s) => ({ seat: Number(s), sig: sess.sigs[s] })).filter((p) => !!p.sig);
     const r = await mpFireSettle(sess, pairs);
     return { stored: true, settled: true, ...r };
@@ -919,6 +975,7 @@ export default async function handler(req, res) {
       case 'demoGame': out = await doDemoGame(body); break;
       case 'demoSettle': out = await doDemoSettle(body); break;
       case 'mpCreate': out = await doMpCreate(body); break;
+      case 'mpSponsor': out = await doMpSponsor(body); break;
       case 'mpJoin': out = await doMpJoin(body); break;
       case 'mpLobby': out = await doMpLobby(body); break;
       case 'mpBegin': out = await doMpBegin(body); break;
