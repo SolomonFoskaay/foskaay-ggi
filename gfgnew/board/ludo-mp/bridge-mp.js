@@ -187,6 +187,8 @@
     }
 
     var countTimer = null;
+    var ROOMANCHOR = null; // {startHash, sponsorAddress} for log verification
+    var pollN = 0;
     // One shared countdown, from the CONTRACT timer (same numbers on every
     // phone; the page only displays). Stops at zero; the timeout advance is a
     // separate tap so a slow network never auto-skips a live player.
@@ -203,6 +205,23 @@
         countTimer = setInterval(draw, 1000);
     }
 
+    // Full-log adopt: every few polls the whole verified log is cached, so
+    // opponent moves witnessed live also survive on this device.
+    function adoptFullLog() {
+        if (!SID || !ROOMANCHOR) return;
+        var s = sdk();
+        if (!s || typeof s.verifyMoveLog !== 'function') return;
+        relay('mpMoves', { sessionId: SID }).then(function (m) {
+            if (!m || !m.found || !m.moves) return;
+            s.verifyMoveLog(SID, {
+                startHash: ROOMANCHOR.startHash, moves: m.moves, sessionKeys: SKEYS,
+                sponsorAddress: ROOMANCHOR.sponsorAddress, finalHash: m.finalHash, settled: m.settled
+            }).then(function (vr) {
+                if (vr.valid) cacheAdopt(ROOMANCHOR.startHash, m.moves, PLAYERS, SKEYS, SEATS);
+            }).catch(function () {});
+        }).catch(function () {});
+    }
+
     function startPoll() {
         stopPoll();
         pollTimer = setInterval(function () {
@@ -217,6 +236,7 @@
                     return;
                 }
                 tickCountdown(j.lastTs, j.turnSecs);
+                if ((pollN++ % 5) === 0) adoptFullLog();
                 if (j.view.turn !== VIEW.turn || j.view.finishCount !== VIEW.finishCount) {
                     applyBoard(j.view);
                     beginTurn();
@@ -233,6 +253,7 @@
         try {
             var r = await relay('mpRoll', { sessionId: SID, wallet: MY_WALLET });
             applyBoard(r.view);
+            cacheAppend(r.move);
             pendingDice = [r.dice1, r.dice2];
             window.currentTurnMoves = [r.dice1, r.dice2];
             window.isDiceRolled = true;
@@ -273,6 +294,7 @@
             var r = await relay('mpMove', { sessionId: SID, wallet: MY_WALLET, seat: MY_SEAT, tokenIndex: tokenIndex, value: die });
             pendingDice.splice(pick, 1);
             applyBoard(r.view);
+            cacheAppend(r.move);
             if (ui().log) ui().log('You moved token ' + (tokenIndex + 1) + ' by ' + die + ' (free)', 0);
             if (pendingDice.length && hasLegalMove(MY_SEAT, pendingDice)) setPrompt('Tap another token for your second dice, or Pass.');
             else setTimeout(passTurn, 500);
@@ -338,6 +360,7 @@
             var wallet = PLAYERS[seat];
             var r = await relay('mpRoll', { sessionId: SID, wallet: wallet });
             applyBoard(r.view);
+            cacheAppend(r.move);
             var dice = [r.dice1, r.dice2];
             if (ui().log) ui().log(COLOR_OF[seat] + ' rolled <b>' + r.dice1 + '</b> and <b>' + r.dice2 + '</b> (free)', 0);
             var guard = 0;
@@ -346,11 +369,13 @@
                 if (!pick) break;
                 var mv = await relay('mpMove', { sessionId: SID, wallet: wallet, seat: seat, tokenIndex: pick.token, value: pick.die });
                 applyBoard(mv.view);
+                cacheAppend(mv.move);
                 var di = dice.indexOf(pick.die);
                 if (di >= 0) dice.splice(di, 1);
             }
             var p = await relay('mpPass', { sessionId: SID, wallet: wallet });
             applyBoard(p.view);
+            cacheAppend(p.move);
             beginTurn();
         } catch (e) {
             setPrompt('Computer move failed: ' + e.message);
@@ -373,6 +398,7 @@
             window.currentTurnMoves = [];
             window.isDiceRolled = false;
             applyBoard(r.view);
+            cacheAppend(r.move);
             beginTurn();
         } catch (e) {
             // Not my seat (opponent already moved on): just refresh.
@@ -392,6 +418,7 @@
         try {
             var r = await relay('mpPass', { sessionId: SID, wallet: MY_WALLET, timeout: true });
             applyBoard(r.view);
+            cacheAppend(r.move);
             beginTurn();
         } catch (e) {
             // Anyone may advance a stalled seat; if the gate refuses, refresh.
@@ -470,6 +497,44 @@
         }).catch(function () {});
     }
 
+    // ---- device log cache (persistency, no server store) ----
+    // The phone keeps the verified moves it has witnessed, on its own device.
+    // The copy is a cache, never truth: re-verified on load before drawing,
+    // and only ever submitted to the relay merge which re-verifies everything.
+    // Keys never enter the cache (only public addresses travel).
+    function cacheKey() { return SID ? ('gfg-mp-' + SID) : null; }
+    function cacheLoad() {
+        try {
+            var raw = SID ? localStorage.getItem(cacheKey()) : null;
+            return raw ? JSON.parse(raw) : null;
+        } catch (e) { return null; }
+    }
+    function cacheSave(obj) {
+        try { if (SID) localStorage.setItem(cacheKey(), JSON.stringify(obj)); } catch (e) {}
+    }
+    function cacheAdopt(startHash, moves, players, keys, seats) {
+        cacheSave({ startHash: startHash, moves: moves || [], players: players || [], sessionKeys: keys || [], seatCount: seats || SEATS });
+    }
+    function cacheEnvelope(startHash, players, keys, seats) {
+        var c = cacheLoad() || { startHash: startHash, moves: [], players: [], sessionKeys: [], seatCount: seats || SEATS };
+        if (startHash) c.startHash = startHash;
+        if (players && players.length) c.players = players;
+        if (keys && keys.length) c.sessionKeys = keys;
+        if (seats) c.seatCount = seats;
+        cacheSave(c);
+    }
+    function cacheAppend(move) {
+        if (!move) return;
+        var c = cacheLoad() || { startHash: null, moves: [], players: PLAYERS, sessionKeys: SKEYS, seatCount: SEATS };
+        var last = c.moves.length ? c.moves[c.moves.length - 1].newHash : c.startHash;
+        if (c.moves.length && String(move.prevHash).toLowerCase() !== String(last).toLowerCase()) return; // gap: resync from relay instead
+        if (!c.moves.length && c.startHash && String(move.prevHash).toLowerCase() !== String(c.startHash).toLowerCase()) return;
+        c.moves.push(move);
+        c.players = PLAYERS.length ? PLAYERS : c.players;
+        c.sessionKeys = SKEYS.length ? SKEYS : c.sessionKeys;
+        cacheSave(c);
+    }
+
     // ---- create + join (lobby, zero copying) ----
     // Host opens a lobby (no handover yet). Joiners tap the shared link, signed
     // in: their wallet + fresh silent key address join automatically. When every
@@ -484,7 +549,15 @@
             var el = document.getElementById('mp-lobby');
             if (el) el.innerHTML = 'Seats ' + p.players.length + '/' + SEATS + ': ' + p.players.map(function (w, i) {
                 return '<b>' + COLOR_OF[i] + '</b> ' + short(w) + (w === MY_WALLET ? ' (you)' : '');
-            }).join(' &nbsp; ');
+            }).join(' &nbsp; ') + (p.iid ? ' <span class="ld-muted">relay ' + p.iid + '</span>' : '');
+            var bb = document.getElementById('mp-begin');
+            if (bb) bb.disabled = !(p.status === 0 && p.players.length >= SEATS && PLAYERS[0] === MY_WALLET);
+            // Envelope stays fresh from every lobby sighting (for rebuilds).
+            try {
+                var c = cacheLoad() || { startHash: null, moves: [], players: [], sessionKeys: [], seatCount: SEATS };
+                c.players = p.players; c.seatCount = SEATS;
+                cacheSave(c);
+            } catch (e) {}
         };
         pollTimer = setInterval(function () {
             if (busy || !SID) return;
@@ -498,17 +571,35 @@
                     }).catch(function () {});
                     return;
                 }
-                if (p.status === 0 && p.players.length >= SEATS && PLAYERS[0] === MY_WALLET) {
-                    relay('mpBegin', { sessionId: SID, wallet: MY_WALLET }).then(function (b) {
-                        stopPoll();
-                        if (ui().tx) ui().tx(b.connectTx, 'connected');
-                        if (ui().log) ui().log('Match begun on-chain (fee paid, one transaction)', b.costUsdc6);
-                        applyBoard(b.view);
-                        beginTurn();
-                    }).catch(function (e) { setPrompt('Begin failed: ' + e.message); });
+                // Lobby full: the HOST presses Start match (never automatic).
+                if (p.status === 0 && p.players.length >= SEATS) {
+                    setPrompt(PLAYERS[0] === MY_WALLET
+                        ? 'Lobby full. Press Start match to begin.'
+                        : 'Lobby full. Waiting for the host to start the match.');
                 }
             }).catch(function () {});
         }, 2500);
+    }
+
+    // Manual begin (host only, GFG pattern): the creator presses Start match
+    // after the room fills. The relay rejects anyone else.
+    async function begin() {
+        if (busy || !SID) return null;
+        busy = true;
+        try {
+            var b = await relay('mpBegin', { sessionId: SID, wallet: MY_WALLET });
+            stopPoll();
+            if (ui().tx) ui().tx(b.connectTx, 'connected');
+            if (ui().log) ui().log('Match begun on-chain (fee paid, one transaction)', b.costUsdc6);
+            applyBoard(b.view);
+            beginTurn();
+            return b;
+        } catch (e) {
+            setPrompt('Begin failed: ' + e.message);
+            return null;
+        } finally {
+            busy = false;
+        }
     }
 
     async function start(seatCount, soloTest) {
@@ -581,6 +672,7 @@
         if (busy || !sessionId) return { ok: false, reason: 'no session' };
         busy = true;
         VIEW = null; pendingDice = [];
+        SID = sessionId;
         try {
             var evm = wallet || myWallet();
             if (!evm) return { ok: false, reason: 'sign in first' };
@@ -588,7 +680,19 @@
                 try { window.ggiSessionKey = makeKey(); } catch (e) { return { ok: false, reason: 'key engine loading, try again' }; }
             }
             var j = await relayJoin('mpRejoin', { sessionId: sessionId, wallet: evm });
-            if (!j.ok) { setPrompt(j.reason || 'Cannot rejoin this session.'); return { ok: false, reason: j.reason }; }
+            if (!j.ok) {
+                // Relay lost this session: rebuild from this device's verified
+                // copy (re-verified server-side by the merge), then continue.
+                var c0 = cacheLoad();
+                if (c0 && c0.moves && c0.moves.length) {
+                    setPrompt('Relay lost this session. Rebuilding from verified copies...');
+                    try {
+                        await relay('mpResync', { sessionId: sessionId, envelope: { players: c0.players, sessionKeys: c0.sessionKeys, seatCount: c0.seatCount }, moves: c0.moves });
+                        j = await relayJoin('mpRejoin', { sessionId: sessionId, wallet: evm });
+                    } catch (e2) { setPrompt('Rebuild failed: ' + e2.message); return { ok: false, reason: e2.message }; }
+                }
+                if (!j.ok) { setPrompt(j.reason || 'Cannot rejoin this session.'); return { ok: false, reason: j.reason }; }
+            }
             var seated = (j.players || []).some(function (w) { return String(w).toLowerCase() === String(evm).toLowerCase(); });
             if (!seated && j.status === 0) {
                 var jj = await relayJoin('mpJoin', { sessionId: sessionId, wallet: evm, sessionKey: window.ggiSessionKey.address });
@@ -613,6 +717,8 @@
                     if (ui().log) ui().log('Midchain verified: ' + vr.checked + ' signed moves match the on-chain anchors', 0);
                 }
             }
+            cacheAdopt(j.startHash, j.moves || [], j.players || [], j.sessionKeys || [], j.seatCount);
+            ROOMANCHOR = { startHash: j.startHash, sponsorAddress: j.sponsorAddress || '' };
             SID = j.sessionId;
             try { if (history && history.replaceState) history.replaceState(null, '', lobbyLink()); } catch (e) {}
             SEATS = j.seatCount;
@@ -624,6 +730,7 @@
                 if (String(PLAYERS[i]).toLowerCase() === String(evm).toLowerCase()) MY_SEAT = i;
             }
             if (MY_SEAT < 0) return { ok: false, reason: 'your wallet is not a seat in this match' };
+            cacheEnvelope(j.startHash, j.players || [], j.sessionKeys || [], j.seatCount);
             // My session key: this device's in-memory key when it matches the
             // committed seat key (just joined, or created the seat here), else a
             // solo-test key held on this phone. Keys never leave the device.
@@ -691,6 +798,7 @@
     window.GFG_MP = {
         start: start,
         rejoin: rejoin,
+        begin: begin,
         pass: passTurn,
         timeout: timeoutSeat,
         settle: settle,
