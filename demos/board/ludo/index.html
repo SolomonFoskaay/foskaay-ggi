@@ -257,6 +257,13 @@
             return;
         }
         var sdk = window.GGI_SDK;
+        // Fresh page load (no Start pressed yet): build the read-only client
+        // the same way the bridge does, so points come from the player
+        // contract on-chain instead of sitting at zero. No wallet needed.
+        if (!sdk && window.FoskaayGGI) {
+            var Klass = window.FoskaayGGI.GgiClient || window.FoskaayGGI.default;
+            if (Klass) { try { sdk = new Klass({ network: window.GGI_NETWORK || 'mainnet' }); window.GGI_SDK = sdk; } catch (e) {} }
+        }
         if (!sdk) return;
         sdk.pointsOf(evm, LUDO_TAG).then(function (n) {
             if (host) host.innerHTML = 'Your ludo points: <b style="color:#f39c12">' + n.toString() + '</b>';
