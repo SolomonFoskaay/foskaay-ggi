@@ -168,7 +168,7 @@
 })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@foskaay/ggi-sdk@0.2.4/dist/ggi-sdk.browser.js"></script>
-<script src="./bridge-mp.js"></script>
+<script type="module">import './bridge-mp.js';</script>
 <script>
 (function () {
     'use strict';
@@ -209,11 +209,12 @@
     window.updatePoints = updatePoints;
 
     $('mp-new').addEventListener('click', async function () {
+        if (!window.GFG_MP) { $('mp-status').innerHTML = 'Game engine still loading, tap again in a second.'; return; }
         await window.GFG_MP.start(Number($('mp-seats').value), $('mp-solo').checked);
     });
-    $('mp-pass').addEventListener('click', function () { window.GFG_MP.pass(); });
-    $('mp-timeout').addEventListener('click', function () { window.GFG_MP.timeout(); });
-    $('mp-settle').addEventListener('click', function () { window.GFG_MP.settle(); });
+    $('mp-pass').addEventListener('click', function () { if (window.GFG_MP) window.GFG_MP.pass(); });
+    $('mp-timeout').addEventListener('click', function () { if (window.GFG_MP) window.GFG_MP.timeout(); });
+    $('mp-settle').addEventListener('click', function () { if (window.GFG_MP) window.GFG_MP.settle(); });
     $('mp-join').addEventListener('click', function () {
         var el = $('mp-code-in');
         if (el) el.focus();
@@ -226,6 +227,7 @@
         var m = code.match(/game=([^&#]+)/);
         if (m) code = m[1];
         var evm = (typeof window.getDynamicEvmWallet === 'function') ? window.getDynamicEvmWallet() : null;
+        if (!window.GFG_MP) { $('mp-status').innerHTML = 'Game engine still loading, tap again in a second.'; return; }
         var r = await window.GFG_MP.rejoin(code, evm);
         if (r && !r.ok) alert('Join: ' + (r.reason || 'failed'));
     });
@@ -235,7 +237,7 @@
         if (!q) return;
         var attempt = function () {
             var evm = (typeof window.getDynamicEvmWallet === 'function') ? window.getDynamicEvmWallet() : null;
-            if (!evm) return;
+            if (!evm || !window.GFG_MP) return;
             window.GFG_MP.rejoin(q, evm).then(function (r) {
                 if (!(r && r.ok)) $('mp-status').innerHTML = 'Join: <b>' + ((r && r.reason) || 'unavailable') + '</b>';
             });
