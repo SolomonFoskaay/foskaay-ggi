@@ -277,7 +277,7 @@ async function doDemoRoll(body) {
   const seeds = await pub.readContract({ address: ADDR.FoskaayGGI, abi: coreAbi, functionName: 'randomN', args: [sess.seed, d.rollCounter, 2] });
   const view = await step(sess, 0, d.turn, 0, 0, Array.from(seeds));
   const nd = decodeState(sess.state);
-  return { view, dice1: nd.dieA, dice2: nd.dieB, costUsdc6: '0', gasless: true };
+  return { view, dice1: nd.dieA, dice2: nd.dieB, move: sess.moves[sess.moves.length - 1], moves: sess.moves.length, costUsdc6: '0', gasless: true };
 }
 
 /// MOVE: free.
@@ -522,6 +522,24 @@ function mpClients() {
 
 const mpSessions = new Map(); // sessionId => lobby(0)/live(1)/settled(2): { sessionId, status, seed, seedCommit, state, startHash, lastHash, players, sessionKeys, seatCount, moves: [], tss: [], sigs: {}, handoverTs, connectTx, settleTx, createdAt }
 
+/// Relay instance id (diagnostics: proves which server copy served a call).
+const MP_IID = Math.random().toString(36).slice(2, 8);
+
+const mpHandoverEvent = {
+  type: 'event', name: 'Handover',
+  inputs: [
+    { type: 'bytes32', name: 'sessionId', indexed: true },
+    { type: 'address', name: 'gameLogic', indexed: true },
+    { type: 'bytes32', name: 'startHash' },
+    { type: 'bytes32', name: 'seedCommit' },
+    { type: 'address[]', name: 'players' },
+    { type: 'address[]', name: 'sessionKeys' },
+    { type: 'uint16', name: 'randomCount' },
+    { type: 'address', name: 'payer', indexed: true },
+    { type: 'uint64', name: 'counter' },
+  ],
+};
+
 // The mp game settle carries the move timestamps for the contract timer.
 const mpGamesAbi = parseAbi([
   'function settle(bytes32 sessionId, (uint8 turn, uint8 seats, uint32 step, bytes board, bytes32 boardHash, bool over)[] list, address[] seatPlayers, bytes32 gameTag, uint64[] moveTss) returns (uint256)',
@@ -605,7 +623,7 @@ async function mpStep(sess, kind, seat, tokenIndex, value, seeds) {
   const ts = await mpNow(pub, floor);
   sess.state = newState;
   sess.lastHash = newHash;
-  sess.moves.push({ kind, seat, seatLabel: 'seat' + seat, tokenIndex, value, seeds: seeds || [], prevHash, newHash, sig, ts });
+  sess.moves.push({ kind, seat, seatLabel: 'seat' + seat, tokenIndex, value, seeds: seeds || [], prevHash, newHash, sig, ts, board: newState });
   sess.tss.push(ts);
   return mpViewOf(sess);
 }
@@ -631,7 +649,7 @@ async function doMpCreate(body) {
   const code = BigInt(sessionId).toString(36).toUpperCase().slice(-6);
   const sess = { sessionId, code, status: 0, seed, seedCommit, state: state0, startHash, lastHash: startHash, players, sessionKeys, seatCount, moves: [], tss: [], sigs: {}, handoverTs: 0, connectTx: null, settleTx: null, createdAt: Date.now() };
   mpSessions.set(sessionId, sess);
-  return { sessionId, code, seatCount, players, status: 0, view: mpViewOf(sess) };
+  return { sessionId, code, seatCount, players, status: 0, view: mpViewOf(sess), iid: MP_IID };
 }
 
 /// MPJOIN: one tap. A signed-in wallet claims the first free seat with its own
@@ -650,13 +668,13 @@ async function doMpJoin(body) {
   if (sess.players.length >= sess.seatCount) throw new Error('all seats are taken');
   sess.players.push(wallet);
   sess.sessionKeys.push(key);
-  return { sessionId: sess.sessionId, seat: sess.players.length - 1, players: sess.players, status: sess.status, view: mpViewOf(sess) };
+  return { sessionId: sess.sessionId, seat: sess.players.length - 1, players: sess.players, status: sess.status, view: mpViewOf(sess), iid: MP_IID };
 }
 
 /// MPLOBBY: free read of who is seated (for the host + joiners to watch fill).
 async function doMpLobby(body) {
   const sess = mpResolveSession(body);
-  return { sessionId: sess.sessionId, code: sess.code, status: sess.status, players: sess.players, seatCount: sess.seatCount, connectTx: sess.connectTx, settleTx: sess.settleTx };
+  return { sessionId: sess.sessionId, code: sess.code, status: sess.status, players: sess.players, seatCount: sess.seatCount, connectTx: sess.connectTx, settleTx: sess.settleTx, iid: MP_IID };
 }
 
 /// MPBEGIN: host (players[0]) starts the match when every seat is filled. The
@@ -715,7 +733,7 @@ async function doMpMove(body) {
   if (seat !== d.turn) throw new Error('not your turn');
   mpSeatGate(sess, body, seat);
   const view = await mpStep(sess, 1, Number(body.seat), Number(body.tokenIndex), Number(body.value), []);
-  return { view, costUsdc6: '0', gasless: true };
+  return { view, move: sess.moves[sess.moves.length - 1], moves: sess.moves.length, costUsdc6: '0', gasless: true };
 }
 
 /// MPPASS: free. Normal pass is seat-gated like a move. Timeout-advance is
@@ -736,7 +754,7 @@ async function doMpPass(body) {
     mpSeatGate(sess, body, d.turn);
   }
   const view = await mpStep(sess, kind, d.turn, 0, 0, []);
-  return { view, costUsdc6: '0', gasless: true };
+  return { view, move: sess.moves[sess.moves.length - 1], moves: sess.moves.length, costUsdc6: '0', gasless: true };
 }
 
 async function doMpBoard(body) {
@@ -791,7 +809,13 @@ async function doMpRejoin(body) {
     }
   }
   const notYours = 'not your session';
-  if (sess && walletAddr && sess.players.map(String).map((x) => x.toLowerCase()).indexOf(walletAddr) === -1) {
+  const seated = sess && walletAddr && sess.players.map(String).map((x) => x.toLowerCase()).indexOf(walletAddr) !== -1;
+  // Open lobby + stranger = an invitation, not a rejection: the caller joins
+  // with one tap (needsJoin). A live match stays closed to strangers.
+  if (sess && sess.status === 0 && walletAddr && !seated) {
+    return { ok: true, needsJoin: true, sessionId: sess.sessionId, code: sess.code, seatCount: sess.seatCount, players: sess.players, status: 0, seedCommit: sess.seedCommit, startHash: sess.startHash, sponsorAddress: mpClients().account.address };
+  }
+  if (sess && walletAddr && !seated) {
     return { ok: false, reason: notYours, error: notYours };
   }
   if (!sess) {
@@ -812,6 +836,94 @@ async function doMpRejoin(body) {
     finalHash: sess.lastHash, settled: !!sess.settleTx, moves: sess.moves,
     view: mpViewOf(sess),
   };
+}
+
+/// MPRESYNC (persistency, no database, no transaction): any device re-submits
+/// the witnessed session envelope plus signed moves; the relay verifies
+/// EVERYTHING before rebuilding or extending, then serves the reunited log.
+/// Checks: seed commitment shape, recomputed start hash, unbroken hash chain
+/// from it, every signature against the committed seat key (or the sponsor for
+/// house seats), and for begun sessions the core commitment hash itself plus
+/// the true handover block time from the Handover event. Unverifiable data is
+/// rejected loudly; the relay stays an untrusted carrier.
+async function doMpResync(body) {
+  const { pub } = mpClients();
+  const sid = String(body.sessionId || '');
+  if (!sid) throw new Error('no session');
+  const env = body.envelope || {};
+  const players = Array.from(env.players || []);
+  const sessionKeys = Array.from(env.sessionKeys || []);
+  const seatCount = Number(env.seatCount || players.length);
+  if (!players.length || players.length !== sessionKeys.length) throw new Error('incomplete envelope');
+  if (seatCount !== 2 && seatCount !== 4) throw new Error('bad seat count');
+  // The seed is recomputed, never trusted and never exposed: it was derived
+  // as keccak('ggi-ludo-mp-' + sessionId) at create, so any relay copy derives
+  // the identical seed while players only ever see the reveal at settle.
+  const seed = keccak256(toBytes('ggi-ludo-mp-' + sid));
+  const incoming = Array.isArray(body.moves) ? body.moves : [];
+  const have = mpSessions.get(sid);
+  if (have && have.moves.length >= incoming.length && incoming.length) {
+    return { ok: true, merged: 0, status: have.status, moves: have.moves.length, iid: MP_IID };
+  }
+  // 1. Envelope shape: seed commitment + recomputed start hash (free calls).
+  const seedCommit = keccak256(toBytes(seed));
+  const state0 = await mpGameRead(pub, 'getInitialState', [seatCount, 0]);
+  const startHash = await mpGameRead(pub, 'hashState', [state0]);
+  // 2. Chain continuity from the start hash + every signature.
+  const sponsor = mpClients().account.address.toLowerCase();
+  let prev = startHash.toLowerCase();
+  const tss = [];
+  for (let i = 0; i < incoming.length; i++) {
+    const m = incoming[i] || {};
+    if (String(m.prevHash || '').toLowerCase() !== prev) throw new Error('log break at move ' + i + ' (tampered or truncated)');
+    const digest = await pub.readContract({ address: MP_ADDR.FoskaayGGI, abi: coreAbi, functionName: 'midchainDigest', args: [sid, m.newHash] });
+    let got = '';
+    try { got = (await recoverAddress({ hash: digest, signature: m.sig })).toLowerCase(); } catch (e) { throw new Error('unparseable signature at move ' + i); }
+    const seatKey = String(sessionKeys[Number(m.seat)] || '').toLowerCase();
+    if (!((seatKey && got === seatKey) || got === sponsor)) throw new Error('bad signature at move ' + i);
+    tss.push(Number(m.ts) || 0);
+    prev = String(m.newHash).toLowerCase();
+  }
+  // 3. Begun sessions anchor to the chain: commitment hash + handover time.
+  let status = 0;
+  let handoverTs = 0;
+  let connectTx = null;
+  try {
+    const paid = await pub.readContract({ address: MP_ADDR.FoskaayGGI, abi: coreAbi, functionName: 'isPaid', args: [sid] });
+    if (paid) {
+      const commit = await pub.readContract({
+        address: MP_ADDR.FoskaayGGI, abi: parseAbi(['function commitments(bytes32 sessionId) view returns (bytes32)']),
+        functionName: 'commitments', args: [sid],
+      });
+      const expect = keccak256(encodeAbiParameters(parseAbiParameters('bytes32,address[],address[]'), [seedCommit, players, sessionKeys]));
+      if (String(expect).toLowerCase() !== String(commit).toLowerCase()) throw new Error('envelope does not match the on-chain session');
+      status = 1;
+      try {
+        const logs = await pub.getLogs({ address: MP_ADDR.FoskaayGGI, event: mpHandoverEvent, args: { sessionId: sid }, fromBlock: 0n, toBlock: 'latest' });
+        if (logs && logs.length) {
+          connectTx = logs[0].transactionHash;
+          const blk = await pub.getBlock({ blockNumber: logs[0].blockNumber });
+          if (blk && blk.timestamp) handoverTs = Number(blk.timestamp);
+        }
+      } catch (e) { /* handover time stays 0, moves still verify by chain */ }
+    }
+  } catch (e) {
+    if (/envelope does not match/.test((e && e.message) || '')) throw e;
+    /* unreadable chain: lobby rebuild continues on signatures alone */
+  }
+  let state = state0;
+  for (const m of incoming) {
+    if (m.board) state = m.board;
+  }
+  const sess = {
+    sessionId: sid, code: have ? have.code : BigInt(sid).toString(36).toUpperCase().slice(-6),
+    status, seed, seedCommit, state, startHash, lastHash: incoming.length ? prev : startHash,
+    players, sessionKeys, seatCount, moves: incoming, tss, sigs: (have && have.sigs) || {},
+    handoverTs, connectTx: connectTx || (have && have.connectTx) || null,
+    settleTx: (have && have.settleTx) || null, createdAt: (have && have.createdAt) || Date.now(),
+  };
+  mpSessions.set(sid, sess);
+  return { ok: true, merged: incoming.length, status, moves: incoming.length, iid: MP_IID };
 }
 
 /// MPSETTLE: commit the match + credit every earning seat, then close the core
@@ -978,6 +1090,7 @@ export default async function handler(req, res) {
       case 'mpSponsor': out = await doMpSponsor(body); break;
       case 'mpJoin': out = await doMpJoin(body); break;
       case 'mpLobby': out = await doMpLobby(body); break;
+      case 'mpResync': out = await doMpResync(body); break;
       case 'mpBegin': out = await doMpBegin(body); break;
       case 'mpRoll': out = await doMpRoll(body); break;
       case 'mpMove': out = await doMpMove(body); break;

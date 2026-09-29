@@ -54,6 +54,7 @@
         <div class="ld-panel">
             <div class="ld-row">
                 <button class="ld-btn primary" id="mp-new">Start multiplayer match</button>
+                <button class="ld-btn" id="mp-begin" disabled>Start match</button>
                 <button class="ld-btn" id="mp-join">Join with code</button>
                 <button class="ld-btn" id="mp-pass">Pass</button>
                 <button class="ld-btn" id="mp-timeout">Timeout seat</button>
@@ -208,8 +209,19 @@
 
     $('mp-new').addEventListener('click', async function () {
         if (!window.GFG_MP) { $('mp-status').innerHTML = 'Game engine still loading, tap again in a second.'; return; }
-        await window.GFG_MP.start(Number($('mp-seats').value), $('mp-solo').checked);
+        busyBtn('mp-new', 'Starting...');
+        try { await window.GFG_MP.start(Number($('mp-seats').value), $('mp-solo').checked); }
+        finally { busyBtn('mp-new', 'Start multiplayer match'); }
     });
+    function busyBtn(id, label) {
+        var b = $(id);
+        if (!b) return;
+        if (label == null) { b.disabled = false; return; }
+        if (!b.dataset.label) b.dataset.label = b.textContent;
+        if (label === false) { b.textContent = b.dataset.label; b.disabled = false; return; }
+        b.textContent = label;
+        b.disabled = true;
+    }
     $('mp-pass').addEventListener('click', function () { if (window.GFG_MP) window.GFG_MP.pass(); });
     $('mp-timeout').addEventListener('click', function () { if (window.GFG_MP) window.GFG_MP.timeout(); });
     $('mp-settle').addEventListener('click', function () { if (window.GFG_MP) window.GFG_MP.settle(); });
@@ -224,8 +236,9 @@
         if (!sid) { alert('Start or join a match first'); return; }
         var link = location.origin + '/gfgnew/board/ludo-mp/?game=' + sid;
         var done = function () { copyBtn.textContent = 'Copied'; setTimeout(function () { copyBtn.textContent = 'Copy session link'; }, 2000); };
-        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(link).then(done).catch(function () { prompt('Copy this link:', link); });
-        else prompt('Copy this link:', link);
+        var manual = function () { $('mp-status').innerHTML = 'Copy this link: <b>' + link + '</b>'; };
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(link).then(done).catch(manual);
+        else manual();
     });
     $('mp-join-go').addEventListener('click', async function () {
         var code = ($('mp-code-in').value || '').trim();
@@ -235,8 +248,19 @@
         if (m) code = m[1];
         var evm = (typeof window.getDynamicEvmWallet === 'function') ? window.getDynamicEvmWallet() : null;
         if (!window.GFG_MP) { $('mp-status').innerHTML = 'Game engine still loading, tap again in a second.'; return; }
-        var r = await window.GFG_MP.rejoin(code, evm);
-        if (r && !r.ok) alert('Join: ' + (r.reason || 'failed'));
+        busyBtn('mp-join-go', 'Joining...');
+        try {
+            var r = await window.GFG_MP.rejoin(code, evm);
+            if (r && !r.ok) $('mp-status').innerHTML = 'Join: <b>' + ((r && r.reason) || 'failed, tap again') + '</b>';
+        } finally {
+            busyBtn('mp-join-go', false);
+        }
+    });
+    $('mp-begin').addEventListener('click', async function () {
+        if (!window.GFG_MP || !window.GFG_MP.begin) return;
+        busyBtn('mp-begin', 'Starting...');
+        try { await window.GFG_MP.begin(); }
+        finally { busyBtn('mp-begin', false); }
     });
 
     function resumeFromQuery() {
