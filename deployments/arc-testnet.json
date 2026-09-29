@@ -100,6 +100,18 @@
       "gamesImplementation": "0x1de7877eefbaca09bcbfd3e408ff948cdd27786c64317aa97e428fc440093dd5",
       "gamesProxy": "0x1ceee80d4eeaa995709251979c8dd8427bfd0e76b123fbb1ba568d228983a40a",
       "wireSetGame": "0xd97a4af07d47bc23fd0912f4cf136f58829f558177ee906d8a929aaf7c64a62c"
+    },
+    "v4TimerUpgrade": {
+      "upgradedAt": "2026-09-29",
+      "note": "Contract-owned turn timer (approved): turnSecs 45 + maxMatchSecs 3600 constants, turnDeadline/isTurnExpired views, settle verifies move timestamps (monotonic, turn window + grace, match cap, not future). Same proxies, same data (old committed games still read).",
+      "gamesImpl": "0xb268D6942Cde9C5820F3567C463271e9941662ca",
+      "gamesImplDeployTx": "0x839647e35a167434b94ede2ad0a697a931938f55a910eb77968cc693acaea787",
+      "upgradeTx": "0x163d818a3c3c61d953115b4d78bc143c7118e957a29694a013ffb43edec6ecc1"
+    },
+    "v4TimerFix": {
+      "upgradedAt": "2026-09-29",
+      "note": "Clock-sketch hardening: handover-anchored moveTss[0], chain-anchored relay timestamps (never ahead of head, never below previous), 120s future tolerance for testnet head jitter. Same proxies, same data.",
+      "gamesImpl": "0x9bD60E6582dC26845845F8E7D22356a7E03B03Ea"
     }
   }
 }

@@ -72,34 +72,30 @@
         </div>
 
         <div class="ld-panel">
-            <b style="color:#fff;font-size:0.9rem">Start: who sits at the board</b>
-            <p class="ld-muted" style="margin:6px 0 10px">Solo test holds every seat on this phone. Real match: each opponent shares their wallet plus their session key address first (they get the key address from the Join panel below).</p>
+            <b style="color:#fff;font-size:0.9rem">Start: open a lobby</b>
+            <p class="ld-muted" style="margin:6px 0 10px">Solo test holds every seat on this phone. Real match: press Start, share the session link, opponents tap it and join by themselves. The match begins automatically when every seat is filled.</p>
             <div class="ld-row" style="margin-bottom:10px">
                 <label class="ld-muted"><input type="checkbox" id="mp-solo" checked> Solo test (I hold every seat)</label>
             </div>
-            <div id="mp-opponents"></div>
-            <div class="ld-muted" style="margin-top:8px">Session code to share: <span class="ld-addr" id="mp-code">appears after Start</span></div>
+            <div class="ld-muted" id="mp-lobby">No lobby yet.</div>
+            <div class="ld-muted" style="margin-top:8px">Session link to share: <span class="ld-addr" id="mp-code">appears after Start</span></div>
             <div class="ld-muted" style="margin-top:6px" id="mp-points">Your ludo-mp points: <b style="color:#f39c12">0</b> (sign in)</div>
         </div>
 
         <div class="ld-panel">
-            <b style="color:#fff;font-size:0.9rem">Join: bring your own seat</b>
-            <p class="ld-muted" style="margin:6px 0 10px">On your phone: sign in, press Key, share the key address plus your wallet with the host. When the host shares the session code, paste it and press Join.</p>
-            <div class="ld-row" style="margin-bottom:10px">
-                <button class="ld-btn" id="mp-key">Generate my key</button>
-                <span class="ld-muted" id="mp-mykey">no key yet</span>
-            </div>
+            <b style="color:#fff;font-size:0.9rem">Join: one tap</b>
+            <p class="ld-muted" style="margin:6px 0 10px">Sign in, paste the session link or code, press Join. Your seat key is created silently on this phone and only its address travels. Nothing to copy by hand.</p>
             <div class="ld-row">
-                <input id="mp-code-in" class="ld-btn" style="flex:1;min-width:200px" placeholder="paste session code">
+                <input id="mp-code-in" class="ld-btn" style="flex:1;min-width:200px" placeholder="paste session link or code">
                 <button class="ld-btn primary" id="mp-join-go">Join</button>
             </div>
         </div>
 
         <div class="ld-panel">
-            <b style="color:#fff;font-size:0.9rem">Settle: every seat signs</b>
-            <p class="ld-muted" style="margin:6px 0 10px">Press Settle at the top. Your signature appears here for the host to collect. Paste the other seats signatures below (one per line) and press Settle again. Nothing settles until every seat has signed.</p>
-            <div class="ld-muted">My signature: <span class="ld-addr" id="mp-mysig">appears at settle time</span></div>
-            <textarea id="mp-sigs" rows="3" style="width:100%;box-sizing:border-box;margin-top:8px;background:rgba(0,0,0,0.4);color:#cfe8ff;border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px;font-size:0.75rem" placeholder="other seats signatures, one per line"></textarea>
+            <div class="ld-row" style="justify-content:space-between;align-items:center">
+                <b style="color:#2ecc71;font-size:0.95rem" id="mp-countdown"></b>
+                <span class="ld-muted">settle is automatic at game end</span>
+            </div>
         </div>
 
         <div class="ld-panel">
@@ -202,34 +198,6 @@
         sessionLost: function () {}
     };
 
-    function opponents() {
-        var solo = $('mp-solo').checked;
-        var n = Number($('mp-seats').value);
-        if (solo) return { solo: true, list: [] };
-        var list = [];
-        for (var i = 1; i < n; i++) {
-            var w = ($('mp-opp-w' + i) || {}).value || '';
-            var k = ($('mp-opp-k' + i) || {}).value || '';
-            list.push({ wallet: w.trim(), key: k.trim() });
-        }
-        return { solo: false, list: list };
-    }
-
-    function renderOppInputs() {
-        var host = $('mp-opponents');
-        var n = Number($('mp-seats').value);
-        if ($('mp-solo').checked) { host.innerHTML = '<span class="ld-muted">Solo test: every seat is held here.</span>'; return; }
-        var html = '';
-        for (var i = 1; i < n; i++) {
-            html += '<div class="ld-row" style="margin-bottom:8px">'
-                + '<span class="ld-muted">Seat ' + i + '</span>'
-                + '<input id="mp-opp-w' + i + '" class="ld-btn" style="flex:1;min-width:140px" placeholder="opponent wallet">'
-                + '<input id="mp-opp-k' + i + '" class="ld-btn" style="flex:1;min-width:140px" placeholder="opponent session key">'
-                + '</div>';
-        }
-        host.innerHTML = html;
-    }
-
     function updatePoints() {
         var evm = (typeof window.getDynamicEvmWallet === 'function') ? window.getDynamicEvmWallet() : null;
         if (!evm) return;
@@ -240,13 +208,8 @@
     }
     window.updatePoints = updatePoints;
 
-    $('mp-solo').addEventListener('change', renderOppInputs);
-    $('mp-seats').addEventListener('change', renderOppInputs);
-    renderOppInputs();
-
     $('mp-new').addEventListener('click', async function () {
-        var o = opponents();
-        await window.GFG_MP.start(Number($('mp-seats').value), o.list, o.solo);
+        await window.GFG_MP.start(Number($('mp-seats').value), $('mp-solo').checked);
     });
     $('mp-pass').addEventListener('click', function () { window.GFG_MP.pass(); });
     $('mp-timeout').addEventListener('click', function () { window.GFG_MP.timeout(); });
@@ -259,23 +222,12 @@
     $('mp-join-go').addEventListener('click', async function () {
         var code = ($('mp-code-in').value || '').trim();
         if (!code) return;
+        // Accept a full shared link or a bare session id.
+        var m = code.match(/game=([^&#]+)/);
+        if (m) code = m[1];
         var evm = (typeof window.getDynamicEvmWallet === 'function') ? window.getDynamicEvmWallet() : null;
         var r = await window.GFG_MP.rejoin(code, evm);
         if (r && !r.ok) alert('Join: ' + (r.reason || 'failed'));
-    });
-    $('mp-key').addEventListener('click', function () {
-        try {
-            var s = window.GGI_SDK;
-            if (!s && window.FoskaayGGI) {
-                var Klass = window.FoskaayGGI.GgiClient || window.FoskaayGGI.default;
-                if (Klass) s = new Klass({ network: 'testnet' });
-            }
-            if (!s) { alert('SDK still loading, try again'); return; }
-            window.GGI_SDK = s;
-            var k = s.createSessionKey();
-            window.ggiSessionKey = k;
-            $('mp-mykey').textContent = k.address + ' (share this plus your wallet with the host)';
-        } catch (e) { alert('Key failed: ' + e.message); }
     });
 
     function resumeFromQuery() {

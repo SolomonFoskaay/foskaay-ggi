@@ -9,6 +9,7 @@ interface VmMp {
     function prank(address) external;
     function expectRevert() external;
     function expectRevert(bytes4) external;
+    function warp(uint256) external;
 }
 
 /// ludo-mp parity + upgrade-safety tests (testnet shape, no chain needed).
@@ -77,7 +78,7 @@ contract GFGLudoMpTest {
         GFGGames gamesImpl2 = new GFGGames();
         games.upgradeToAndCall(address(gamesImpl2), "");
         require(address(games) == proxyBefore, "address kept");
-        require(games.version() == 3, "version kept");
+        require(games.version() == 4, "version kept");
         require(players.game() == address(games), "wiring kept");
     }
 
@@ -89,5 +90,62 @@ contract GFGLudoMpTest {
         vm.prank(stranger);
         vm.expectRevert();
         players.setGame(address(1));
+    }
+
+    function testTimerDefaultsAndHelpers() public view {
+        require(games.turnSecs() == 45, "turnSecs default");
+        require(games.maxMatchSecs() == 3600, "maxMatchSecs default");
+        require(games.turnDeadline(1000) == 1045, "deadline");
+        require(!games.isTurnExpired(1000, 1044), "not expired");
+        require(games.isTurnExpired(1000, 1045), "expired");
+    }
+
+    function testOnlyOwnerTimerGuards() public {
+        vm.prank(address(0xBEEF));
+        vm.expectRevert();
+        games.setTurnSecs(30);
+        games.setTurnSecs(30);
+        require(games.turnSecs() == 30, "turnSecs set");
+        vm.prank(address(0xBEEF));
+        vm.expectRevert();
+        games.setMaxMatchSecs(60);
+    }
+
+    function testSettleRejectsEmptyTimestamps() public {
+        bytes memory s0 = games.getInitialState(2, 0);
+        GFGGames.Game[] memory list = new GFGGames.Game[](1);
+        list[0].turn = 0;
+        list[0].seats = 2;
+        list[0].step = 0;
+        list[0].board = s0;
+        list[0].boardHash = games.hashState(s0);
+        list[0].over = false;
+        address[] memory seats = new address[](2);
+        seats[0] = address(0x1);
+        seats[1] = address(0x2);
+        uint64[] memory tss = new uint64[](0);
+        vm.expectRevert(GFGGames.BadTiming.selector);
+        games.settle(bytes32("s"), list, seats, bytes32("t"), tss);
+    }
+
+    function testSettleAcceptsSlightlyFutureTimestamps() public {
+        vm.warp(1000000);
+        bytes memory s0 = games.getInitialState(2, 0);
+        GFGGames.Game[] memory list = new GFGGames.Game[](1);
+        list[0].turn = 0;
+        list[0].seats = 2;
+        list[0].step = 1;
+        list[0].board = s0;
+        list[0].boardHash = games.hashState(s0);
+        list[0].over = false;
+        address[] memory seats = new address[](2);
+        seats[0] = address(0x1);
+        seats[1] = address(0x2);
+        uint64 nowTs = uint64(block.timestamp);
+        uint64[] memory tss = new uint64[](2);
+        tss[0] = nowTs - 10;
+        tss[1] = nowTs + 30; // jitter tolerance, still settles
+        games.settle(bytes32("s2"), list, seats, bytes32("t"), tss);
+        require(games.gameCount(bytes32("s2")) == 1, "committed");
     }
 }

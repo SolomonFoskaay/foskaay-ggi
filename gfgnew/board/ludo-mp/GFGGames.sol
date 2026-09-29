@@ -38,6 +38,15 @@ contract GFGGames is Initializable, UUPSUpgradeable, OwnableUpgradeable {
     uint8 internal constant SEATS = 4;
     uint8 internal constant TOKENS_PER_SEAT = 4;
     uint256 internal constant STATE_LEN = 36;
+    /// Relay-latency grace added to turnSecs inside settle verification.
+    uint64 internal constant TURN_GRACE = 15;
+    /// Testnet block clocks jitter backward; timestamps stamped from a chain
+    /// head may land slightly ahead of the settle block. Small tolerance only:
+    /// gaps and the duration cap below still bind every timestamp.
+    uint64 internal constant FUTURE_TOL = 120;
+    /// Default timer values (also set in initialize for fresh deploys).
+    uint64 internal constant DEFAULT_TURN_SECS = 45;
+    uint64 internal constant DEFAULT_MAX_MATCH_SECS = 3600;
 
     /// One committed game. `board` is the compact board bytes; `boardHash` is
     /// keccak256(board) (one bytes32 per game, checked at settle).
@@ -76,6 +85,15 @@ contract GFGGames is Initializable, UUPSUpgradeable, OwnableUpgradeable {
     /// from the chain with no relay memory.
     mapping(bytes32 => mapping(address => uint32[])) public playerGameIndices;
 
+    /// TURN TIMER (contract-owned, never client-controlled). The constants live
+    /// here so every phone counts down from the SAME numbers (free eth_call
+    /// reads); per-move timestamps travel in the signed log and are VERIFIED
+    /// at settle, so a forged clock fails settlement. No per-tick transaction:
+    /// everything runs gas-free in the midchain, only settle is on-chain.
+    /// turnSecs: max seconds per turn window. maxMatchSecs: whole-match cap.
+    uint64 public turnSecs;
+    uint64 public maxMatchSecs;
+
     error BadSeat();
     error BadState();
     error NotYourTurn();
@@ -88,6 +106,7 @@ contract GFGGames is Initializable, UUPSUpgradeable, OwnableUpgradeable {
     error BadKind();
     error BadInput();
     error BadHash();
+    error BadTiming();
     error ZeroAddress();
 
     event Settled(bytes32 indexed sessionId, uint256 games, uint256 credited);
@@ -98,7 +117,9 @@ contract GFGGames is Initializable, UUPSUpgradeable, OwnableUpgradeable {
         if (owner_ == address(0) || players_ == address(0)) revert ZeroAddress();
         __Ownable_init(owner_);
         players = players_;
-        version = 3;
+        turnSecs = DEFAULT_TURN_SECS;
+        maxMatchSecs = DEFAULT_MAX_MATCH_SECS;
+        version = 4;
         emit PlayersSet(players_);
     }
 
@@ -121,6 +142,19 @@ contract GFGGames is Initializable, UUPSUpgradeable, OwnableUpgradeable {
     ///         storage field is appended, so readers can detect the new layout.
     function setVersion(uint8 v) external onlyOwner {
         version = v;
+    }
+
+    /// @notice Set the per-turn window in seconds (owner only). Every phone
+    ///         reads this same value, so both clocks agree by construction.
+    function setTurnSecs(uint64 v) external onlyOwner {
+        if (v == 0) revert BadInput();
+        turnSecs = v;
+    }
+
+    /// @notice Set the whole-match cap in seconds (owner only).
+    function setMaxMatchSecs(uint64 v) external onlyOwner {
+        if (v == 0) revert BadInput();
+        maxMatchSecs = v;
     }
 
     // ---------------------------------------------------------------- init
@@ -244,6 +278,21 @@ contract GFGGames is Initializable, UUPSUpgradeable, OwnableUpgradeable {
         revert BadKind();
     }
 
+    // -------------------------------------------------------------- timer
+
+    /// @notice The deadline of a turn that started at `lastTs`. Free view:
+    ///         every phone counts down from this same number.
+    function turnDeadline(uint64 lastTs) external view returns (uint64) {
+        return lastTs + turnSecs;
+    }
+
+    /// @notice True when the turn that started at `lastTs` has expired at
+    ///         `nowTs`. Free view: the relay checks this before executing a
+    ///         timeout-advance, and settle re-verifies the timestamps.
+    function isTurnExpired(uint64 lastTs, uint64 nowTs) external view returns (bool) {
+        return nowTs >= lastTs + turnSecs;
+    }
+
     // -------------------------------------------------------------- settle
 
     /// @notice Commit N games in ONE transaction and credit GFGPlayers in
@@ -254,15 +303,21 @@ contract GFGGames is Initializable, UUPSUpgradeable, OwnableUpgradeable {
     /// @param list the N committed games.
     /// @param seatPlayers seat => player address (length must equal each game's seats).
     /// @param gameTag the game bucket (e.g. "ludo-mp").
+    /// @param moveTss handover block time FIRST (auditable against the Handover
+    ///        event), then one unix timestamp per logged move, in order.
+    ///        Verified here: monotonic, every gap within turnSecs + grace, total
+    ///        within maxMatchSecs, last at or before now. A forged clock reverts.
     function settle(
         bytes32 sessionId,
         Game[] calldata list,
         address[] calldata seatPlayers,
-        bytes32 gameTag
+        bytes32 gameTag,
+        uint64[] calldata moveTss
     ) external onlyOwner returns (uint256 credited) {
         uint256 n = list.length;
         if (n == 0) revert BadInput();
         if (seatPlayers.length == 0 || seatPlayers.length > SEATS) revert BadSeat();
+        _verifyTiming(list, moveTss);
 
         uint64[4] memory totals;
         for (uint256 i = 0; i < n; i++) {
@@ -297,6 +352,27 @@ contract GFGGames is Initializable, UUPSUpgradeable, OwnableUpgradeable {
             }
         }
         emit Settled(sessionId, n, credited);
+    }
+
+    /// @notice Settle-time clock verification. Every logged move must arrive
+    ///         within a turn window of the previous one (turnSecs + grace for
+    ///         relay latency), the whole match within maxMatchSecs, and no
+    ///         timestamp may lie in the future. Timeout-advance moves are logged
+    ///         like any move, so a stalled seat cannot hide extra time either.
+    function _verifyTiming(Game[] calldata list, uint64[] calldata moveTss) private view {
+        uint256 steps = 0;
+        for (uint256 i = 0; i < list.length; i++) steps += list[i].step;
+        // moveTss = [handoverTs, ...one ts per logged move].
+        if (moveTss.length == 0 || moveTss.length != steps + 1) revert BadTiming();
+        uint64 prev = moveTss[0];
+        for (uint256 i = 1; i < moveTss.length; i++) {
+            uint64 ts = moveTss[i];
+            if (ts < prev) revert BadTiming(); // monotonic
+            if (ts - prev > turnSecs + TURN_GRACE) revert BadTiming(); // turn window
+            prev = ts;
+        }
+        if (prev > uint64(block.timestamp) + FUTURE_TOL) revert BadTiming(); // not the future
+        if (prev - moveTss[0] > maxMatchSecs) revert BadTiming(); // match cap
     }
 
     // --------------------------------------------------------------- views
