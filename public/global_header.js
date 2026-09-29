@@ -83,6 +83,7 @@
       + '  <a class="ggi-item" href="/profile/" ' + act('/profile') + '>Wallets / Profile</a>'
       + '  <a class="ggi-item hire" href="/hire/">Hire me</a>'
       + '  <a class="ggi-item" href="/arc-launch.html">Arc community launch</a>'
++ '  <a class="ggi-item" href="/gfgnew/board/ludo-mp/">Ludo multiplayer (testnet)</a>'
       + '</nav>';
 
     var bar = document.createElement('div');

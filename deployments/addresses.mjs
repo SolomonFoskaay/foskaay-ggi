@@ -19,6 +19,9 @@ export const NETWORKS = {
       FoskaayGGIGames: '0x24e38ac2e80958782a8Bc5CD479bbe2e5D81EcDF',
       FoskaayGGIPlayers: '0x1614ebc72eA1cB3D31975b3976B5B474FAcE3b3C',
       FoskaayGGILudo: '0xa5040Ece5945a8551499ad1148fc3cD15b165987',
+      // ludo-mp (isolated multiplayer copy, testnet only until proven).
+      GFGGames: '0x1016B29A147a9b2f84ecF3ca31Ac825A01Af2a22',
+      GFGPlayers: '0xE85fC6f002830E10bd446668A72236Bd952F6834',
     },
   },
   mainnet: {

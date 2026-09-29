@@ -489,6 +489,269 @@ async function doDemoSettle(body) {
   return { tx: rGame.hash, coreTx, finalHash, costUsdc6: (BigInt(rGame.costUsdc6) + coreCost).toString(), coreSettleError };
 }
 
+// ---------------------------------------------------------------- ludo-mp
+//
+// MULTIPLAYER (gfgnew/board/ludo-mp), Arc TESTNET ONLY. Same midchain shape as
+// the demo above, but every seat is a REAL player: players[] + sessionKeys[]
+// all come from the clients, and the settle carries every seat's own
+// signature (the relay signs none). Single-player demo paths above are
+// untouched; this block only adds mp* actions on isolated session state.
+
+const MP_NET = GGI_NETS.testnet;
+const MP_ADDR = {
+  FoskaayGGI: MP_NET.contracts.FoskaayGGI,
+  GFGGames: MP_NET.contracts.GFGGames,
+  GFGPlayers: MP_NET.contracts.GFGPlayers,
+};
+const MP_GAME_TAG = keccak256(toBytes('ludo-mp'));
+
+const mpChain = defineChain({
+  id: MP_NET.chainId,
+  name: 'Arc Testnet',
+  nativeCurrency: { name: 'USDC', symbol: 'USDC', decimals: 18 },
+  rpcUrls: { default: { http: [MP_NET.rpc] } },
+});
+
+function mpClients() {
+  if (!SPONSOR_KEY) throw new Error('server misconfigured: GFG_Arc_Gasless_Sponsor_Key is not set');
+  const account = accountFor(SPONSOR_KEY);
+  const pub = createPublicClient({ chain: mpChain, transport: http(MP_NET.rpc) });
+  const wallet = createWalletClient({ chain: mpChain, transport: http(MP_NET.rpc), account });
+  return { account, pub, wallet };
+}
+
+const mpSessions = new Map(); // sessionId => { sessionId, seed, seedCommit, state, startState, startHash, lastHash, players, sessionKeys, seatCount, moves: [], connectTx, settleTx, createdAt }
+
+async function mpGameRead(pub, fn, args) {
+  return await pub.readContract({ address: MP_ADDR.GFGGames, abi: gamesRulesAbi, functionName: fn, args });
+}
+
+function mpNeedSession(body) {
+  const s = mpSessions.get(String(body.sessionId));
+  if (!s) throw new Error('unknown session (start or join a multiplayer match first)');
+  return s;
+}
+
+/// SEAT GATE (anti-impersonation): the wallet calling a turn action must own
+/// the acting seat from the on-chain-committed players list. The pure contract
+/// enforces whose TURN it is; this enforces WHO may act for that seat, so one
+/// phone can never move another player's tokens.
+function mpSeatGate(sess, body, seat) {
+  const wallet = String(body.wallet || '').toLowerCase();
+  const owner = String(sess.players[seat] || '').toLowerCase();
+  if (!wallet || wallet !== owner) throw new Error('not your turn seat (this seat belongs to another wallet)');
+}
+
+function mpViewOf(sess) {
+  return viewOf(sess); // same 36-byte board decode, shared helper
+}
+
+async function mpStep(sess, kind, seat, tokenIndex, value, seeds) {
+  const { account, pub } = mpClients();
+  const newState = await mpGameRead(pub, 'applyMove', [sess.state, kind, seat, tokenIndex, value, seeds || []]);
+  const prevHash = sess.moves.length ? sess.lastHash : sess.startHash;
+  const newHash = await mpGameRead(pub, 'hashState', [newState]);
+  const digest = await pub.readContract({ address: MP_ADDR.FoskaayGGI, abi: coreAbi, functionName: 'midchainDigest', args: [sess.sessionId, newHash] });
+  const sig = await account.sign({ hash: digest });
+  sess.state = newState;
+  sess.lastHash = newHash;
+  sess.moves.push({ kind, seat, seatLabel: 'seat' + seat, tokenIndex, value, seeds: seeds || [], prevHash, newHash, sig });
+  return mpViewOf(sess);
+}
+
+/// MPCREATE: one transaction on testnet. All seats are real players supplied
+/// by the clients. The relay pays the fee and commits seed + participants.
+async function doMpCreate(body) {
+  const { account, pub, wallet } = mpClients();
+  const seatCount = Number(body.seatCount || 2);
+  if (seatCount !== 2 && seatCount !== 4) throw new Error('seatCount must be 2 or 4');
+  const players = Array.from(body.players || []);
+  const sessionKeys = Array.from(body.sessionKeys || []);
+  if (!players.length || players.length !== seatCount) throw new Error('players[] must list every seat');
+  if (sessionKeys.length !== seatCount) throw new Error('sessionKeys[] must list every seat');
+  const sessionId = body.sessionId || keccak256(encodeAbiParameters(parseAbiParameters('address,uint256'), [account.address, BigInt(Date.now())]));
+  const seed = keccak256(toBytes('ggi-ludo-mp-' + sessionId));
+  const seedCommit = keccak256(seed);
+  const state0 = await mpGameRead(pub, 'getInitialState', [seatCount, 0]);
+  const startHash = await mpGameRead(pub, 'hashState', [state0]);
+  const accounts = [MP_ADDR.GFGGames, MP_ADDR.GFGPlayers];
+  const games = 1;
+  const [feeBase, feePerAccount, feePerGame] = await Promise.all([
+    pub.readContract({ address: MP_ADDR.FoskaayGGI, abi: coreAbi, functionName: 'feeBase' }),
+    pub.readContract({ address: MP_ADDR.FoskaayGGI, abi: coreAbi, functionName: 'feePerAccount' }),
+    pub.readContract({ address: MP_ADDR.FoskaayGGI, abi: coreAbi, functionName: 'feePerGame' }),
+  ]);
+  const fee = feeBase + feePerAccount * BigInt(accounts.length) + feePerGame * BigInt(games);
+  const r = await send(wallet, pub, {
+    address: MP_ADDR.FoskaayGGI, abi: coreAbi, functionName: 'handoverWithAccounts',
+    args: [sessionId, MP_ADDR.GFGGames, startHash, seedCommit, players, sessionKeys, 2, accounts, games],
+    value: fee, account,
+  });
+  const sess = { sessionId, seed, seedCommit, state: state0, startState: state0, startHash, lastHash: startHash, players, sessionKeys, seatCount, moves: [], connectTx: r.hash, settleTx: null, createdAt: Date.now() };
+  mpSessions.set(sessionId, sess);
+  const total = BigInt(r.costUsdc6) + (fee / 1_000_000_000_000n);
+  return { sessionId, seatCount, players, sessionKeys, connectTx: r.hash, costUsdc6: total.toString(), fee: fee.toString(), view: mpViewOf(sess) };
+}
+
+/// MPROLL: free. Dice from the core randomN, applied via the mp game contract.
+async function doMpRoll(body) {
+  const { pub } = mpClients();
+  const sess = mpNeedSession(body);
+  const d = decodeState(sess.state);
+  mpSeatGate(sess, body, d.turn);
+  const seeds = await pub.readContract({ address: MP_ADDR.FoskaayGGI, abi: coreAbi, functionName: 'randomN', args: [sess.seed, d.rollCounter, 2] });
+  const view = await mpStep(sess, 0, d.turn, 0, 0, Array.from(seeds));
+  const nd = decodeState(sess.state);
+  return { view, dice1: nd.dieA, dice2: nd.dieB, costUsdc6: '0', gasless: true };
+}
+
+/// MPMOVE: free.
+async function doMpMove(body) {
+  const sess = mpNeedSession(body);
+  const seat = Number(body.seat);
+  const d = decodeState(sess.state);
+  if (seat !== d.turn) throw new Error('not your turn');
+  mpSeatGate(sess, body, seat);
+  const view = await mpStep(sess, 1, Number(body.seat), Number(body.tokenIndex), Number(body.value), []);
+  return { view, costUsdc6: '0', gasless: true };
+}
+
+/// MPPASS (or timeout): free.
+async function doMpPass(body) {
+  const sess = mpNeedSession(body);
+  const kind = body.timeout ? 3 : 2;
+  const d = decodeState(sess.state);
+  mpSeatGate(sess, body, d.turn);
+  const view = await mpStep(sess, kind, d.turn, 0, 0, []);
+  return { view, costUsdc6: '0', gasless: true };
+}
+
+async function doMpBoard(body) {
+  const sess = mpNeedSession(body);
+  return { view: mpViewOf(sess) };
+}
+
+async function doMpMoves(body) {
+  const sess = mpSessions.get(String(body.sessionId));
+  if (!sess) return { found: false, sessionId: body.sessionId };
+  return {
+    found: true, sessionId: sess.sessionId, gameLogic: MP_ADDR.GFGGames,
+    startHash: sess.startHash, seedCommit: sess.seedCommit, finalHash: sess.lastHash,
+    settled: !!sess.settleTx, players: sess.players, sessionKeys: sess.sessionKeys,
+    sponsorAddress: mpClients().account.address, moves: sess.moves,
+  };
+}
+
+async function doMpDigest(body) {
+  const { pub } = mpClients();
+  const sess = mpNeedSession(body);
+  const finalHash = await mpGameRead(pub, 'hashState', [sess.state]);
+  const digest = await pub.readContract({ address: MP_ADDR.FoskaayGGI, abi: coreAbi, functionName: 'midchainDigest', args: [sess.sessionId, finalHash] });
+  return { sessionId: sess.sessionId, finalHash, digest };
+}
+
+async function doMpSession(body) {
+  const sess = mpSessions.get(String(body.sessionId));
+  return { found: !!sess, sessionId: body.sessionId, connectTx: sess ? sess.connectTx : null, settleTx: sess ? sess.settleTx : null };
+}
+
+/// MPREJOIN: same untrusted-cache rule as the demo. Verify client-side.
+async function doMpRejoin(body) {
+  const { pub } = mpClients();
+  const sid = String(body.sessionId);
+  const walletAddr = String(body.wallet || '').toLowerCase();
+  const sess = mpSessions.get(sid);
+  if (sess && walletAddr && sess.players.map(String).map((x) => x.toLowerCase()).indexOf(walletAddr) === -1) {
+    return { ok: false, reason: 'not your session' };
+  }
+  if (!sess) {
+    try {
+      const paid = await pub.readContract({ address: MP_ADDR.FoskaayGGI, abi: coreAbi, functionName: 'isPaid', args: [sid] });
+      if (!paid) return { ok: false, reason: 'session not found on-chain' };
+      return { ok: false, reason: 'mid-game moves are midchain state and never on Arc. This relay instance restarted and lost the signed log, so start a new match; if it was settled, the result is committed on-chain.' };
+    } catch (e) {
+      return { ok: false, reason: (e && (e.shortMessage || e.message)) || String(e) };
+    }
+  }
+  return {
+    ok: true, sessionId: sid, seatCount: sess.seatCount,
+    players: sess.players, sessionKeys: sess.sessionKeys, seedCommit: sess.seedCommit,
+    sponsorAddress: mpClients().account.address, startHash: sess.startHash,
+    finalHash: sess.lastHash, settled: !!sess.settleTx, moves: sess.moves,
+    view: mpViewOf(sess),
+  };
+}
+
+/// MPSETTLE: commit the match + credit every earning seat, then close the core
+/// session. Every seat signature comes from the clients (body.sigs, one per
+/// seat, over the core midchainDigest). The relay signs nothing here.
+async function doMpSettle(body) {
+  const { account, pub, wallet } = mpClients();
+  const sess = mpNeedSession(body);
+  const sigs = Array.from(body.sigs || []);
+  if (sigs.length !== sess.seatCount) throw new Error('sigs[] must carry one signature per seat');
+  const finalHash = await mpGameRead(pub, 'hashState', [sess.state]);
+  const d = decodeState(sess.state);
+  const need = d.seatCount === 2 ? 1 : 3;
+  const game = {
+    turn: d.turn,
+    seats: d.seatCount,
+    step: sess.moves.length,
+    board: sess.state,
+    boardHash: finalHash,
+    over: d.finishCount >= need,
+  };
+  const rGame = await send(wallet, pub, {
+    address: MP_ADDR.GFGGames, abi: gamesAbi, functionName: 'settle',
+    args: [sess.sessionId, [game], sess.players, MP_GAME_TAG],
+    account,
+  });
+  let coreTx = null;
+  let coreSettleError = null;
+  let coreCost = 0n;
+  try {
+    const rCore = await send(wallet, pub, {
+      address: MP_ADDR.FoskaayGGI, abi: coreAbi, functionName: 'settle',
+      args: [sess.sessionId, finalHash, sess.seed, sess.players, sess.sessionKeys, sigs, sess.sessionKeys],
+      account,
+    });
+    coreTx = rCore.hash;
+    coreCost = BigInt(rCore.costUsdc6);
+  } catch (e) {
+    coreSettleError = (e && (e.shortMessage || e.message)) || String(e);
+  }
+  sess.settleTx = rGame.hash;
+  return { tx: rGame.hash, coreTx, finalHash, costUsdc6: (BigInt(rGame.costUsdc6) + coreCost).toString(), coreSettleError };
+}
+
+/// MPPOINTS: free read of a wallet's ludo-mp points + committed game count.
+async function doMpPoints(body) {
+  const { pub } = mpClients();
+  const player = String(body.player || body.wallet || '');
+  if (!player) return { points: '0' };
+  const playersAbi = parseAbi(['function pointsOf(address player, bytes32 gameTag) view returns (uint64)']);
+  const gamesAbiCount = parseAbi(['function gameCount(bytes32 sessionId) view returns (uint256)']);
+  const points = await pub.readContract({ address: MP_ADDR.GFGPlayers, abi: playersAbi, functionName: 'pointsOf', args: [player, MP_GAME_TAG] });
+  let committed = 0;
+  try {
+    if (body.sessionId) committed = Number(await pub.readContract({ address: MP_ADDR.GFGGames, abi: gamesAbiCount, functionName: 'gameCount', args: [String(body.sessionId)] }));
+  } catch (e) { /* soft */ }
+  return { points: points.toString(), committed };
+}
+
+/// MPGAME: free read of the last committed board of a settled session.
+async function doMpGame(body) {
+  const { pub } = mpClients();
+  try {
+    const count = Number(await pub.readContract({ address: MP_ADDR.GFGGames, abi: gamesAbi, functionName: 'gameCount', args: [String(body.sessionId)] }));
+    if (!count) return { found: false };
+    const list = await pub.readContract({ address: MP_ADDR.GFGGames, abi: gamesAbi, functionName: 'gamesOf', args: [String(body.sessionId)] });
+    const last = list[list.length - 1];
+    const dec = await pub.readContract({ address: MP_ADDR.GFGGames, abi: gamesRulesAbi, functionName: 'decodeState', args: [last.board] });
+    return { found: true, gameCount: count, over: last.over, turn: dec[0], finishCount: dec[1], seatCount: dec[3], points: dec[6], boardHash: last.boardHash };
+  } catch (e) { return { found: false, error: (e && (e.shortMessage || e.message)) || String(e) }; }
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') { res.status(405).json({ error: 'method not allowed' }); return; }
   let body = req.body;
@@ -510,6 +773,18 @@ export default async function handler(req, res) {
       case 'demoRejoin': out = await doDemoRejoin(body); break;
       case 'demoGame': out = await doDemoGame(body); break;
       case 'demoSettle': out = await doDemoSettle(body); break;
+      case 'mpCreate': out = await doMpCreate(body); break;
+      case 'mpRoll': out = await doMpRoll(body); break;
+      case 'mpMove': out = await doMpMove(body); break;
+      case 'mpPass': out = await doMpPass(body); break;
+      case 'mpBoard': out = await doMpBoard(body); break;
+      case 'mpMoves': out = await doMpMoves(body); break;
+      case 'mpDigest': out = await doMpDigest(body); break;
+      case 'mpSession': out = await doMpSession(body); break;
+      case 'mpRejoin': out = await doMpRejoin(body); break;
+      case 'mpSettle': out = await doMpSettle(body); break;
+      case 'mpPoints': out = await doMpPoints(body); break;
+      case 'mpGame': out = await doMpGame(body); break;
       case 'sponsorAddress': {
         const { account } = clients();
         out = {
