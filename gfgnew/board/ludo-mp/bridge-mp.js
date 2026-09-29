@@ -160,8 +160,26 @@
         if (typeof drawLudoLayout === 'function') drawLudoLayout();
         if (typeof window.ensureBoardAnimationLoop === 'function') window.ensureBoardAnimationLoop();
         stopPoll();
+        if (SID) relay('mpBoard', { sessionId: SID }).then(function (j) { tickCountdown(j.lastTs, j.turnSecs); }).catch(function () {});
         if (VIEW.turn === MY_SEAT) setPrompt('Your turn (' + COLOR_OF[MY_SEAT] + '): tap the centre of the board to roll.');
         else { setPrompt(COLOR_OF[VIEW.turn] + ' is playing... you watch.'); startPoll(); }
+    }
+
+    var countTimer = null;
+    // One shared countdown, from the CONTRACT timer (same numbers on every
+    // phone; the page only displays). Stops at zero; the timeout advance is a
+    // separate tap so a slow network never auto-skips a live player.
+    function tickCountdown(lastTs, turnSecs) {
+        if (countTimer) { clearInterval(countTimer); countTimer = null; }
+        var el = document.getElementById('mp-countdown');
+        if (!el || !lastTs || !turnSecs) { if (el) el.textContent = ''; return; }
+        var draw = function () {
+            var left = (lastTs + turnSecs) - Math.floor(Date.now() / 1000);
+            if (left < 0) left = 0;
+            el.textContent = 'Turn clock: ' + left + 's (contract timer, same on every phone)';
+        };
+        draw();
+        countTimer = setInterval(draw, 1000);
     }
 
     function startPoll() {
@@ -169,6 +187,15 @@
         pollTimer = setInterval(function () {
             if (busy || !SID || !VIEW || VIEW.turn === MY_SEAT || VIEW.matchOver) return;
             relay('mpBoard', { sessionId: SID }).then(function (j) {
+                if (j.settled) {
+                    stopPoll();
+                    if (countTimer) { clearInterval(countTimer); countTimer = null; }
+                    setPrompt('Sealed on-chain. Open the transaction link below for the record.');
+                    if (ui().tx && j.settleTx) ui().tx(j.settleTx, 'settled');
+                    updatePoints();
+                    return;
+                }
+                tickCountdown(j.lastTs, j.turnSecs);
                 if (j.view.turn !== VIEW.turn || j.view.finishCount !== VIEW.finishCount) {
                     applyBoard(j.view);
                     beginTurn();
@@ -177,7 +204,7 @@
         }, 3000);
     }
 
-    function stopPoll() { if (pollTimer) { clearInterval(pollTimer); pollTimer = null; } }
+    function stopPoll() { if (pollTimer) { clearInterval(pollTimer); pollTimer = null; } if (countTimer) { clearInterval(countTimer); countTimer = null; } }
 
     async function rollCurrent() {
         if (busy || !VIEW || VIEW.turn !== MY_SEAT) return;
@@ -276,11 +303,14 @@
         }
     }
 
+    // Automatic settle. The WINNER device signs silently with its own in-memory
+    // key and posts the signature; the relay settles the moment the winner
+    // signature is present, so the loser does nothing and the game never waits
+    // on them. Other devices poll the session until it seals, then show it.
     async function settle() {
         if (busy || !SID) return;
         busy = true;
         stopPoll();
-        setPrompt('Match finished. Collecting every seat signature, then sealing on-chain...');
         try {
             var dg = await relay('mpDigest', { sessionId: SID });
             var s = sdk();
@@ -290,38 +320,44 @@
             } else if (typeof window.ggiSignDigest === 'function') {
                 mySig = await window.ggiSignDigest(dg.digest);
             }
-            if (!mySig) throw new Error('could not sign (session key missing)');
-            var others = [];
-            try {
-                var raw = (document.getElementById('mp-sigs') || {}).value || '';
-                others = raw.split('\n').map(function (x) { return x.trim(); }).filter(Boolean);
-            } catch (e) {}
-            var sigs = new Array(SEATS).fill(null);
-            sigs[MY_SEAT] = mySig;
-            var oi = 0;
-            for (var i = 0; i < SEATS; i++) {
-                if (sigs[i] == null) { sigs[i] = others[oi] || null; oi++; }
+            if (mySig) {
+                var r = await relay('mpSign', { sessionId: SID, wallet: MY_WALLET, seat: MY_SEAT, sig: mySig });
+                if (r && r.settled) return showSealed(r);
             }
-            if (sigs.some(function (x) { return !x; })) {
-                setPrompt('Your signature is ready (copied below). Waiting on ' + sigs.filter(function (x) { return !x; }).length + ' more seat(s): paste their signatures and press Settle again.');
-                if (ui().log) ui().log('My seat signature: <b>' + short(mySig) + '</b> (full value in the box)', 0);
-                var box = document.getElementById('mp-mysig');
-                if (box) box.textContent = mySig;
-                busy = false;
-                return;
-            }
-            var r = await relay('mpSettle', { sessionId: SID, sigs: sigs });
-            if (ui().log) ui().log('GREEN: multiplayer match committed on-chain, every earning seat credited', r.costUsdc6);
-            if (ui().tx) { ui().tx(r.tx, 'settled'); }
-            var w = VIEW && VIEW.order ? VIEW.order[0] : null;
-            setPrompt('Sealed on-chain. ' + (w === MY_SEAT ? 'You win the crown.' : COLOR_OF[w] + ' wins the crown.'));
-            if (ui().onSettled) ui().onSettled(w === MY_SEAT, r.tx);
-            updatePoints();
+            setPrompt('Signature posted. Sealing automatically...');
+            pollSettled();
         } catch (e) {
             setPrompt('Settle failed: ' + e.message);
-        } finally {
             busy = false;
         }
+    }
+
+    function showSealed(r) {
+        if (ui().log) ui().log('GREEN: multiplayer match committed on-chain, every earning seat credited', r.costUsdc6);
+        if (ui().tx) ui().tx(r.tx || r.coreTx, 'settled');
+        var w = VIEW && VIEW.order ? VIEW.order[0] : null;
+        setPrompt('Sealed on-chain. ' + (w === MY_SEAT ? 'You win the crown.' : COLOR_OF[w] + ' wins the crown.'));
+        if (ui().onSettled) ui().onSettled(w === MY_SEAT, r.tx);
+        updatePoints();
+        busy = false;
+    }
+
+    function pollSettled() {
+        var tries = 0;
+        var loop = setInterval(function () {
+            tries++;
+            relay('mpSession', { sessionId: SID }).then(function (p) {
+                if (p && p.status === 2) {
+                    clearInterval(loop);
+                    relay('mpGame', { sessionId: SID }).then(function () {}).catch(function () {});
+                    showSealed({ tx: p.settleTx, costUsdc6: 0 });
+                } else if (tries > 40) {
+                    clearInterval(loop);
+                    setPrompt('Still waiting on the seal. Stay on this page; it completes automatically.');
+                    busy = false;
+                }
+            }).catch(function () {});
+        }, 3000);
     }
 
     function updatePoints() {
@@ -332,12 +368,52 @@
         }).catch(function () {});
     }
 
-    // ---- create + join ----
+    // ---- create + join (lobby, zero copying) ----
+    // Host opens a lobby (no handover yet). Joiners tap the shared link, signed
+    // in: their wallet + fresh silent key address join automatically. When every
+    // seat is filled the HOST device begins (one handover, sponsor pays) and
+    // joins lock. Solo test holds every seat on this phone.
 
-    async function start(seatCount, opponents, soloTest) {
+    function lobbyLink() { return SID ? ('/gfgnew/board/ludo-mp/?game=' + SID) : ''; }
+
+    function pollLobby() {
+        stopPoll();
+        var show = function (p) {
+            var el = document.getElementById('mp-lobby');
+            if (el) el.innerHTML = 'Seats ' + p.players.length + '/' + SEATS + ': ' + p.players.map(function (w, i) {
+                return '<b>' + COLOR_OF[i] + '</b> ' + short(w) + (w === MY_WALLET ? ' (you)' : '');
+            }).join(' &nbsp; ');
+        };
+        pollTimer = setInterval(function () {
+            if (busy || !SID) return;
+            relay('mpLobby', { sessionId: SID }).then(function (p) {
+                show(p);
+                if (p.status === 1) {
+                    stopPoll();
+                    relay('mpBoard', { sessionId: SID }).then(function (j) {
+                        applyBoard(j.view);
+                        beginTurn();
+                    }).catch(function () {});
+                    return;
+                }
+                if (p.status === 0 && p.players.length >= SEATS && PLAYERS[0] === MY_WALLET) {
+                    relay('mpBegin', { sessionId: SID, wallet: MY_WALLET }).then(function (b) {
+                        stopPoll();
+                        if (ui().tx) ui().tx(b.connectTx, 'connected');
+                        if (ui().log) ui().log('Match begun on-chain (fee paid, one transaction)', b.costUsdc6);
+                        applyBoard(b.view);
+                        beginTurn();
+                    }).catch(function (e) { setPrompt('Begin failed: ' + e.message); });
+                }
+            }).catch(function () {});
+        }, 2500);
+    }
+
+    async function start(seatCount, soloTest) {
         if (busy) return null;
         busy = true;
         VIEW = null; pendingDice = [];
+        SEATS = (seatCount === 4) ? 4 : 2;
         try {
             var evm = myWallet();
             if (!evm) {
@@ -353,35 +429,35 @@
             var players = [evm];
             var keys = [MY_KEY.address];
             if (soloTest) {
-                for (var i = 1; i < seatCount; i++) {
+                for (var i = 1; i < SEATS; i++) {
                     var k = makeKey();
                     players.push(k.address);
                     keys.push(k.address);
                     window['mpSoloKey' + i] = k;
                 }
-                MY_SEAT = 0;
-            } else {
-                if (!opponents || opponents.length !== seatCount - 1) throw new Error('paste every opponent wallet first');
-                for (var o = 0; o < opponents.length; o++) {
-                    if (!opponents[o].wallet || !opponents[o].key) throw new Error('opponent ' + (o + 2) + ' needs wallet + session key');
-                    players.push(opponents[o].wallet);
-                    keys.push(opponents[o].key);
-                }
-                MY_SEAT = 0;
             }
-            var created = await relay('mpCreate', { seatCount: seatCount, players: players, sessionKeys: keys });
+            MY_SEAT = 0;
+            var created = await relay('mpCreate', { seatCount: SEATS, wallet: evm, sessionKey: MY_KEY.address, players: players, sessionKeys: keys });
             SID = created.sessionId;
-            PLAYERS = players;
-            SKEYS = keys;
-            SEATS = seatCount;
-            try { if (history && history.replaceState) history.replaceState(null, '', '/gfgnew/board/ludo-mp/?game=' + SID); } catch (e) {}
+            PLAYERS = created.players;
+            SKEYS = created.players.map(function (_, i) { return (keys[i] || ''); });
+            SEATS = created.view.seatCount;
+            try { if (history && history.replaceState) history.replaceState(null, '', lobbyLink()); } catch (e) {}
             applyBoard(created.view);
-            if (ui().log) ui().log('Multiplayer session connected on-chain (fee paid, one transaction)', created.costUsdc6);
+            if (ui().log) ui().log('Lobby open: share the session link below', 0);
             if (ui().ids) ui().ids(SID, '');
-            if (ui().tx) ui().tx(created.connectTx, 'connected');
             var code = document.getElementById('mp-code');
             if (code) code.textContent = SID;
-            beginTurn();
+            if (soloTest && PLAYERS.length >= SEATS) {
+                var b = await relay('mpBegin', { sessionId: SID, wallet: MY_WALLET });
+                if (ui().tx) ui().tx(b.connectTx, 'connected');
+                if (ui().log) ui().log('Match begun on-chain (fee paid, one transaction)', b.costUsdc6);
+                applyBoard(b.view);
+                beginTurn();
+            } else {
+                setPrompt('Lobby open. Share the session link; the match begins when every seat is filled.');
+                pollLobby();
+            }
             updatePoints();
             return created;
         } catch (e) {
@@ -392,6 +468,10 @@
         }
     }
 
+    // Join or rejoin with ONE tap. Signed in: a fresh session key is born
+    // silently on this device; only its ADDRESS travels in the join call.
+    // New wallet on an open lobby = auto-join a free seat. Seated wallet =
+    // rejoin (lobby wait or live render). Nothing is ever copied by hand.
     async function rejoin(sessionId, wallet) {
         if (busy || !sessionId) return { ok: false, reason: 'no session' };
         busy = true;
@@ -399,8 +479,18 @@
         try {
             var evm = wallet || myWallet();
             if (!evm) return { ok: false, reason: 'sign in first' };
+            if (!window.ggiSessionKey) {
+                try { window.ggiSessionKey = makeKey(); } catch (e) { return { ok: false, reason: 'key engine loading, try again' }; }
+            }
             var j = await relay('mpRejoin', { sessionId: sessionId, wallet: evm });
             if (!j.ok) { setPrompt(j.reason || 'Cannot rejoin this session.'); return { ok: false, reason: j.reason }; }
+            var seated = (j.players || []).some(function (w) { return String(w).toLowerCase() === String(evm).toLowerCase(); });
+            if (!seated && j.status === 0) {
+                var jj = await relay('mpJoin', { sessionId: sessionId, wallet: evm, sessionKey: window.ggiSessionKey.address });
+                if (!jj || jj.seat == null || jj.seat < 0) { setPrompt((jj && jj.error) || 'Join failed (seats may be full).'); return { ok: false, reason: (jj && jj.error) || 'join failed' }; }
+                if (ui().log) ui().log('Joined as ' + COLOR_OF[jj.seat] + ' (seat ' + jj.seat + ')', 0);
+                j = await relay('mpRejoin', { sessionId: sessionId, wallet: evm });
+            }
             // VERIFY BEFORE DRAW: the relay is an untrusted cache. A tampered
             // log is never rendered.
             if (j.moves && j.moves.length) {
@@ -428,23 +518,27 @@
                 if (String(PLAYERS[i]).toLowerCase() === String(evm).toLowerCase()) MY_SEAT = i;
             }
             if (MY_SEAT < 0) return { ok: false, reason: 'your wallet is not a seat in this match' };
-            // My session key: reuse the stored one if this device created it,
-            // else the key for this seat must already be mine (solo test) or I
-            // hold only my address and sign settle with a fresh key? No: settle
-            // must use the committed key. Ask for the key when unknown.
+            // My session key: this device's in-memory key when it matches the
+            // committed seat key (just joined, or created the seat here), else a
+            // solo-test key held on this phone. Keys never leave the device.
             if (window.ggiSessionKey && SKEYS[MY_SEAT] &&
                 String(window.ggiSessionKey.address).toLowerCase() === String(SKEYS[MY_SEAT]).toLowerCase()) {
                 MY_KEY = window.ggiSessionKey;
             } else if (window['mpSoloKey' + MY_SEAT]) {
                 MY_KEY = window['mpSoloKey' + MY_SEAT];
             } else {
-                setPrompt('Joined as ' + COLOR_OF[MY_SEAT] + '. If this device created your seat key, it is ready; otherwise settle signing needs that key.');
-                MY_KEY = window.ggiSessionKey || null;
+                MY_KEY = null;
             }
             applyBoard(j.view);
             if (ui().ids) ui().ids(SID, j);
-            if (ui().log) ui().log('Rejoined multiplayer session ' + short(SID), 0);
-            beginTurn();
+            if (j.status === 0) {
+                setPrompt('Lobby: waiting for seats (' + PLAYERS.length + '/' + SEATS + '). The match begins automatically when full.');
+                if (ui().log) ui().log('In lobby as ' + COLOR_OF[MY_SEAT], 0);
+                pollLobby();
+            } else {
+                if (ui().log) ui().log('Rejoined multiplayer session ' + short(SID), 0);
+                beginTurn();
+            }
             updatePoints();
             return { ok: true };
         } catch (e) {
