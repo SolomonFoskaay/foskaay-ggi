@@ -238,7 +238,7 @@
     function tickCountdown(lastTs, turnSecs) {
         if (countTimer) { clearInterval(countTimer); countTimer = null; }
         var el = document.getElementById('mp-countdown');
-        if (!el || !lastTs || !turnSecs) { if (el) el.textContent = ''; return; }
+        if (!el || !lastTs || !turnSecs) { if (el) el.textContent = '00m:00s:000ms'; return; }
         var draw = function () {
             var ms = (lastTs + turnSecs) * 1000 - Date.now();
             if (ms < 0) ms = 0;
@@ -733,6 +733,8 @@
         var show = function (p) {
             if (p.quadOrder && p.quadOrder.length) QUADS = p.quadOrder;
             renderMatrixLive(p);
+            var lobbyEl = document.getElementById('mp-lobby');
+            if (lobbyEl) lobbyEl.innerHTML = 'Seats ' + p.players.length + '/' + SEATS + ' &nbsp; code <b>' + (p.code || '') + '</b>' + (p.iid ? ' <span class="ld-muted">relay ' + p.iid + '</span>' : '');
             var bb = document.getElementById('mp-begin');
             if (bb) bb.disabled = !(p.status === 0 && p.players.length >= SEATS && PLAYERS[0] === MY_WALLET);
             // Envelope stays fresh from every lobby sighting (for rebuilds).
