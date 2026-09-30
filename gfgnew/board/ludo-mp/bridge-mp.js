@@ -230,11 +230,10 @@
     var countTimer = null;
     var ROOMANCHOR = null; // {startHash, sponsorAddress} for log verification
     var pollN = 0;
-    var firedKey = '';
     // One shared countdown, from the CONTRACT timer (same numbers on every
-    // phone; the page only displays). At zero the turn auto-fires a timeout
-    // advance once per turn: the relay dedupes doubles and the contract only
-    // advances a truly expired turn, keeping bonus turns intact.
+    // phone; the page only displays). At zero every phone fires a timeout
+    // advance; the relay dedupes doubles and the contract only advances a
+    // truly expired turn, keeping bonus turns intact.
     function tickCountdown(lastTs, turnSecs) {
         if (countTimer) { clearInterval(countTimer); countTimer = null; }
         var el = document.getElementById('mp-countdown');
@@ -245,9 +244,7 @@
             var mm = Math.floor(ms / 60000), ss = Math.floor((ms % 60000) / 1000), mmm = Math.floor(ms % 1000);
             var pad = function (v, n) { v = String(v); while (v.length < n) v = '0' + v; return v; };
             el.textContent = pad(mm, 2) + 'm:' + pad(ss, 2) + 's:' + pad(mmm, 3) + 'ms';
-            var key = (SID || '') + ':' + lastTs + ':' + (VIEW ? VIEW.turn : '?');
-            if (ms <= 0 && firedKey !== key && SID && VIEW && !VIEW.matchOver) {
-                firedKey = key;
+            if (ms <= 0 && SID && VIEW && !VIEW.matchOver) {
                 timeoutSeat();
             }
         };
@@ -719,11 +716,21 @@
 
     // Setup panels collapse once the match is live so the board, message,
     // turn card and dice fit one phone screen. They return on fresh load.
+    // Seats matrix is NEVER hidden: every phone always sees who sits where.
+    // Only the setup panels collapse. Slot buttons lock once the match
+    // starts so seats cannot change mid-game.
+    function lockMatrix(locked) {
+        document.querySelectorAll('#mp-slots .setup-slot button').forEach(function (b) {
+            b.disabled = !!locked;
+        });
+    }
+
     function setLiveUI(live) {
         ['mp-panel-lobby', 'mp-panel-join'].forEach(function (id) {
             var el = document.getElementById(id);
             if (el) el.style.display = live ? 'none' : '';
         });
+        lockMatrix(live);
     }
 
     function lobbyLink() { return SID ? ('/gfgnew/board/ludo-mp/?game=' + SID) : ''; }
@@ -829,6 +836,7 @@
             }
             var created = await relay('mpCreate', { seatCount: qo.length, wallet: evm, sessionKey: MY_KEY.address, players: players, sessionKeys: keys, quadOrder: qo });
             SID = created.sessionId;
+            MY_SEAT = 0; // host always sits seat 0 (begin authority)
             actMsg('Lobby open. Share the link below.');
             if (created.quadOrder && created.quadOrder.length) QUADS = created.quadOrder;
             PLAYERS = created.players;
@@ -847,7 +855,7 @@
                 applyBoard(b.view);
                 beginTurn();
             } else {
-                setPrompt('Lobby open. Share the session link; the match begins when every seat is filled.');
+                setPrompt('Lobby open. Share the session link; press Start match when every seat is filled.');
                 pollLobby();
             }
             updatePoints();
@@ -870,12 +878,14 @@
         busy = true;
         VIEW = null; pendingDice = [];
         SID = sessionId;
+        var stage = 'enter';
         try {
             var evm = wallet || myWallet();
             if (!evm) return { ok: false, reason: 'sign in first' };
             if (!window.ggiSessionKey) {
                 try { window.ggiSessionKey = makeKey(); } catch (e) { return { ok: false, reason: 'key engine loading, try again' }; }
             }
+            stage = 'fetch';
             var j = await relayJoin('mpRejoin', { sessionId: sessionId, wallet: evm });
             if (!j.ok) {
                 // Relay lost this session: rebuild from this device's verified
@@ -892,6 +902,7 @@
             }
             var seated = (j.players || []).some(function (w) { return String(w).toLowerCase() === String(evm).toLowerCase(); });
             if (!seated && j.status === 0) {
+                stage = 'join';
                 var jj = await relayJoin('mpJoin', { sessionId: sessionId, wallet: evm, sessionKey: window.ggiSessionKey.address, quad: quad || '' });
                 if (!jj || jj.seat == null || jj.seat < 0) { setPrompt((jj && jj.error) || 'Join failed (seats may be full).'); return { ok: false, reason: (jj && jj.error) || 'join failed' }; }
                 if (ui().log) ui().log('Joined as ' + quad(jj.seat) + ' (seat ' + jj.seat + ')', 0);
@@ -899,6 +910,7 @@
             }
             // VERIFY BEFORE DRAW: the relay is an untrusted cache. A tampered
             // log is never rendered.
+            stage = 'verify';
             if (j.moves && j.moves.length) {
                 var s = sdk();
                 if (s && typeof s.verifyMoveLog === 'function') {
@@ -916,6 +928,7 @@
             }
             cacheAdopt(j.startHash, j.moves || [], j.players || [], j.sessionKeys || [], j.seatCount);
             ROOMANCHOR = { startHash: j.startHash, sponsorAddress: j.sponsorAddress || '' };
+            stage = 'render';
             SID = j.sessionId;
             try { if (history && history.replaceState) history.replaceState(null, '', lobbyLink()); } catch (e) {}
             SEATS = j.seatCount;
@@ -944,7 +957,7 @@
             applyBoard(j.view);
             if (ui().ids) ui().ids(SID, j);
             if (j.status === 0) {
-                setPrompt('Lobby: waiting for seats (' + PLAYERS.length + '/' + SEATS + '). The match begins automatically when full.');
+                setPrompt('Lobby: waiting for seats (' + PLAYERS.length + '/' + SEATS + '). The host presses Start match when full.');
                 if (ui().log) ui().log('In lobby as ' + quad(MY_SEAT), 0);
                 pollLobby();
             } else {
@@ -955,7 +968,7 @@
             return { ok: true };
         } catch (e) {
             setPrompt('Rejoin failed: ' + e.message);
-            return { ok: false, reason: e.message };
+            return { ok: false, reason: '[' + stage + '] ' + e.message };
         } finally {
             busy = false;
         }
