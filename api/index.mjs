@@ -619,8 +619,8 @@ const mpGamesAbi = parseAbi([
   'function isTurnExpired(uint64 lastTs, uint64 nowTs) view returns (bool)',
 ]);
 
-async function mpGameRead(pub, fn, args) {
-  return await pub.readContract({ address: MP_ADDR.GFGGames, abi: gamesRulesAbi, functionName: fn, args });
+async function mpGameRead(pub, fn, args, addr) {
+  return await pub.readContract({ address: addr || MP_ADDR.GFGGames, abi: gamesRulesAbi, functionName: fn, args });
 }
 
 function mpNeedSession(body) {
@@ -683,9 +683,10 @@ async function mpNow(pub, floor) {
 
 async function mpStep(sess, kind, seat, tokenIndex, value, seeds) {
   const { account, pub } = mpClients();
-  const newState = await mpGameRead(pub, 'applyMove', [sess.state, kind, seat, tokenIndex, value, seeds || []]);
+  const ga = sess.gameAddr || MP_ADDR.GFGGames;
+  const newState = await mpGameRead(pub, 'applyMove', [sess.state, kind, seat, tokenIndex, value, seeds || []], ga);
   const prevHash = sess.moves.length ? sess.lastHash : sess.startHash;
-  const newHash = await mpGameRead(pub, 'hashState', [newState]);
+  const newHash = await mpGameRead(pub, 'hashState', [newState], ga);
   const digest = await pub.readContract({ address: MP_ADDR.FoskaayGGI, abi: coreAbi, functionName: 'midchainDigest', args: [sess.sessionId, newHash] });
   const sig = await account.sign({ hash: digest });
   const floor = sess.tss.length ? sess.tss[sess.tss.length - 1] : (sess.handoverTs || 0);
@@ -713,10 +714,11 @@ async function doMpCreate(body) {
   const sessionId = body.sessionId || keccak256(encodeAbiParameters(parseAbiParameters('address,uint256'), [account.address, BigInt(Date.now())]));
   const seed = keccak256(toBytes('ggi-ludo-mp-' + sessionId));
   const seedCommit = keccak256(seed);
-  const state0 = await mpGameRead(pub, 'getInitialState', [seatCount, 0]);
-  const startHash = await mpGameRead(pub, 'hashState', [state0]);
+  const gameAddr = String(body.game || MP_ADDR.GFGGames);
+  const state0 = await mpGameRead(pub, 'getInitialState', [seatCount, 0], gameAddr);
+  const startHash = await mpGameRead(pub, 'hashState', [state0], gameAddr);
   const code = BigInt(sessionId).toString(36).toUpperCase().slice(-6);
-  const sess = { sessionId, code, status: 0, seed, seedCommit, state: state0, startHash, lastHash: startHash, players, sessionKeys, seatCount, moves: [], tss: [], sigs: {}, handoverTs: 0, connectTx: null, settleTx: null, createdAt: Date.now() };
+  const sess = { sessionId, code, status: 0, seed, seedCommit, state: state0, startHash, lastHash: startHash, players, sessionKeys, seatCount, gameAddr, moves: [], tss: [], sigs: {}, handoverTs: 0, connectTx: null, settleTx: null, createdAt: Date.now() };
   mpSessions.set(sessionId, sess);
   return { sessionId, code, seatCount, players, status: 0, view: mpViewOf(sess), iid: MP_IID };
 }
@@ -755,7 +757,8 @@ async function doMpBegin(body) {
   const caller = String(body.wallet || '').toLowerCase();
   if (!caller || caller !== String(sess.players[0] || '').toLowerCase()) throw new Error('only the host can begin');
   if (sess.players.length !== sess.seatCount) throw new Error('waiting for players (' + sess.players.length + '/' + sess.seatCount + ')');
-  const accounts = [MP_ADDR.GFGGames, MP_ADDR.GFGPlayers];
+  const gaddr = sess.gameAddr || MP_ADDR.GFGGames;
+  const accounts = (gaddr === MP_ADDR.GFGGames) ? [MP_ADDR.GFGGames, MP_ADDR.GFGPlayers] : [gaddr];
   const games = 1;
   const [feeBase, feePerAccount, feePerGame] = await Promise.all([
     pub.readContract({ address: MP_ADDR.FoskaayGGI, abi: coreAbi, functionName: 'feeBase' }),
@@ -765,7 +768,7 @@ async function doMpBegin(body) {
   const fee = feeBase + feePerAccount * BigInt(accounts.length) + feePerGame * BigInt(games);
   const r = await send(wallet, pub, {
     address: MP_ADDR.FoskaayGGI, abi: coreAbi, functionName: 'handoverWithAccounts',
-    args: [sess.sessionId, MP_ADDR.GFGGames, sess.startHash, sess.seedCommit, sess.players, sess.sessionKeys, 2, accounts, games],
+    args: [sess.sessionId, gaddr, sess.startHash, sess.seedCommit, sess.players, sess.sessionKeys, 2, accounts, games],
     value: fee, account,
   });
   let handoverTs = Math.floor(Date.now() / 1000);
@@ -851,7 +854,7 @@ async function doMpMoves(body) {
 async function doMpDigest(body) {
   const { pub } = mpClients();
   const sess = mpResolveSession(body);
-  const finalHash = await mpGameRead(pub, 'hashState', [sess.state]);
+  const finalHash = await mpGameRead(pub, 'hashState', [sess.state], sess.gameAddr);
   const digest = await pub.readContract({ address: MP_ADDR.FoskaayGGI, abi: coreAbi, functionName: 'midchainDigest', args: [sess.sessionId, finalHash] });
   return { sessionId: sess.sessionId, finalHash, digest };
 }
@@ -1056,7 +1059,7 @@ async function mpFireSettle(sess, pairs) {
   };
   const moveTss = [BigInt(sess.handoverTs || 0)].concat(sess.tss.map((t) => BigInt(t)));
   const rGame = await send(wallet, pub, {
-    address: MP_ADDR.GFGGames, abi: mpGamesAbi, functionName: 'settle',
+    address: sess.gameAddr || MP_ADDR.GFGGames, abi: mpGamesAbi, functionName: 'settle',
     args: [sess.sessionId, [game], seatPlayers, MP_GAME_TAG, moveTss],
     account,
   });
@@ -1113,7 +1116,9 @@ async function doMpPoints(body) {
   if (!player) return { points: '0' };
   const playersAbi = parseAbi(['function pointsOf(address player, bytes32 gameTag) view returns (uint64)']);
   const gamesAbiCount = parseAbi(['function gameCount(bytes32 sessionId) view returns (uint256)']);
-  const points = await pub.readContract({ address: MP_ADDR.GFGPlayers, abi: playersAbi, functionName: 'pointsOf', args: [player, MP_GAME_TAG] });
+  let paddr = MP_ADDR.GFGPlayers;
+  try { const s = body.sessionId && mpSessions.get(String(body.sessionId)); if (s && s.gameAddr && s.gameAddr !== MP_ADDR.GFGGames) paddr = s.gameAddr; } catch (e) {}
+  const points = await pub.readContract({ address: paddr, abi: playersAbi, functionName: 'pointsOf', args: [player, MP_GAME_TAG] });
   let committed = 0;
   try {
     if (body.sessionId) committed = Number(await pub.readContract({ address: MP_ADDR.GFGGames, abi: gamesAbiCount, functionName: 'gameCount', args: [String(body.sessionId)] }));
@@ -1125,9 +1130,11 @@ async function doMpPoints(body) {
 async function doMpGame(body) {
   const { pub } = mpClients();
   try {
-    const count = Number(await pub.readContract({ address: MP_ADDR.GFGGames, abi: gamesAbi, functionName: 'gameCount', args: [String(body.sessionId)] }));
+    let ggaddr = MP_ADDR.GFGGames;
+    try { const s = mpSessions.get(String(body.sessionId)); if (s && s.gameAddr) ggaddr = s.gameAddr; } catch (e) {}
+    const count = Number(await pub.readContract({ address: ggaddr, abi: gamesAbi, functionName: 'gameCount', args: [String(body.sessionId)] }));
     if (!count) return { found: false };
-    const list = await pub.readContract({ address: MP_ADDR.GFGGames, abi: gamesAbi, functionName: 'gamesOf', args: [String(body.sessionId)] });
+    const list = await pub.readContract({ address: ggaddr, abi: gamesAbi, functionName: 'gamesOf', args: [String(body.sessionId)] });
     const last = list[list.length - 1];
     const dec = await pub.readContract({ address: MP_ADDR.GFGGames, abi: gamesRulesAbi, functionName: 'decodeState', args: [last.board] });
     return { found: true, gameCount: count, over: last.over, turn: dec[0], finishCount: dec[1], seatCount: dec[3], points: dec[6], boardHash: last.boardHash };
