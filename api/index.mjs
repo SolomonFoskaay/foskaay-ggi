@@ -1167,6 +1167,10 @@ async function doMpGame(body) {
   } catch (e) { return { found: false, error: (e && (e.shortMessage || e.message)) || String(e) }; }
 }
 
+// gfgnew/board/ludo standalone MP (Arc testnet) — additive, never touches the
+// demo or ludo-mp actions. Imported from api/ludo-arc.mjs.
+import { actions as ludoArcActions } from './ludo-arc.mjs';
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') { res.status(405).json({ error: 'method not allowed' }); return; }
   let body = req.body;
@@ -1219,7 +1223,9 @@ export default async function handler(req, res) {
         };
         break;
       }
-      default: res.status(400).json({ error: 'unknown action' }); return;
+      default:
+        if (ludoArcActions[body.action]) { out = await ludoArcActions[body.action](body); break; }
+        res.status(400).json({ error: 'unknown action' }); return;
     }
     res.status(200).json({ ok: true, ...out });
   } catch (e) {

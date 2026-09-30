@@ -22,6 +22,10 @@ export const NETWORKS = {
       // ludo-mp (isolated multiplayer copy, testnet only until proven).
       GFGGames: '0x1016B29A147a9b2f84ecF3ca31Ac825A01Af2a22',
       GFGPlayers: '0xE85fC6f002830E10bd446668A72236Bd952F6834',
+      // gfgnew/board/ludo (standalone multiplayer, fixed contracts). Deployed
+      // 2026-09-30 behind permanent UUPS proxies on testnet.
+      LudoGames: '0xd3e1d2b29c6832d30510e55d2a95d53316a239df',
+      LudoPlayers: '0xac8867c904c6f26789fbbe6d3f9872d96c2368cf',
     },
   },
   mainnet: {
