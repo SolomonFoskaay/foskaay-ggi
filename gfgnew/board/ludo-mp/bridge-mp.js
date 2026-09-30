@@ -636,40 +636,59 @@
         if (b4) b4.classList.toggle('active', MPSEL.mode === 4);
     }
 
+    // Local action feedback, directly under the buttons (no popups, no scroll).
+    function actMsg(s) {
+        var el = document.getElementById('mp-action-status');
+        if (el) el.innerHTML = s || '';
+    }
+
     // Slot tap: pre-start host toggles/claims; live lobby joiner sits free seat.
     function tapSlot(q) {
         if (['green', 'yellow', 'blue', 'red'].indexOf(q) === -1) { renderMatrixPre(); return; }
-        if (SID) {
-            // Live lobby: filled locked, free joins now.
-            var p = LASTLOBBY;
-            if (!p) { setPrompt('Open the shared link first, then tap a free seat.'); return; }
-            var idx = (p.quadOrder || []).indexOf(q);
-            if (idx === -1) { setPrompt(q + ' is not in this match.'); return; }
-            if (idx < (p.players || []).length) { setPrompt(q + ' is taken. Pick a free seat.'); return; }
-            var evm = myWallet();
-            if (!evm) { if (typeof window.openDynamicLogin === 'function') window.openDynamicLogin(); return; }
-            rejoin(SID, evm);
-            return;
-        }
-        // Pre-start: toggle button flips active; Sit-here claims You.
+        if (!SID) { toggleQuad(q); return; }
+        // Live lobby: filled locked, free joins now.
+        var p = LASTLOBBY;
+        if (!p) { setPrompt('Open the shared link first, then tap a free seat.'); return; }
+        var idx = (p.quadOrder || []).indexOf(q);
+        if (idx === -1) { setPrompt(q + ' is not in this match.'); return; }
+        if (idx < (p.players || []).length) { setPrompt(q + ' is taken. Pick a free seat.'); return; }
+        var evm = myWallet();
+        if (!evm) { if (typeof window.openDynamicLogin === 'function') window.openDynamicLogin(); return; }
+        actMsg('Joining ' + q + '...');
+        rejoin(SID, evm);
+    }
+
+    // Pre-start toggle: flips a quadrant active/inactive (max = mode count).
+    function toggleQuad(q) {
         var i = MPSEL.active.indexOf(q);
-        if (MPSEL.youQuad !== q) {
-            if (i === -1) {
-                if (MPSEL.active.length >= MPSEL.mode) {
-                    // Full: swap out the last non-you active slot.
-                    var drop = null;
-                    for (var d = MPSEL.active.length - 1; d >= 0; d--) {
-                        if (MPSEL.active[d] !== MPSEL.youQuad) { drop = MPSEL.active[d]; break; }
-                    }
-                    if (drop) MPSEL.active.splice(MPSEL.active.indexOf(drop), 1);
-                    else return;
+        if (i === -1) {
+            if (MPSEL.active.length >= MPSEL.mode) {
+                var drop = null;
+                for (var d = MPSEL.active.length - 1; d >= 0; d--) {
+                    if (MPSEL.active[d] !== MPSEL.youQuad) { drop = MPSEL.active[d]; break; }
                 }
-                MPSEL.active.push(q);
+                if (drop) MPSEL.active.splice(MPSEL.active.indexOf(drop), 1);
+                else return;
             }
-            MPSEL.youQuad = q;
+            MPSEL.active.push(q);
         } else {
-            MPSEL.youQuad = null;
+            if (MPSEL.active.length <= 1) return;
+            MPSEL.active.splice(i, 1);
+            if (MPSEL.youQuad === q) MPSEL.youQuad = null;
         }
+        renderMatrixPre();
+    }
+
+    // Pre-start claim: sit in a quadrant as You (activates it if there is room).
+    function claimYou(q) {
+        if (MPSEL.active.indexOf(q) === -1) {
+            if (MPSEL.active.length >= MPSEL.mode) {
+                actMsg('Only ' + MPSEL.mode + ' active at once. Tap one off first.');
+                return;
+            }
+            MPSEL.active.push(q);
+        }
+        MPSEL.youQuad = (MPSEL.youQuad === q) ? null : q;
         renderMatrixPre();
     }
 
@@ -750,6 +769,7 @@
     async function begin() {
         if (busy || !SID) return null;
         busy = true;
+        actMsg('Starting match on-chain...');
         try {
             var b = await relay('mpBegin', { sessionId: SID, wallet: MY_WALLET });
             stopPoll();
@@ -759,6 +779,7 @@
             beginTurn();
             return b;
         } catch (e) {
+            actMsg('Begin failed: ' + e.message);
             setPrompt('Begin failed: ' + e.message);
             return null;
         } finally {
@@ -766,11 +787,19 @@
         }
     }
 
-    async function start(seatCount, soloTest) {
+    async function start(seatCountIgnored, soloTest) {
         if (busy) return null;
         busy = true;
         VIEW = null; pendingDice = [];
-        SEATS = (seatCount === 4) ? 4 : 2;
+        var qo = quadOrderForStart();
+        if (!qo) {
+            actMsg('Tap your color seat first (Sit here), then Start.');
+            setPrompt('Tap your color seat first, then Start.');
+            busy = false;
+            return null;
+        }
+        SEATS = qo.length;
+        actMsg('Creating lobby...');
         try {
             var evm = myWallet();
             if (!evm) {
@@ -798,6 +827,7 @@
             }
             var created = await relay('mpCreate', { seatCount: qo.length, wallet: evm, sessionKey: MY_KEY.address, players: players, sessionKeys: keys, quadOrder: qo });
             SID = created.sessionId;
+            actMsg('Lobby open. Share the link below.');
             if (created.quadOrder && created.quadOrder.length) QUADS = created.quadOrder;
             PLAYERS = created.players;
             SKEYS = created.players.map(function (_, i) { return (keys[i] || ''); });
@@ -821,6 +851,7 @@
             updatePoints();
             return created;
         } catch (e) {
+            actMsg('Start failed: ' + e.message);
             setPrompt('Start failed: ' + e.message);
             return null;
         } finally {
@@ -966,6 +997,8 @@
         rejoin: rejoin,
         begin: begin,
         tapSlot: tapSlot,
+        toggleQuad: toggleQuad,
+        claimYou: claimYou,
         setMode: setMode,
         selState: selState,
         renderMatrix: renderMatrixPre,
