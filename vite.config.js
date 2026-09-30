@@ -30,6 +30,7 @@ export default defineConfig({
         profile: 'profile/index.html',
         'arc-launch': 'arc-launch.html',
         'gfgnew-board-ludo-mp': 'gfgnew/board/ludo-mp/index.html',
+        'gfgnew-board-ludo': 'gfgnew/board/ludo/index.html',
         'web/main.js': 'web/main.js'
       },
       output: {

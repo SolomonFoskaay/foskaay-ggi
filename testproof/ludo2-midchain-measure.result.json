@@ -1,0 +1,198 @@
+{
+  "sponsor": "0xAd0A4348C7202E44e96c3FAE1cBB0B645dD86EB4",
+  "testA": {
+    "connectCost": "5748",
+    "connectFee": "1400000000000000",
+    "during": {
+      "core": {
+        "paid": true,
+        "commitment": "0x1b6a1161e9697beb...",
+        "liftedAccounts": [
+          "0xd3E1d2B29C6832D30510e55D2a95D53316a239df",
+          "0xac8867c904c6f26789FBBE6D3f9872d96C2368cf"
+        ],
+        "declaredGames": "1"
+      },
+      "ludoGames": {
+        "committedGames": "0",
+        "onChainBoards": 0,
+        "liveBoardSlotLen": 2,
+        "playerGameIndex": []
+      },
+      "ludoPlayers": {
+        "pointsOfLoggedInUser": "0"
+      }
+    },
+    "settle": {
+      "tx": "0x5744a26bc81d09285f5fc7f7c2f66069f55999c79101364c1859583348835301",
+      "coreTx": "0x94e65a3124c148e87a6dbfd4850ca636cf8f5287fccafcc7ceb2ca13d5bd56eb",
+      "finalHash": "0xec4ea8f1d74157d544257a610ed5d7b8955591537277034b604714a4343b4c4d",
+      "costUsdc6": "6299",
+      "coreSettleError": null
+    },
+    "after": {
+      "core": {
+        "paid": true,
+        "commitment": "0x1b6a1161e9697beb...",
+        "liftedAccounts": [
+          "0xd3E1d2B29C6832D30510e55D2a95D53316a239df",
+          "0xac8867c904c6f26789FBBE6D3f9872d96C2368cf"
+        ],
+        "declaredGames": "1"
+      },
+      "ludoGames": {
+        "committedGames": "1",
+        "onChainBoards": 1,
+        "liveBoardSlotLen": 2,
+        "playerGameIndex": [],
+        "committedBoard": [
+          {
+            "over": false,
+            "board": {
+              "turn": 1,
+              "finishCount": 0,
+              "seatCount": 2,
+              "order": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "points": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "dieA": 0,
+              "dieB": 0,
+              "steps": [
+                -1,
+                -1,
+                -1,
+                -1,
+                -1,
+                -1,
+                -1,
+                -1,
+                -1,
+                -1,
+                -1,
+                -1,
+                -1,
+                -1,
+                -1,
+                -1
+              ]
+            },
+            "boardHash": "0xec4ea8f1d74157d5"
+          }
+        ]
+      },
+      "ludoPlayers": {
+        "pointsOfLoggedInUser": "0"
+      }
+    }
+  },
+  "testB": {
+    "connectCost": "5748",
+    "connectFee": "1400000000000000",
+    "during": {
+      "core": {
+        "paid": true,
+        "commitment": "0x3c89b48779a9fc9a...",
+        "liftedAccounts": [
+          "0xd3E1d2B29C6832D30510e55D2a95D53316a239df",
+          "0xac8867c904c6f26789FBBE6D3f9872d96C2368cf"
+        ],
+        "declaredGames": "1"
+      },
+      "ludoGames": {
+        "committedGames": "0",
+        "onChainBoards": 0,
+        "liveBoardSlotLen": 2,
+        "playerGameIndex": []
+      },
+      "ludoPlayers": {
+        "pointsOfLoggedInUser": "0"
+      }
+    },
+    "settle": {
+      "ok": true,
+      "stored": true,
+      "settled": true,
+      "tx": "0x8d44ec9bb865e0b6b738c3152bb21e10d5a543b3e02661d43c1d24ee6305f9c1",
+      "coreTx": "0xc445714e4e4eddc88ace801dfbfcfd19e6e9556118f02cdc079fcc78c584d8bd",
+      "finalHash": "0x6ae4d1ba4cecae2ecc1205640864068b4b48f0a5ee87db13fcb878134c38b2a2",
+      "costUsdc6": "8322",
+      "coreSettleError": null
+    },
+    "after": {
+      "core": {
+        "paid": true,
+        "commitment": "0x3c89b48779a9fc9a...",
+        "liftedAccounts": [
+          "0xd3E1d2B29C6832D30510e55D2a95D53316a239df",
+          "0xac8867c904c6f26789FBBE6D3f9872d96C2368cf"
+        ],
+        "declaredGames": "1"
+      },
+      "ludoGames": {
+        "committedGames": "1",
+        "onChainBoards": 1,
+        "liveBoardSlotLen": 2,
+        "playerGameIndex": [
+          "0"
+        ],
+        "committedBoard": [
+          {
+            "over": true,
+            "board": {
+              "turn": 0,
+              "finishCount": 1,
+              "seatCount": 2,
+              "order": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "points": [
+                100,
+                0,
+                0,
+                0
+              ],
+              "dieA": 0,
+              "dieB": 0,
+              "steps": [
+                57,
+                57,
+                57,
+                57,
+                -1,
+                -1,
+                -1,
+                -1,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "boardHash": "0x6ae4d1ba4cecae2e"
+          }
+        ]
+      },
+      "ludoPlayers": {
+        "pointsOfLoggedInUser": "100"
+      }
+    }
+  },
+  "balanceBefore": "54.4098",
+  "balanceAfter": "54.3836"
+}
