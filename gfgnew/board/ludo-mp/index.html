@@ -68,8 +68,8 @@
                 <span class="ld-muted">Players</span>
                 <button class="ld-btn mode-btn active" id="mp-mode-2p">2</button>
                 <button class="ld-btn mode-btn" id="mp-mode-4p">4</button>
-                <label class="ld-muted"><input type="checkbox" id="mp-solo"> Solo</label>
             </div>
+            <div class="ld-muted" id="mp-action-status" style="margin-top:8px;min-height:1.1em"></div>
         </div>
 
         <div class="ld-panel" id="mp-panel-lobby">
@@ -118,18 +118,6 @@
         </div>
 
         <div class="ld-panel">
-            <div class="ld-row" style="justify-content:space-between;align-items:center;gap:8px">
-                <b style="color:#fff;font-size:0.9rem" id="mp-turn">No match yet</b>
-                <span style="color:#fff;font-size:0.8rem;font-weight:800;background:#7838f8;border:1px solid rgba(155,89,182,0.7);border-radius:8px;padding:1px 8px;white-space:nowrap" id="mp-countdown"></span>
-            </div>
-            <div class="ld-row" style="margin-top:8px;gap:14px;align-items:center">
-                <span class="ld-muted" id="mp-cardpts">Points <b style="color:#f39c12">0</b></span>
-                <button class="ld-btn" id="mp-copy">Copy session link</button>
-                <span class="ld-muted" id="mp-ids"></span>
-            </div>
-        </div>
-
-        <div class="ld-panel">
             <div class="ld-board-host">
                 <div id="board-frame">
                     <canvas id="ludoCanvas" width="600" height="600"></canvas>
@@ -144,6 +132,18 @@
             </div>
             <div class="ld-status" id="mp-status" style="margin:10px 0 2px">Press Start for a solo test, or open a lobby and share the link.</div>
             <p class="ld-muted" style="margin:6px 0 0">Tap the centre of the board to roll on your turn, then tap a blinking token to move it.</p>
+        </div>
+
+        <div class="ld-panel">
+            <div class="ld-row" style="justify-content:space-between;align-items:center;gap:8px">
+                <b style="color:#fff;font-size:0.9rem" id="mp-turn">No match yet</b>
+                <span style="color:#fff;font-size:0.8rem;font-weight:800;background:#7838f8;border:1px solid rgba(155,89,182,0.7);border-radius:8px;padding:1px 8px;white-space:nowrap" id="mp-countdown"></span>
+            </div>
+            <div class="ld-row" style="margin-top:8px;gap:14px;align-items:center">
+                <span class="ld-muted" id="mp-cardpts">Points <b style="color:#f39c12">0</b></span>
+                <button class="ld-btn" id="mp-copy">Copy session link</button>
+                <span class="ld-muted" id="mp-ids"></span>
+            </div>
         </div>
 
         <div class="ld-panel">
@@ -241,9 +241,9 @@
     document.querySelectorAll('#mp-slots .setup-slot').forEach(function (slot) {
         var q = slot.getAttribute('data-q');
         var tg = slot.querySelector('.seat-toggle');
-        if (tg) tg.addEventListener('click', function () { var g = bridge(); if (g) g.tapSlot(q); });
+        if (tg) tg.addEventListener('click', function () { var g = bridge(); if (g) g.toggleQuad(q); });
         var you = slot.querySelector('.seat-you');
-        if (you) you.addEventListener('click', function () { var g = bridge(); if (g) g.tapSlot(q); });
+        if (you) you.addEventListener('click', function () { var g = bridge(); if (g) g.claimYou(q); });
     });
 
     $('mp-new').addEventListener('click', async function () {
