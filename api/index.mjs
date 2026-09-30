@@ -883,7 +883,7 @@ async function doMpDigest(body) {
 
 async function doMpSession(body) {
   const sess = mpResolveSession(body);
-  return { found: !!sess, sessionId: body.sessionId, status: sess ? sess.status : -1, connectTx: sess ? sess.connectTx : null, settleTx: sess ? sess.settleTx : null };
+  return { found: !!sess, sessionId: sess ? sess.sessionId : body.sessionId, status: sess ? sess.status : -1, connectTx: sess ? sess.connectTx : null, settleTx: sess ? sess.settleTx : null };
 }
 
 /// MPREJOIN: same untrusted-cache rule as the demo. Verify client-side.
@@ -923,8 +923,11 @@ async function doMpRejoin(body) {
       return { ok: false, reason: miss, error: miss };
     }
   }
+  // Canonical full id out: a short-code or link input must never echo back,
+  // or the taker's URL and every later call point at a nickname that only
+  // some paths resolve. The full session id is the only truth downstream.
   return {
-    ok: true, sessionId: sid, seatCount: sess.seatCount, status: sess.status, code: sess.code, quadOrder: sess.quadOrder,
+    ok: true, sessionId: sess.sessionId, seatCount: sess.seatCount, status: sess.status, code: sess.code, quadOrder: sess.quadOrder,
     players: sess.players, sessionKeys: sess.sessionKeys, seedCommit: sess.seedCommit,
     sponsorAddress: mpClients().account.address, startHash: sess.startHash,
     finalHash: sess.lastHash, settled: !!sess.settleTx, moves: sess.moves,

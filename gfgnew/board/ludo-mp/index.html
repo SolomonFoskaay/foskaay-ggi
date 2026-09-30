@@ -60,10 +60,9 @@
     </section>
 
     <div class="ld-body">
-        <div class="ld-panel">
+        <div class="ld-panel" id="mp-panel-controls">
             <div class="ld-row">
                 <button class="ld-btn primary" id="mp-new">Start multiplayer match</button>
-                <button class="ld-btn" id="mp-begin" disabled>Start match</button>
                 <button class="ld-btn" id="mp-join">Join with code</button>
                 <span class="ld-muted">Players</span>
                 <button class="ld-btn mode-btn active" id="mp-mode-2p">2</button>
@@ -137,10 +136,16 @@
         <div class="ld-panel">
             <div class="ld-row" style="justify-content:space-between;align-items:center;gap:8px">
                 <b style="color:#fff;font-size:0.9rem" id="mp-turn">No match yet</b>
-                <span style="color:#fff;font-size:0.8rem;font-weight:800;background:#7838f8;border:1px solid rgba(155,89,182,0.7);border-radius:8px;padding:1px 8px;white-space:nowrap" id="mp-countdown"></span>
+                <span style="color:#fff;font-size:0.8rem;font-weight:800;background:#7838f8;border:1px solid rgba(155,89,182,0.7);border-radius:8px;padding:1px 8px;white-space:nowrap" id="mp-countdown">00m:00s:000ms</span>
             </div>
             <div class="ld-row" style="margin-top:8px;gap:14px;align-items:center">
+                <span class="ld-muted">Dice1: <b style="color:#fff" id="mp-d1">-</b></span>
+                <span class="ld-muted">Dice2: <b style="color:#fff" id="mp-d2">-</b></span>
                 <span class="ld-muted" id="mp-cardpts">Points <b style="color:#f39c12">0</b></span>
+            </div>
+            <div class="ld-row" style="margin-top:8px;gap:10px;align-items:center;flex-wrap:wrap">
+                <button class="ld-btn" id="mp-begin" disabled>Start match</button>
+                <a class="ld-btn" id="mp-newmatch" href="/gfgnew/board/ludo-mp/" style="display:none;text-decoration:none">＋ New match</a>
                 <button class="ld-btn" id="mp-copy">Copy session link</button>
                 <span class="ld-muted" id="mp-ids"></span>
             </div>
@@ -194,6 +199,11 @@
 <script>
 (function () {
     'use strict';
+    // Any uncaught page error lands inline (never silent, never popup).
+    window.addEventListener('error', function (e) {
+        var el = document.getElementById('mp-status');
+        if (el && e && e.message) el.innerHTML = 'Error: <b>' + e.message.slice(0, 160) + '</b>';
+    });
     function $(id) { return document.getElementById(id); }
     function sh(h) { return h ? (h.slice(0, 10) + '...' + h.slice(-6)) : ''; }
 
@@ -302,6 +312,14 @@
     function resumeFromQuery() {
         var q = new URLSearchParams(location.search).get('game');
         if (!q) return;
+        // Session mode: this page shows ONLY this game (status, board, turn
+        // card). Creating happens on the clean page via New match below.
+        ['mp-panel-controls', 'mp-panel-lobby', 'mp-panel-join'].forEach(function (id) {
+            var el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+        });
+        var nm = document.getElementById('mp-newmatch');
+        if (nm) nm.style.display = '';
         var attempt = function () {
             var evm = (typeof window.getDynamicEvmWallet === 'function') ? window.getDynamicEvmWallet() : null;
             if (!evm || !window.GFG_MP) return;
