@@ -263,7 +263,7 @@ async function doDemoCreate(body) {
     args: [sessionId, ADDR.FoskaayGGIGames, startHash, seedCommit, players, sessionKeys, 2, accounts, games],
     value: fee, account,
   });
-  const sess = { sessionId, matchRef, seed, seedCommit, state: state0, startState: state0, startHash, lastHash: startHash, players, sessionKeys, creditPlayers, accounts, games, seatCount, userSeat, user, sessionKey, moves: [], connectTx: r.hash, settleTx: null, createdAt: Date.now() };
+  const sess = { sessionId, matchRef, seed, seedCommit, state: state0, startState: state0, startHash, lastHash: startHash, players, sessionKeys, creditPlayers, accounts, games, seatCount, userSeat, user, sessionKey, moves: [], finished: [], gameStartMoves: 0, connectTx: r.hash, settleTx: null, createdAt: Date.now() };
   sessions.set(sessionId, sess);
   const total = BigInt(r.costUsdc6) + (fee / 1_000_000_000_000n);
   return { sessionId, matchRef, userSeat, seatCount, user, sessionKey, connectTx: r.hash, costUsdc6: total.toString(), fee: fee.toString(), accounts, games, view: viewOf(sess) };
@@ -439,6 +439,75 @@ async function doDemoGame(body) {
 /// on-chain and credits FoskaayGGIPlayers in the same step; then the core settle
 /// verifies the players' signatures and closes the session. No replay: the final
 /// hash already commits to the board and the points, so this is O(1).
+/// DEMONEXT (batch test path): freeze the finished current game into the
+/// session's finished list and open a fresh board in the same session. Only
+/// a terminal board may be banked, so no live game is ever stranded.
+async function doDemoNext(body) {
+  const { pub } = clients();
+  const sess = needSession(body);
+  const d = decodeState(sess.state);
+  const need = d.seatCount === 2 ? 1 : 3;
+  if (d.finishCount < need) throw new Error('current game not finished');
+  const finalHash = await gameRead(pub, 'hashState', [sess.state]);
+  sess.finished.push({
+    turn: d.turn, seats: d.seatCount, step: sess.moves.length - sess.gameStartMoves,
+    board: sess.state, boardHash: finalHash, over: true,
+  });
+  const state0 = await gameRead(pub, 'getInitialState', [sess.seatCount, sess.userSeat]);
+  sess.state = state0;
+  sess.gameStartMoves = sess.moves.length;
+  return { gamesBanked: sess.finished.length, view: viewOf(sess) };
+}
+
+/// DEMOSETTLEALL (batch test path): commit every banked game plus the current
+/// one if terminal, credit summed totals once, then close the core session.
+/// Same two settle transactions no matter how many games the session holds.
+async function doDemoSettleAll(body) {
+  const { account, pub, wallet } = clients();
+  const sess = needSession(body);
+  const d = decodeState(sess.state);
+  const need = d.seatCount === 2 ? 1 : 3;
+  const list = sess.finished.slice();
+  if (d.finishCount >= need) {
+    const finalHash = await gameRead(pub, 'hashState', [sess.state]);
+    list.push({ turn: d.turn, seats: d.seatCount, step: sess.moves.length - sess.gameStartMoves, board: sess.state, boardHash: finalHash, over: true });
+  }
+  if (!list.length) throw new Error('no finished game to settle');
+  const lastHash = list[list.length - 1].boardHash;
+  const rGame = await send(wallet, pub, {
+    address: ADDR.FoskaayGGIGames, abi: gamesAbi, functionName: 'settle',
+    args: [sess.sessionId, list, sess.creditPlayers, GAME_TAG],
+    account,
+  });
+  const digest = await pub.readContract({ address: ADDR.FoskaayGGI, abi: coreAbi, functionName: 'midchainDigest', args: [sess.sessionId, lastHash] });
+  const sigs = [];
+  const signers = [];
+  for (let s = 0; s < sess.seatCount; s++) {
+    signers.push(sess.sessionKeys[s]);
+    if (s === sess.userSeat && body.sig) sigs.push(body.sig);
+    else sigs.push(await account.sign({ hash: digest }));
+  }
+  // The user-seat signature covers the final committed board hash, which the
+  // caller signs via demoDigest on the current (terminal) board, so the core
+  // binding holds exactly like the single-game path.
+  let coreTx = null;
+  let coreSettleError = null;
+  let coreCost = 0n;
+  try {
+    const rCore = await send(wallet, pub, {
+      address: ADDR.FoskaayGGI, abi: coreAbi, functionName: 'settle',
+      args: [sess.sessionId, lastHash, sess.seed, sess.players, sess.sessionKeys, sigs, signers],
+      account,
+    });
+    coreTx = rCore.hash;
+    coreCost = BigInt(rCore.costUsdc6);
+  } catch (e) {
+    coreSettleError = (e && (e.shortMessage || e.message)) || String(e);
+  }
+  sess.settleTx = rGame.hash;
+  return { tx: rGame.hash, coreTx, gamesCommitted: list.length, finalHash: lastHash, costUsdc6: (BigInt(rGame.costUsdc6) + coreCost).toString(), coreSettleError };
+}
+
 async function doDemoSettle(body) {
   const { account, pub, wallet } = clients();
   const sess = needSession(body);
@@ -1086,6 +1155,8 @@ export default async function handler(req, res) {
       case 'demoRejoin': out = await doDemoRejoin(body); break;
       case 'demoGame': out = await doDemoGame(body); break;
       case 'demoSettle': out = await doDemoSettle(body); break;
+      case 'demoNext': out = await doDemoNext(body); break;
+      case 'demoSettleAll': out = await doDemoSettleAll(body); break;
       case 'mpCreate': out = await doMpCreate(body); break;
       case 'mpSponsor': out = await doMpSponsor(body); break;
       case 'mpJoin': out = await doMpJoin(body); break;
