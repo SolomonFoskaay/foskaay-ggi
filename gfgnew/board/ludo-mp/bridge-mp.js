@@ -143,7 +143,9 @@
             if (color === 'blue') return { c: 14 - lane, r: 7 };
             return { c: 7, r: 14 - lane };
         }
-        var abs = (START_INDEX[color] + stepsWalked) % 52;
+        // Track position follows the SEAT number exactly like the contract
+        // ((seat*13 + steps) % 52); only lane/yard geometry follows quadrant.
+        var abs = (seat * 13 + stepsWalked) % 52;
         return COMMON_PATH[abs];
     }
 
@@ -167,7 +169,7 @@
                     tok.r = HOME_YARDS[color][i].r;
                 } else {
                     tok.stepsWalked = steps;
-                    tok.pathIndex = steps >= 57 ? -2 : ((SEAT_OF[color] * 13 + steps) % 52);
+                    tok.pathIndex = steps >= 57 ? -2 : ((s * 13 + steps) % 52);
                     var cr = tokenCR(s, steps);
                     tok.c = cr.c;
                     tok.r = cr.r;
@@ -200,6 +202,7 @@
 
     function beginTurn() {
         if (!VIEW) return;
+        setLiveUI(true);
         if (VIEW.matchOver) { setTimeout(settle, 0); return; }
         window.setupConfigurationLocked = true;
         window.isDiceRolled = false;
@@ -239,7 +242,9 @@
         var draw = function () {
             var ms = (lastTs + turnSecs) * 1000 - Date.now();
             if (ms < 0) ms = 0;
-            el.textContent = 'Turn clock: ' + (ms / 1000).toFixed(1) + 's (contract timer, same on every phone)';
+            var mm = Math.floor(ms / 60000), ss = Math.floor((ms % 60000) / 1000), mmm = Math.floor(ms % 1000);
+            var pad = function (v, n) { v = String(v); while (v.length < n) v = '0' + v; return v; };
+            el.textContent = pad(mm, 2) + 'm:' + pad(ss, 2) + 's:' + pad(mmm, 3) + 'ms';
             var key = (SID || '') + ':' + lastTs + ':' + (VIEW ? VIEW.turn : '?');
             if (ms <= 0 && firedKey !== key && SID && VIEW && !VIEW.matchOver) {
                 firedKey = key;
@@ -586,11 +591,21 @@
     // seat is filled the HOST device begins (one handover, sponsor pays) and
     // joins lock. Solo test holds every seat on this phone.
 
+    // Setup panels collapse once the match is live so the board, message,
+    // turn card and dice fit one phone screen. They return on fresh load.
+    function setLiveUI(live) {
+        ['mp-panel-lobby', 'mp-panel-join'].forEach(function (id) {
+            var el = document.getElementById(id);
+            if (el) el.style.display = live ? 'none' : '';
+        });
+    }
+
     function lobbyLink() { return SID ? ('/gfgnew/board/ludo-mp/?game=' + SID) : ''; }
 
     function pollLobby() {
         stopPoll();
         var show = function (p) {
+            if (p.quadOrder && p.quadOrder.length) QUADS = p.quadOrder;
             var el = document.getElementById('mp-lobby');
             if (el) el.innerHTML = 'Seats ' + p.players.length + '/' + SEATS + ': ' + p.players.map(function (w, i) {
                 return '<b>' + quad(i) + '</b> ' + short(w) + (w === MY_WALLET ? ' (you)' : '');
@@ -714,7 +729,7 @@
     // silently on this device; only its ADDRESS travels in the join call.
     // New wallet on an open lobby = auto-join a free seat. Seated wallet =
     // rejoin (lobby wait or live render). Nothing is ever copied by hand.
-    async function rejoin(sessionId, wallet) {
+    async function rejoin(sessionId, wallet, quad) {
         if (busy || !sessionId) return { ok: false, reason: 'no session' };
         busy = true;
         VIEW = null; pendingDice = [];
@@ -741,7 +756,7 @@
             }
             var seated = (j.players || []).some(function (w) { return String(w).toLowerCase() === String(evm).toLowerCase(); });
             if (!seated && j.status === 0) {
-                var jj = await relayJoin('mpJoin', { sessionId: sessionId, wallet: evm, sessionKey: window.ggiSessionKey.address });
+                var jj = await relayJoin('mpJoin', { sessionId: sessionId, wallet: evm, sessionKey: window.ggiSessionKey.address, quad: quad || '' });
                 if (!jj || jj.seat == null || jj.seat < 0) { setPrompt((jj && jj.error) || 'Join failed (seats may be full).'); return { ok: false, reason: (jj && jj.error) || 'join failed' }; }
                 if (ui().log) ui().log('Joined as ' + quad(jj.seat) + ' (seat ' + jj.seat + ')', 0);
                 j = await relay('mpRejoin', { sessionId: sessionId, wallet: evm });
@@ -768,6 +783,7 @@
             SID = j.sessionId;
             try { if (history && history.replaceState) history.replaceState(null, '', lobbyLink()); } catch (e) {}
             SEATS = j.seatCount;
+            if (j.quadOrder && j.quadOrder.length) QUADS = j.quadOrder;
             if (j.quadOrder && j.quadOrder.length) QUADS = j.quadOrder;
             PLAYERS = j.players || [];
             SKEYS = j.sessionKeys || [];

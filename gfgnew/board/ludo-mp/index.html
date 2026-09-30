@@ -73,9 +73,9 @@
             </div>
         </div>
 
-        <div class="ld-panel">
+        <div class="ld-panel" id="mp-panel-lobby">
             <b style="color:#fff;font-size:0.9rem">Start: open a lobby</b>
-            <p class="ld-muted" style="margin:6px 0 10px">Solo test plays you against the computer. Real match: press Start, share the session link, opponents tap it and join by themselves. The match begins automatically when every seat is filled.</p>
+            <p class="ld-muted" style="margin:6px 0 10px">Solo test plays you against the computer. Real match: press Start, share the session link, opponents tap it and join by themselves. Press Start match when every seat is filled.</p>
             <div class="ld-row" style="margin-bottom:10px">
                 <label class="ld-muted"><input type="checkbox" id="mp-solo"> Solo test (computer seats)</label>
             </div>
@@ -84,9 +84,15 @@
             <div class="ld-muted" style="margin-top:6px" id="mp-points">Your ludo-mp points: <b style="color:#f39c12">0</b> (sign in)</div>
         </div>
 
-        <div class="ld-panel">
+        <div class="ld-panel" id="mp-panel-join">
             <b style="color:#fff;font-size:0.9rem">Join: one tap</b>
-            <p class="ld-muted" style="margin:6px 0 10px">Sign in, paste the session link or code, press Join. Your seat key is created silently on this phone and only its address travels. Nothing to copy by hand.</p>
+            <p class="ld-muted" style="margin:6px 0 10px">Sign in, paste the session link or code, pick a free color, press Join. Your seat key is created silently on this phone and only its address travels. Nothing to copy by hand.</p>
+            <div class="ld-row" style="margin-bottom:8px" id="mp-quads">
+                <button class="ld-btn mp-quad" data-q="green" style="border-color:#2ecc71">Green</button>
+                <button class="ld-btn mp-quad" data-q="yellow" style="border-color:#f1c40f">Yellow</button>
+                <button class="ld-btn mp-quad" data-q="blue" style="border-color:#3498db">Blue</button>
+                <button class="ld-btn mp-quad" data-q="red" style="border-color:#e74c3c">Red</button>
+            </div>
             <div class="ld-row">
                 <input id="mp-code-in" class="ld-btn" style="flex:1;min-width:200px" placeholder="paste session link or code">
                 <button class="ld-btn primary" id="mp-join-go">Join</button>
@@ -94,19 +100,11 @@
         </div>
 
         <div class="ld-panel">
-            <div class="ld-row" style="justify-content:space-between;align-items:center">
-                <b style="color:#2ecc71;font-size:0.95rem" id="mp-countdown"></b>
-                <span class="ld-muted">settle is automatic at game end</span>
-            </div>
-        </div>
-
-        <div class="ld-panel">
             <div class="ld-row" style="justify-content:space-between;align-items:center;gap:8px">
                 <b style="color:#fff;font-size:0.9rem" id="mp-turn">No match yet</b>
-                <span style="color:#2ecc71;font-size:0.9rem;font-weight:800" id="mp-countdown"></span>
+                <span style="color:#fff;font-size:0.8rem;font-weight:800;background:#7838f8;border:1px solid rgba(155,89,182,0.7);border-radius:8px;padding:1px 8px;white-space:nowrap" id="mp-countdown"></span>
             </div>
             <div class="ld-row" style="margin-top:8px;gap:14px;align-items:center">
-                <span class="ld-muted">Dice <b style="color:#fff" id="mp-d1">-</b> <b style="color:#fff" id="mp-d2">-</b></span>
                 <span class="ld-muted" id="mp-cardpts">Points <b style="color:#f39c12">0</b></span>
                 <button class="ld-btn" id="mp-copy">Copy session link</button>
                 <span class="ld-muted" id="mp-ids"></span>
@@ -209,10 +207,23 @@
         if (!evm) return;
         fetch('/api/foskaay-ggi-sponsor', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'mpPoints', player: evm }) })
             .then(function (r) { return r.json(); })
-            .then(function (j) { if (j && j.points != null) $('mp-points').innerHTML = 'Your ludo-mp points: <b style="color:#f39c12">' + j.points + '</b>'; })
+            .then(function (j) {
+                if (j && j.points != null) {
+                    $('mp-points').innerHTML = 'Your ludo-mp points: <b style="color:#f39c12">' + j.points + '</b>';
+                    var cp = $('mp-cardpts');
+                    if (cp) cp.innerHTML = 'Points <b style="color:#f39c12">' + j.points + '</b>';
+                }
+            })
             .catch(function () {});
     }
     window.updatePoints = updatePoints;
+    window.mpJoinQuad = '';
+    document.querySelectorAll('.mp-quad').forEach(function (b) {
+        b.addEventListener('click', function () {
+            window.mpJoinQuad = b.getAttribute('data-q');
+            document.querySelectorAll('.mp-quad').forEach(function (x) { x.style.opacity = (x === b) ? '1' : '0.45'; });
+        });
+    });
 
     $('mp-new').addEventListener('click', async function () {
         if (!window.GFG_MP) { $('mp-status').innerHTML = 'Game engine still loading, tap again in a second.'; return; }
@@ -254,7 +265,7 @@
         if (!window.GFG_MP) { $('mp-status').innerHTML = 'Game engine still loading, tap again in a second.'; return; }
         busyBtn('mp-join-go', 'Joining...');
         try {
-            var r = await window.GFG_MP.rejoin(code, evm);
+            var r = await window.GFG_MP.rejoin(code, evm, window.mpJoinQuad || '');
             if (r && !r.ok) $('mp-status').innerHTML = 'Join: <b>' + ((r && r.reason) || 'failed, tap again') + '</b>';
         } finally {
             busyBtn('mp-join-go', false);
