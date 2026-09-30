@@ -8,6 +8,7 @@ import {OwnableUpgradeable} from "@openzeppelin/contracts/access/OwnableUpgradea
 /// @notice The player account the game credits (FoskaayGGIPlayers).
 interface IFoskaayGGIPlayers {
     function credit(address player, bytes32 gameTag, uint64 amount) external;
+    function addRecord(address player, bytes32 gameTag, uint64 played, uint64 wins, uint64 best) external;
 }
 
 /// @title FoskaayGGIGames — the first Foskaay GGI game (Ludo), one contract for
@@ -260,6 +261,7 @@ contract FoskaayGGIGames is Initializable, UUPSUpgradeable, OwnableUpgradeable {
         if (seatPlayers.length == 0 || seatPlayers.length > SEATS) revert BadSeat();
 
         uint64[4] memory totals;
+        uint64[4] memory winCounts;
         for (uint256 i = 0; i < n; i++) {
             Game calldata g = list[i];
             if (g.board.length != STATE_LEN) revert BadState();
@@ -279,6 +281,7 @@ contract FoskaayGGIGames is Initializable, UUPSUpgradeable, OwnableUpgradeable {
             for (uint8 s = 0; s < g.seats; s++) {
                 uint64 pts = _seatPoints(g.board, s);
                 totals[s] += pts;
+                if (uint8(g.board[1]) > 0 && uint8(g.board[24]) == s) winCounts[s] += 1; // crowned this game
                 if (pts > 0 && seatPlayers[s] != address(0)) {
                     playerGameIndices[sessionId][seatPlayers[s]].push(uint32(i));
                 }
@@ -289,6 +292,12 @@ contract FoskaayGGIGames is Initializable, UUPSUpgradeable, OwnableUpgradeable {
             if (seatPlayers[s] != address(0) && totals[s] > 0) {
                 IFoskaayGGIPlayers(players).credit(seatPlayers[s], gameTag, totals[s]);
                 credited += totals[s];
+            }
+        }
+        // Crown record in the SAME transaction: no new tx for extra writes.
+        for (uint8 s = 0; s < seatPlayers.length; s++) {
+            if (seatPlayers[s] != address(0)) {
+                IFoskaayGGIPlayers(players).addRecord(seatPlayers[s], gameTag, uint64(n), winCounts[s], totals[s]);
             }
         }
         emit Settled(sessionId, n, credited);
