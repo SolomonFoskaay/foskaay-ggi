@@ -56,13 +56,18 @@
                 <button class="ld-btn primary" id="mp-new">Start multiplayer match</button>
                 <button class="ld-btn" id="mp-begin" disabled>Start match</button>
                 <button class="ld-btn" id="mp-join">Join with code</button>
-                <button class="ld-btn" id="mp-pass">Pass</button>
-                <button class="ld-btn" id="mp-timeout">Timeout seat</button>
-                <button class="ld-btn" id="mp-settle">Settle</button>
                 <label class="ld-muted" style="margin-left:auto">Players
                     <select id="mp-seats" class="ld-btn" style="padding:8px 10px">
                         <option value="2" selected>2</option>
                         <option value="4">4</option>
+                    </select>
+                </label>
+                <label class="ld-muted">Color
+                    <select id="mp-color" class="ld-btn" style="padding:8px 10px">
+                        <option value="0" selected>Green</option>
+                        <option value="1">Yellow</option>
+                        <option value="2">Blue</option>
+                        <option value="3">Red</option>
                     </select>
                 </label>
             </div>
@@ -100,7 +105,9 @@
                 <b style="color:#fff;font-size:0.9rem" id="mp-turn">No match yet</b>
                 <span style="color:#2ecc71;font-size:0.9rem;font-weight:800" id="mp-countdown"></span>
             </div>
-            <div class="ld-row" style="margin-top:8px">
+            <div class="ld-row" style="margin-top:8px;gap:14px;align-items:center">
+                <span class="ld-muted">Dice <b style="color:#fff" id="mp-d1">-</b> <b style="color:#fff" id="mp-d2">-</b></span>
+                <span class="ld-muted" id="mp-cardpts">Points <b style="color:#f39c12">0</b></span>
                 <button class="ld-btn" id="mp-copy">Copy session link</button>
                 <span class="ld-muted" id="mp-ids"></span>
             </div>
@@ -222,9 +229,6 @@
         b.textContent = label;
         b.disabled = true;
     }
-    $('mp-pass').addEventListener('click', function () { if (window.GFG_MP) window.GFG_MP.pass(); });
-    $('mp-timeout').addEventListener('click', function () { if (window.GFG_MP) window.GFG_MP.timeout(); });
-    $('mp-settle').addEventListener('click', function () { if (window.GFG_MP) window.GFG_MP.settle(); });
     $('mp-join').addEventListener('click', function () {
         var el = $('mp-code-in');
         if (el) el.focus();

@@ -82,6 +82,26 @@ contract GFGLudoMpTest {
         require(players.game() == address(games), "wiring kept");
     }
 
+    function testTimeoutKeepsBonusTurn() public view {
+        // Turn 0 with one pending double-six bonus: timeout must act as a
+        // pass (bonus consumed, same seat keeps the turn), never a skip.
+        bytes memory s = games.getInitialState(2, 0);
+        // Simulate: turn=0, extraRoll=1. State layout: [0]=turn,[7]=extraRoll.
+        // getInitialState gives turn 0 already; poke extraRoll via a copy.
+        bytes memory t = new bytes(36);
+        for (uint256 i = 0; i < 36; i++) t[i] = s[i];
+        t[7] = bytes1(uint8(1));
+        bytes memory o = games.applyMove(t, 3, 0, 0, 0, new bytes32[](0));
+        require(uint8(o[0]) == 0, "bonus turn kept");
+        require(uint8(o[7]) == 0, "bonus consumed");
+    }
+
+    function testTimeoutAdvancesWithoutBonus() public view {
+        bytes memory s = games.getInitialState(2, 0);
+        bytes memory o = games.applyMove(s, 3, 0, 0, 0, new bytes32[](0));
+        require(uint8(o[0]) == 1, "turn advances");
+    }
+
     function testOnlyOwnerGuards() public {
         address stranger = address(0xBEEF);
         vm.prank(stranger);
