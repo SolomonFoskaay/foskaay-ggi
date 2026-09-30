@@ -715,12 +715,15 @@ async function doMpCreate(body) {
   const seed = keccak256(toBytes('ggi-ludo-mp-' + sessionId));
   const seedCommit = keccak256(seed);
   const gameAddr = String(body.game || MP_ADDR.GFGGames);
+  const PAL = ['green', 'yellow', 'blue', 'red'];
+  const hostQuad = Math.min(3, Math.max(0, Number(body.hostQuad || 0)));
+  const quadOrder = [PAL[hostQuad]].concat(PAL.filter((_, i) => i !== hostQuad)).slice(0, seatCount);
   const state0 = await mpGameRead(pub, 'getInitialState', [seatCount, 0], gameAddr);
   const startHash = await mpGameRead(pub, 'hashState', [state0], gameAddr);
   const code = BigInt(sessionId).toString(36).toUpperCase().slice(-6);
-  const sess = { sessionId, code, status: 0, seed, seedCommit, state: state0, startHash, lastHash: startHash, players, sessionKeys, seatCount, gameAddr, moves: [], tss: [], sigs: {}, handoverTs: 0, connectTx: null, settleTx: null, createdAt: Date.now() };
+  const sess = { sessionId, code, status: 0, seed, seedCommit, state: state0, startHash, lastHash: startHash, players, sessionKeys, seatCount, quadOrder, gameAddr, moves: [], tss: [], sigs: {}, handoverTs: 0, connectTx: null, settleTx: null, createdAt: Date.now() };
   mpSessions.set(sessionId, sess);
-  return { sessionId, code, seatCount, players, status: 0, view: mpViewOf(sess), iid: MP_IID };
+  return { sessionId, code, seatCount, players, status: 0, quadOrder, view: mpViewOf(sess), iid: MP_IID };
 }
 
 /// MPJOIN: one tap. A signed-in wallet claims the first free seat with its own
@@ -739,20 +742,20 @@ async function doMpJoin(body) {
   if (sess.players.length >= sess.seatCount) throw new Error('all seats are taken');
   sess.players.push(wallet);
   sess.sessionKeys.push(key);
-  return { sessionId: sess.sessionId, seat: sess.players.length - 1, players: sess.players, status: sess.status, view: mpViewOf(sess), iid: MP_IID };
+  return { sessionId: sess.sessionId, seat: sess.players.length - 1, players: sess.players, status: sess.status, quadOrder: sess.quadOrder, view: mpViewOf(sess), iid: MP_IID };
 }
 
 /// MPLOBBY: free read of who is seated (for the host + joiners to watch fill).
 async function doMpLobby(body) {
   const sess = mpResolveSession(body);
-  return { sessionId: sess.sessionId, code: sess.code, status: sess.status, players: sess.players, seatCount: sess.seatCount, connectTx: sess.connectTx, settleTx: sess.settleTx, iid: MP_IID };
+  return { sessionId: sess.sessionId, code: sess.code, status: sess.status, players: sess.players, seatCount: sess.seatCount, quadOrder: sess.quadOrder, connectTx: sess.connectTx, settleTx: sess.settleTx, iid: MP_IID };
 }
 
 /// MPBEGIN: host (players[0]) starts the match when every seat is filled. The
 /// ONE handover commits the final set + seed; sponsor pays. Joins lock after.
 async function doMpBegin(body) {
   const { account, pub, wallet } = mpClients();
-  const sess = mpNeedSession(body);
+  const sess = mpResolveSession(body);
   if (sess.status !== 0) throw new Error('match already started');
   const caller = String(body.wallet || '').toLowerCase();
   if (!caller || caller !== String(sess.players[0] || '').toLowerCase()) throw new Error('only the host can begin');
@@ -786,7 +789,7 @@ async function doMpBegin(body) {
 /// MPROLL: free. Dice from the core randomN, applied via the mp game contract.
 async function doMpRoll(body) {
   const { pub } = mpClients();
-  const sess = mpNeedSession(body);
+  const sess = mpResolveSession(body);
   if (sess.status !== 1) throw new Error('match not live yet');
   const d = decodeState(sess.state);
   mpSeatGate(sess, body, d.turn);
@@ -798,7 +801,7 @@ async function doMpRoll(body) {
 
 /// MPMOVE: free.
 async function doMpMove(body) {
-  const sess = mpNeedSession(body);
+  const sess = mpResolveSession(body);
   if (sess.status !== 1) throw new Error('match not live yet');
   const seat = Number(body.seat);
   const d = decodeState(sess.state);
@@ -813,19 +816,23 @@ async function doMpMove(body) {
 /// only when the contract's own isTurnExpired says the deadline truly passed.
 async function doMpPass(body) {
   const { pub } = mpClients();
-  const sess = mpNeedSession(body);
+  const sess = mpResolveSession(body);
   if (sess.status !== 1) throw new Error('match not live yet');
   const kind = body.timeout ? 3 : 2;
   const d = decodeState(sess.state);
   if (body.timeout) {
     const lastTs = sess.tss.length ? sess.tss[sess.tss.length - 1] : (sess.handoverTs || 0);
     const nowTs = await mpNow(pub);
+    // Duplicate-fire guard: two phones timing out the same dead turn produce
+    // one advance. A later genuine stall has a longer log, so it still passes.
+    if (sess.lastTimeoutAt != null && sess.lastTimeoutAt === sess.moves.length) throw new Error('turn already advanced, refresh the board');
     const expired = await pub.readContract({ address: MP_ADDR.GFGGames, abi: mpGamesAbi, functionName: 'isTurnExpired', args: [BigInt(lastTs), BigInt(nowTs)] });
     if (!expired) throw new Error('turn still live');
   } else {
     mpSeatGate(sess, body, d.turn);
   }
   const view = await mpStep(sess, kind, d.turn, 0, 0, []);
+  if (body.timeout) sess.lastTimeoutAt = sess.moves.length;
   return { view, move: sess.moves[sess.moves.length - 1], moves: sess.moves.length, costUsdc6: '0', gasless: true };
 }
 
@@ -902,7 +909,7 @@ async function doMpRejoin(body) {
     }
   }
   return {
-    ok: true, sessionId: sid, seatCount: sess.seatCount, status: sess.status, code: sess.code,
+    ok: true, sessionId: sid, seatCount: sess.seatCount, status: sess.status, code: sess.code, quadOrder: sess.quadOrder,
     players: sess.players, sessionKeys: sess.sessionKeys, seedCommit: sess.seedCommit,
     sponsorAddress: mpClients().account.address, startHash: sess.startHash,
     finalHash: sess.lastHash, settled: !!sess.settleTx, moves: sess.moves,
@@ -987,10 +994,11 @@ async function doMpResync(body) {
   for (const m of incoming) {
     if (m.board) state = m.board;
   }
+  const quadKept = (have && have.quadOrder) || (Array.isArray(body.quadOrder) && body.quadOrder.length ? body.quadOrder : ['green', 'yellow', 'blue', 'red'].slice(0, seatCount));
   const sess = {
     sessionId: sid, code: have ? have.code : BigInt(sid).toString(36).toUpperCase().slice(-6),
     status, seed, seedCommit, state, startHash, lastHash: incoming.length ? prev : startHash,
-    players, sessionKeys, seatCount, moves: incoming, tss, sigs: (have && have.sigs) || {},
+    players, sessionKeys, seatCount, quadOrder: quadKept, moves: incoming, tss, sigs: (have && have.sigs) || {},
     handoverTs, connectTx: connectTx || (have && have.connectTx) || null,
     settleTx: (have && have.settleTx) || null, createdAt: (have && have.createdAt) || Date.now(),
   };
@@ -1004,7 +1012,7 @@ async function doMpResync(body) {
 /// seat's committed session key before anything is sent. The relay signs
 /// nothing here.
 async function doMpSettle(body) {
-  const sess = mpNeedSession(body);
+  const sess = mpResolveSession(body);
   const pairs = Array.from(body.sigs || []);
   if (!pairs.length) throw new Error('at least the winner seat must sign');
   return mpFireSettle(sess, pairs);
@@ -1090,7 +1098,7 @@ async function mpFireSettle(sess, pairs) {
 /// loser does nothing and the game never waits on them.
 async function doMpSign(body) {
   const { account } = mpClients();
-  const sess = mpNeedSession(body);
+  const sess = mpResolveSession(body);
   if (sess.status === 2) return { stored: true, settled: true, tx: sess.settleTx };
   const seat = Number(body.seat);
   if (!(seat >= 0 && seat < sess.seatCount)) throw new Error('unknown seat');

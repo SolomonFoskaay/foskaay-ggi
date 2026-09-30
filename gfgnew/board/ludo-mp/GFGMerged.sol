@@ -274,11 +274,18 @@ contract GFGMerged is Initializable, UUPSUpgradeable, OwnableUpgradeable {
             return out;
         }
 
-        if (kind == 3) { // timeout: advance, no bonus
+        if (kind == 3) { // timeout: FORCED PASS, never a skip. Same turn rules
+            // as kind 2: a pending double-six bonus stays on the same seat
+            // (consumed by one), otherwise the turn advances. The timer only
+            // triggers the normal turn mechanism; it never overrides the rules.
             out[4] = bytes1(uint8(0));
             out[5] = bytes1(uint8(0));
-            out[7] = bytes1(uint8(0));
-            out[0] = bytes1(_nextSeat(out, seat));
+            uint8 e3 = uint8(out[7]);
+            if (e3 > 0) {
+                out[7] = bytes1(e3 - 1); // bonus roll: stay on the same seat
+            } else {
+                out[0] = bytes1(_nextSeat(out, seat));
+            }
             return out;
         }
 

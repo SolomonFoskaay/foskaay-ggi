@@ -18,6 +18,11 @@
 
     var RELAY = '/api/foskaay-ggi-sponsor';
     var COLOR_OF = ['green', 'yellow', 'blue', 'red'];
+    // Quadrant map: seat index -> displayed quadrant color. The contract only
+    // knows seat numbers; color is pure display, shared via the lobby so every
+    // phone paints the same seat in the same quadrant.
+    var QUADS = ['green', 'yellow', 'blue', 'red'];
+    function quad(s) { return QUADS[s] || COLOR_OF[s] || 'green'; }
     var SEAT_OF = { green: 0, yellow: 1, blue: 2, red: 3 };
 
     var SID = null, MY_WALLET = null, MY_KEY = null, MY_SEAT = -1, SEATS = 2;
@@ -41,12 +46,14 @@
     window.isGamePaused = false;
     window.isChainDown = false;
     window.gfgRemoteTurn = function () { return VIEW ? VIEW.turn !== MY_SEAT : false; };
-    window.getActiveSeats = function () { return COLOR_OF.slice(0, SEATS); };
+    window.getActiveSeats = function () { return QUADS.slice(0, SEATS); };
     window.getPlayerRank = function (color) {
         if (!VIEW || !VIEW.order) return 0;
+        var seat = QUADS.indexOf(color);
+        if (seat < 0) seat = SEAT_OF[color] || 0;
         var fc = VIEW.finishCount || 0;
         for (var i = 0; i < fc; i++) {
-            if (VIEW.order[i] === SEAT_OF[color]) return i + 1;
+            if (VIEW.order[i] === seat) return i + 1;
         }
         return 0;
     };
@@ -68,6 +75,24 @@
                 return j;
             });
         });
+    }
+
+
+    // Live-action retry: safe ONLY for 'unknown session' (thrown before any
+    // state change), covering serverless copies that never saw the lobby.
+    // Never retries dice/move rejections: those already executed or ruled.
+    function relayLive(action, extra, tries) {
+        tries = (typeof tries === 'number') ? tries : 6;
+        var attempt = function (i) {
+            return relay(action, extra).catch(function (e) {
+                var msg = (e && e.message) || String(e);
+                if (i < tries && /unknown session|lobby not found/i.test(msg)) {
+                    return new Promise(function (res) { setTimeout(res, 800); }).then(function () { return attempt(i + 1); });
+                }
+                throw e;
+            });
+        };
+        return attempt(0);
     }
 
     // Join retries: serverless relays each hold their own lobby memory, so a
@@ -110,7 +135,7 @@
     // ---- board painting (contract bytes in, pixels out) ----
 
     function tokenCR(seat, stepsWalked) {
-        var color = COLOR_OF[seat];
+        var color = quad(seat);
         if (stepsWalked >= 52) {
             var lane = stepsWalked - 51;
             if (color === 'green') return { c: lane, r: 7 };
@@ -125,9 +150,13 @@
     function applyBoard(view) {
         VIEW = view;
         SEATS = view.seatCount;
+        var dd1 = document.getElementById('mp-d1');
+        var dd2 = document.getElementById('mp-d2');
+        if (dd1) dd1.textContent = (view.dieA > 0) ? view.dieA : '-';
+        if (dd2) dd2.textContent = (view.dieB > 0) ? view.dieB : '-';
         var t = window.tokens;
         for (var s = 0; s < 4; s++) {
-            var color = COLOR_OF[s];
+            var color = quad(s);
             for (var i = 0; i < 4; i++) {
                 var steps = view.steps[s * 4 + i];
                 var tok = t[color][i];
@@ -145,10 +174,10 @@
                 }
             }
         }
-        window.currentTurn = COLOR_OF[view.turn] || 'green';
+        window.currentTurn = quad(view.turn);
         window.matchOver = !!view.matchOver;
         for (var p = 0; p < 4; p++) {
-            var c = COLOR_OF[p];
+            var c = quad(p);
             window.playerProfiles[c] = { mode: 'human', isUser: p === MY_SEAT };
         }
         if (typeof drawLudoLayout === 'function') drawLudoLayout();
@@ -178,31 +207,47 @@
         if (typeof drawLudoLayout === 'function') drawLudoLayout();
         if (typeof window.ensureBoardAnimationLoop === 'function') window.ensureBoardAnimationLoop();
         stopPoll();
-        if (SID) relay('mpBoard', { sessionId: SID }).then(function (j) { tickCountdown(j.lastTs, j.turnSecs); }).catch(function () {});
+        try {
+            for (var bs = 0; bs < SEATS; bs++) {
+                var bc = quad(bs);
+                if (window.playerProfiles[bc]) {
+                    window.playerProfiles[bc].mode = 'human';
+                    window.playerProfiles[bc].isUser = (bs === MY_SEAT);
+                }
+            }
+        } catch (e) {}
+        if (SID) relayLive('mpBoard', { sessionId: SID }).then(function (j) { tickCountdown(j.lastTs, j.turnSecs); }).catch(function () {});
         var turnEl = document.getElementById('mp-turn');
-        if (turnEl) turnEl.textContent = (VIEW.turn === MY_SEAT ? 'Your turn' : COLOR_OF[VIEW.turn] + ' to play') + ' (' + SEATS + 'P)';
-        if (VIEW.turn === MY_SEAT) setPrompt('Your turn (' + COLOR_OF[MY_SEAT] + '): tap the centre of the board to roll.');
-        else if (SOLO) { setPrompt(COLOR_OF[VIEW.turn] + ' (computer) is playing...'); setTimeout(function () { houseTakeTurn(VIEW.turn); }, 900); }
-        else { setPrompt(COLOR_OF[VIEW.turn] + ' is playing... you watch.'); startPoll(); }
+        if (turnEl) turnEl.textContent = (VIEW.turn === MY_SEAT ? 'Your turn' : quad(VIEW.turn) + ' to play') + ' (' + SEATS + 'P)';
+        if (VIEW.turn === MY_SEAT) setPrompt('Your turn (' + quad(MY_SEAT) + '): tap the centre of the board to roll.');
+        else if (SOLO) { setPrompt(quad(VIEW.turn) + ' (computer) is playing...'); setTimeout(function () { houseTakeTurn(VIEW.turn); }, 900); }
+        else { setPrompt(quad(VIEW.turn) + ' is playing... you watch.'); startPoll(); }
     }
 
     var countTimer = null;
     var ROOMANCHOR = null; // {startHash, sponsorAddress} for log verification
     var pollN = 0;
+    var firedKey = '';
     // One shared countdown, from the CONTRACT timer (same numbers on every
-    // phone; the page only displays). Stops at zero; the timeout advance is a
-    // separate tap so a slow network never auto-skips a live player.
+    // phone; the page only displays). At zero the turn auto-fires a timeout
+    // advance once per turn: the relay dedupes doubles and the contract only
+    // advances a truly expired turn, keeping bonus turns intact.
     function tickCountdown(lastTs, turnSecs) {
         if (countTimer) { clearInterval(countTimer); countTimer = null; }
         var el = document.getElementById('mp-countdown');
         if (!el || !lastTs || !turnSecs) { if (el) el.textContent = ''; return; }
         var draw = function () {
-            var left = (lastTs + turnSecs) - Math.floor(Date.now() / 1000);
-            if (left < 0) left = 0;
-            el.textContent = 'Turn clock: ' + left + 's (contract timer, same on every phone)';
+            var ms = (lastTs + turnSecs) * 1000 - Date.now();
+            if (ms < 0) ms = 0;
+            el.textContent = 'Turn clock: ' + (ms / 1000).toFixed(1) + 's (contract timer, same on every phone)';
+            var key = (SID || '') + ':' + lastTs + ':' + (VIEW ? VIEW.turn : '?');
+            if (ms <= 0 && firedKey !== key && SID && VIEW && !VIEW.matchOver) {
+                firedKey = key;
+                timeoutSeat();
+            }
         };
         draw();
-        countTimer = setInterval(draw, 1000);
+        countTimer = setInterval(draw, 100);
     }
 
     // Full-log adopt: every few polls the whole verified log is cached, so
@@ -226,7 +271,7 @@
         stopPoll();
         pollTimer = setInterval(function () {
             if (busy || !SID || !VIEW || VIEW.turn === MY_SEAT || VIEW.matchOver) return;
-            relay('mpBoard', { sessionId: SID }).then(function (j) {
+            relayLive('mpBoard', { sessionId: SID }).then(function (j) {
                 if (j.settled) {
                     stopPoll();
                     if (countTimer) { clearInterval(countTimer); countTimer = null; }
@@ -251,7 +296,7 @@
         if (busy || !VIEW || VIEW.turn !== MY_SEAT) return;
         busy = true;
         try {
-            var r = await relay('mpRoll', { sessionId: SID, wallet: MY_WALLET });
+            var r = await relayLive('mpRoll', { sessionId: SID, wallet: MY_WALLET });
             applyBoard(r.view);
             cacheAppend(r.move);
             pendingDice = [r.dice1, r.dice2];
@@ -291,7 +336,7 @@
         var die = pendingDice[pick];
         busy = true;
         try {
-            var r = await relay('mpMove', { sessionId: SID, wallet: MY_WALLET, seat: MY_SEAT, tokenIndex: tokenIndex, value: die });
+            var r = await relayLive('mpMove', { sessionId: SID, wallet: MY_WALLET, seat: MY_SEAT, tokenIndex: tokenIndex, value: die });
             pendingDice.splice(pick, 1);
             applyBoard(r.view);
             cacheAppend(r.move);
@@ -358,29 +403,29 @@
         busy = true;
         try {
             var wallet = PLAYERS[seat];
-            var r = await relay('mpRoll', { sessionId: SID, wallet: wallet });
+            var r = await relayLive('mpRoll', { sessionId: SID, wallet: wallet });
             applyBoard(r.view);
             cacheAppend(r.move);
             var dice = [r.dice1, r.dice2];
-            if (ui().log) ui().log(COLOR_OF[seat] + ' rolled <b>' + r.dice1 + '</b> and <b>' + r.dice2 + '</b> (free)', 0);
+            if (ui().log) ui().log(quad(seat) + ' rolled <b>' + r.dice1 + '</b> and <b>' + r.dice2 + '</b> (free)', 0);
             var guard = 0;
             while (dice.length && guard++ < 4) {
                 var pick = housePickToken(seat, dice);
                 if (!pick) break;
-                var mv = await relay('mpMove', { sessionId: SID, wallet: wallet, seat: seat, tokenIndex: pick.token, value: pick.die });
+                var mv = await relayLive('mpMove', { sessionId: SID, wallet: wallet, seat: seat, tokenIndex: pick.token, value: pick.die });
                 applyBoard(mv.view);
                 cacheAppend(mv.move);
                 var di = dice.indexOf(pick.die);
                 if (di >= 0) dice.splice(di, 1);
             }
-            var p = await relay('mpPass', { sessionId: SID, wallet: wallet });
+            var p = await relayLive('mpPass', { sessionId: SID, wallet: wallet });
             applyBoard(p.view);
             cacheAppend(p.move);
             beginTurn();
         } catch (e) {
             setPrompt('Computer move failed: ' + e.message);
             try {
-                var j = await relay('mpBoard', { sessionId: SID });
+                var j = await relayLive('mpBoard', { sessionId: SID });
                 applyBoard(j.view);
                 beginTurn();
             } catch (e2) {}
@@ -393,7 +438,7 @@
         if (busy || !VIEW) return;
         busy = true;
         try {
-            var r = await relay('mpPass', { sessionId: SID, wallet: MY_WALLET });
+            var r = await relayLive('mpPass', { sessionId: SID, wallet: MY_WALLET });
             pendingDice = [];
             window.currentTurnMoves = [];
             window.isDiceRolled = false;
@@ -403,7 +448,7 @@
         } catch (e) {
             // Not my seat (opponent already moved on): just refresh.
             try {
-                var j = await relay('mpBoard', { sessionId: SID });
+                var j = await relayLive('mpBoard', { sessionId: SID });
                 applyBoard(j.view);
                 beginTurn();
             } catch (e2) { setPrompt('Pass failed: ' + e.message); }
@@ -416,14 +461,14 @@
         if (busy || !VIEW) return;
         busy = true;
         try {
-            var r = await relay('mpPass', { sessionId: SID, wallet: MY_WALLET, timeout: true });
+            var r = await relayLive('mpPass', { sessionId: SID, wallet: MY_WALLET, timeout: true });
             applyBoard(r.view);
             cacheAppend(r.move);
             beginTurn();
         } catch (e) {
             // Anyone may advance a stalled seat; if the gate refuses, refresh.
             try {
-                var j = await relay('mpBoard', { sessionId: SID });
+                var j = await relayLive('mpBoard', { sessionId: SID });
                 applyBoard(j.view);
                 beginTurn();
             } catch (e2) { setPrompt('Timeout failed: ' + e.message); }
@@ -441,7 +486,7 @@
         busy = true;
         stopPoll();
         try {
-            var dg = await relay('mpDigest', { sessionId: SID });
+            var dg = await relayLive('mpDigest', { sessionId: SID });
             var s = sdk();
             var mySig = null;
             if (MY_KEY && MY_KEY.privateKey && s && typeof s.signMove === 'function') {
@@ -450,7 +495,7 @@
                 mySig = await window.ggiSignDigest(dg.digest);
             }
             if (mySig) {
-                var r = await relay('mpSign', { sessionId: SID, wallet: MY_WALLET, seat: MY_SEAT, sig: mySig });
+                var r = await relayLive('mpSign', { sessionId: SID, wallet: MY_WALLET, seat: MY_SEAT, sig: mySig });
                 if (r && r.settled) return showSealed(r);
             }
             setPrompt('Signature posted. Sealing automatically...');
@@ -465,7 +510,7 @@
         if (ui().log) ui().log('GREEN: multiplayer match committed on-chain, every earning seat credited', r.costUsdc6);
         if (ui().tx) ui().tx(r.tx || r.coreTx, 'settled');
         var w = VIEW && VIEW.order ? VIEW.order[0] : null;
-        setPrompt('Sealed on-chain. ' + (w === MY_SEAT ? 'You win the crown.' : COLOR_OF[w] + ' wins the crown.'));
+        setPrompt('Sealed on-chain. ' + (w === MY_SEAT ? 'You win the crown.' : quad(w) + ' wins the crown.'));
         if (ui().onSettled) ui().onSettled(w === MY_SEAT, r.tx);
         updatePoints();
         busy = false;
@@ -475,10 +520,10 @@
         var tries = 0;
         var loop = setInterval(function () {
             tries++;
-            relay('mpSession', { sessionId: SID }).then(function (p) {
+            relayLive('mpSession', { sessionId: SID }).then(function (p) {
                 if (p && p.status === 2) {
                     clearInterval(loop);
-                    relay('mpGame', { sessionId: SID }).then(function () {}).catch(function () {});
+                    relayLive('mpGame', { sessionId: SID }).then(function () {}).catch(function () {});
                     showSealed({ tx: p.settleTx, costUsdc6: 0 });
                 } else if (tries > 40) {
                     clearInterval(loop);
@@ -548,7 +593,7 @@
         var show = function (p) {
             var el = document.getElementById('mp-lobby');
             if (el) el.innerHTML = 'Seats ' + p.players.length + '/' + SEATS + ': ' + p.players.map(function (w, i) {
-                return '<b>' + COLOR_OF[i] + '</b> ' + short(w) + (w === MY_WALLET ? ' (you)' : '');
+                return '<b>' + quad(i) + '</b> ' + short(w) + (w === MY_WALLET ? ' (you)' : '');
             }).join(' &nbsp; ') + (p.iid ? ' <span class="ld-muted">relay ' + p.iid + '</span>' : '');
             var bb = document.getElementById('mp-begin');
             if (bb) bb.disabled = !(p.status === 0 && p.players.length >= SEATS && PLAYERS[0] === MY_WALLET);
@@ -565,7 +610,7 @@
                 show(p);
                 if (p.status === 1) {
                     stopPoll();
-                    relay('mpBoard', { sessionId: SID }).then(function (j) {
+                    relayLive('mpBoard', { sessionId: SID }).then(function (j) {
                         applyBoard(j.view);
                         beginTurn();
                     }).catch(function () {});
@@ -633,8 +678,9 @@
                 }
             }
             MY_SEAT = 0;
-            var created = await relay('mpCreate', { seatCount: SEATS, wallet: evm, sessionKey: MY_KEY.address, players: players, sessionKeys: keys });
+            var created = await relay('mpCreate', { seatCount: SEATS, wallet: evm, sessionKey: MY_KEY.address, players: players, sessionKeys: keys, hostQuad: Number((document.getElementById('mp-color') || {}).value || 0) });
             SID = created.sessionId;
+            if (created.quadOrder && created.quadOrder.length) QUADS = created.quadOrder;
             PLAYERS = created.players;
             SKEYS = created.players.map(function (_, i) { return (keys[i] || ''); });
             SEATS = created.view.seatCount;
@@ -697,7 +743,7 @@
             if (!seated && j.status === 0) {
                 var jj = await relayJoin('mpJoin', { sessionId: sessionId, wallet: evm, sessionKey: window.ggiSessionKey.address });
                 if (!jj || jj.seat == null || jj.seat < 0) { setPrompt((jj && jj.error) || 'Join failed (seats may be full).'); return { ok: false, reason: (jj && jj.error) || 'join failed' }; }
-                if (ui().log) ui().log('Joined as ' + COLOR_OF[jj.seat] + ' (seat ' + jj.seat + ')', 0);
+                if (ui().log) ui().log('Joined as ' + quad(jj.seat) + ' (seat ' + jj.seat + ')', 0);
                 j = await relay('mpRejoin', { sessionId: sessionId, wallet: evm });
             }
             // VERIFY BEFORE DRAW: the relay is an untrusted cache. A tampered
@@ -722,6 +768,7 @@
             SID = j.sessionId;
             try { if (history && history.replaceState) history.replaceState(null, '', lobbyLink()); } catch (e) {}
             SEATS = j.seatCount;
+            if (j.quadOrder && j.quadOrder.length) QUADS = j.quadOrder;
             PLAYERS = j.players || [];
             SKEYS = j.sessionKeys || [];
             MY_WALLET = evm;
@@ -746,7 +793,7 @@
             if (ui().ids) ui().ids(SID, j);
             if (j.status === 0) {
                 setPrompt('Lobby: waiting for seats (' + PLAYERS.length + '/' + SEATS + '). The match begins automatically when full.');
-                if (ui().log) ui().log('In lobby as ' + COLOR_OF[MY_SEAT], 0);
+                if (ui().log) ui().log('In lobby as ' + quad(MY_SEAT), 0);
                 pollLobby();
             } else {
                 if (ui().log) ui().log('Rejoined multiplayer session ' + short(SID), 0);
@@ -779,7 +826,7 @@
         var col = Math.floor(x / cell), row = Math.floor(y / cell);
         for (var i = 0; i < 4; i++) {
             var steps = VIEW.steps[MY_SEAT * 4 + i];
-            var pos = steps < 0 ? HOME_YARDS[COLOR_OF[MY_SEAT]][i] : tokenCR(MY_SEAT, steps);
+            var pos = steps < 0 ? HOME_YARDS[quad(MY_SEAT)][i] : tokenCR(MY_SEAT, steps);
             if (!pos) continue;
             if (pos.c === col && pos.r === row) { userMove(i); return; }
         }

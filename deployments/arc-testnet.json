@@ -121,6 +121,12 @@
       "upgradedAt": "2026-09-29",
       "note": "Clock-sketch hardening: handover-anchored moveTss[0], chain-anchored relay timestamps (never ahead of head, never below previous), 120s future tolerance for testnet head jitter. Same proxies, same data.",
       "gamesImpl": "0x9bD60E6582dC26845845F8E7D22356a7E03B03Ea"
+    },
+    "v5TimeoutForcedPass": {
+      "upgradedAt": "2026-09-30",
+      "note": "Timeout (kind 3) is now a forced pass with kind-2 turn rules: pending double-six bonus stays on the same seat, otherwise the turn advances. Timer triggers the normal mechanism, never overrides rules. Same proxies, same data.",
+      "gamesImpl": "0xa735642E6D5909030fbdfCc01228D38D0EBe6eb8",
+      "mergedImpl": "0x6FD759E5A708c4bDFc966E1ECD748e880549CF78"
     }
   }
 }
