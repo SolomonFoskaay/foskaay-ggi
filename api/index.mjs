@@ -1168,8 +1168,9 @@ async function doMpGame(body) {
 }
 
 // gfgnew/board/ludo standalone MP (Arc testnet) — additive, never touches the
-// demo or ludo-mp actions. Imported from api/ludo-arc.mjs.
-import { actions as ludoArcActions } from './ludo-arc.mjs';
+// demo or ludo-mp actions. Imported from lib/ludo-arc.mjs (kept OUT of api/
+// so Vercel never treats it as a second serverless function).
+import { actions as ludoArcActions } from '../lib/ludo-arc.mjs';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') { res.status(405).json({ error: 'method not allowed' }); return; }

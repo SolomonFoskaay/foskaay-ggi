@@ -36,7 +36,7 @@ process.env.GFG_Arc_Gasless_Sponsor_Key = envVal('GFG_Arc_Gasless_Sponsor_Key');
 process.env.GFG_Arc_RPC = envVal('GFG_Arc_RPC', 'https://rpc.testnet.arc.io');
 
 const RPC = process.env.GFG_Arc_RPC;
-const { actions, ldSessions, ldsFireSettle, ldsDecode, LD_ADDR, GAME_TAG, ldClients } = await import('../api/ludo-arc.mjs');
+const { actions, ldSessions, ldsFireSettle, ldsDecode, LD_ADDR, GAME_TAG, ldClients } = await import('../lib/ludo-arc.mjs');
 
 const pub = createPublicClient({ transport: http(RPC) });
 const coreAbi = parseAbi([
