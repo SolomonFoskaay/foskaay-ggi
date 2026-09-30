@@ -716,8 +716,13 @@ async function doMpCreate(body) {
   const seedCommit = keccak256(seed);
   const gameAddr = String(body.game || MP_ADDR.GFGGames);
   const PAL = ['green', 'yellow', 'blue', 'red'];
-  const hostQuad = Math.min(3, Math.max(0, Number(body.hostQuad || 0)));
-  const quadOrder = [PAL[hostQuad]].concat(PAL.filter((_, i) => i !== hostQuad)).slice(0, seatCount);
+  const hostQuad = PAL[Math.min(3, Math.max(0, Number(body.hostQuad || 0)))] || 'green';
+  const quadOrder = [hostQuad];
+  // Solo pre-filled seats take the remaining quadrants in canonical order.
+  for (const c of PAL) {
+    if (quadOrder.length >= players.length) break;
+    if (quadOrder.indexOf(c) === -1) quadOrder.push(c);
+  }
   const state0 = await mpGameRead(pub, 'getInitialState', [seatCount, 0], gameAddr);
   const startHash = await mpGameRead(pub, 'hashState', [state0], gameAddr);
   const code = BigInt(sessionId).toString(36).toUpperCase().slice(-6);
@@ -726,9 +731,10 @@ async function doMpCreate(body) {
   return { sessionId, code, seatCount, players, status: 0, quadOrder, view: mpViewOf(sess), iid: MP_IID };
 }
 
-/// MPJOIN: one tap. A signed-in wallet claims the first free seat with its own
-/// silently-generated session key address. No wallet copying: the code/link is
-/// the only thing shared. Joins lock once the match begins.
+/// MPJOIN: one tap on a free quadrant. A signed-in wallet claims a seat with
+/// its own silently-generated session key address, choosing any quadrant not
+/// already taken (filled seats are locked). No wallet copying: the code/link
+/// is the only thing shared. Joins lock once the match begins.
 async function doMpJoin(body) {
   const sess = mpResolveSession(body);
   if (sess.status !== 0) throw new Error('match already started, no new joins');
@@ -737,11 +743,22 @@ async function doMpJoin(body) {
   if (!wallet || !key) throw new Error('signed-in wallet + session key required');
   const lower = sess.players.map(String).map((x) => x.toLowerCase());
   if (lower.indexOf(wallet.toLowerCase()) !== -1) {
-    return { sessionId: sess.sessionId, seat: lower.indexOf(wallet.toLowerCase()), players: sess.players, status: sess.status, rejoined: true, view: mpViewOf(sess) };
+    return { sessionId: sess.sessionId, seat: lower.indexOf(wallet.toLowerCase()), players: sess.players, status: sess.status, rejoined: true, quadOrder: sess.quadOrder, view: mpViewOf(sess) };
   }
   if (sess.players.length >= sess.seatCount) throw new Error('all seats are taken');
+  const PAL = ['green', 'yellow', 'blue', 'red'];
+  const want = String(body.quad || '').toLowerCase();
+  const taken = sess.quadOrder.map(String).map((x) => x.toLowerCase());
+  let pick = PAL.indexOf(want) >= 0 ? PAL[PAL.indexOf(want)] : '';
+  if (want && (!pick || taken.indexOf(pick) !== -1)) throw new Error('that color seat is taken, pick a free one');
+  if (!pick) {
+    pick = '';
+    for (const c of PAL) { if (taken.indexOf(c) === -1) { pick = c; break; } }
+  }
+  if (!pick) throw new Error('all seats are taken');
   sess.players.push(wallet);
   sess.sessionKeys.push(key);
+  sess.quadOrder.push(pick);
   return { sessionId: sess.sessionId, seat: sess.players.length - 1, players: sess.players, status: sess.status, quadOrder: sess.quadOrder, view: mpViewOf(sess), iid: MP_IID };
 }
 
