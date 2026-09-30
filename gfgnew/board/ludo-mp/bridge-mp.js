@@ -585,7 +585,114 @@
         cacheSave(c);
     }
 
-    // ---- create + join (lobby, zero copying) ----
+    // ---- seat matrix selection (GFG pattern, display + lobby only) ----
+    // Pre-start the host picks mode (2/4), taps slots active/inactive, and sits
+    // in one slot as You. quadOrder sent at create is [you, ...other active].
+    // Live, the same matrix renders occupants from the lobby (filled locked).
+    var MPSEL = { mode: 2, active: ['green', 'red'], youQuad: null };
+    var LASTLOBBY = null;
+
+    function selState() { return MPSEL; }
+
+    function setMode(m) {
+        MPSEL.mode = (m === 4) ? 4 : 2;
+        var PAL = ['green', 'yellow', 'blue', 'red'];
+        MPSEL.active = MPSEL.active.filter(function (q) { return PAL.indexOf(q) >= 0; });
+        while (MPSEL.active.length < MPSEL.mode) {
+            var next = null;
+            for (var i = 0; i < PAL.length; i++) { if (MPSEL.active.indexOf(PAL[i]) === -1) { next = PAL[i]; break; } }
+            if (!next) break;
+            MPSEL.active.push(next);
+        }
+        MPSEL.active = MPSEL.active.slice(0, MPSEL.mode);
+        if (MPSEL.youQuad && MPSEL.active.indexOf(MPSEL.youQuad) === -1) MPSEL.youQuad = null;
+        renderMatrixPre();
+    }
+
+    function quadOrderForStart() {
+        if (!MPSEL.youQuad || MPSEL.active.indexOf(MPSEL.youQuad) === -1) return null;
+        if (MPSEL.active.length !== MPSEL.mode) return null;
+        return [MPSEL.youQuad].concat(MPSEL.active.filter(function (q) { return q !== MPSEL.youQuad; }));
+    }
+
+    function renderMatrixPre() {
+        document.querySelectorAll('#mp-slots .setup-slot').forEach(function (slot) {
+            var q = slot.getAttribute('data-q');
+            var on = MPSEL.active.indexOf(q) !== -1;
+            slot.classList.toggle('off', !on);
+            var st = slot.querySelector('.seat-status');
+            if (st) st.textContent = on ? 'ACTIVE' : 'INACTIVE';
+            var who = slot.querySelector('.seat-who');
+            if (who) who.textContent = (MPSEL.youQuad === q) ? 'You' : '';
+            var you = slot.querySelector('.seat-you');
+            if (you) {
+                you.textContent = (MPSEL.youQuad === q) ? 'You ✔' : 'Sit here';
+                you.classList.toggle('me', MPSEL.youQuad === q);
+            }
+        });
+        var b2 = document.getElementById('mp-mode-2p');
+        var b4 = document.getElementById('mp-mode-4p');
+        if (b2) b2.classList.toggle('active', MPSEL.mode === 2);
+        if (b4) b4.classList.toggle('active', MPSEL.mode === 4);
+    }
+
+    // Slot tap: pre-start host toggles/claims; live lobby joiner sits free seat.
+    function tapSlot(q) {
+        if (['green', 'yellow', 'blue', 'red'].indexOf(q) === -1) { renderMatrixPre(); return; }
+        if (SID) {
+            // Live lobby: filled locked, free joins now.
+            var p = LASTLOBBY;
+            if (!p) { setPrompt('Open the shared link first, then tap a free seat.'); return; }
+            var idx = (p.quadOrder || []).indexOf(q);
+            if (idx === -1) { setPrompt(q + ' is not in this match.'); return; }
+            if (idx < (p.players || []).length) { setPrompt(q + ' is taken. Pick a free seat.'); return; }
+            var evm = myWallet();
+            if (!evm) { if (typeof window.openDynamicLogin === 'function') window.openDynamicLogin(); return; }
+            rejoin(SID, evm);
+            return;
+        }
+        // Pre-start: toggle button flips active; Sit-here claims You.
+        var i = MPSEL.active.indexOf(q);
+        if (MPSEL.youQuad !== q) {
+            if (i === -1) {
+                if (MPSEL.active.length >= MPSEL.mode) {
+                    // Full: swap out the last non-you active slot.
+                    var drop = null;
+                    for (var d = MPSEL.active.length - 1; d >= 0; d--) {
+                        if (MPSEL.active[d] !== MPSEL.youQuad) { drop = MPSEL.active[d]; break; }
+                    }
+                    if (drop) MPSEL.active.splice(MPSEL.active.indexOf(drop), 1);
+                    else return;
+                }
+                MPSEL.active.push(q);
+            }
+            MPSEL.youQuad = q;
+        } else {
+            MPSEL.youQuad = null;
+        }
+        renderMatrixPre();
+    }
+
+    function renderMatrixLive(p) {
+        LASTLOBBY = p;
+        var evm = myWallet();
+        var myAddr = evm ? String(evm).toLowerCase() : '';
+        document.querySelectorAll('#mp-slots .setup-slot').forEach(function (slot) {
+            var q = slot.getAttribute('data-q');
+            var qi = (p.quadOrder || []).indexOf(q);
+            var inMatch = qi !== -1;
+            slot.classList.toggle('off', !inMatch);
+            var st = slot.querySelector('.seat-status');
+            if (st) st.textContent = !inMatch ? 'INACTIVE' : ((p.players || []).length > qi ? 'TAKEN' : 'FREE');
+            var who = slot.querySelector('.seat-who');
+            if (who) {
+                var w = (inMatch && (p.players || [])[qi]) || '';
+                who.textContent = w ? ((String(w).toLowerCase() === myAddr ? 'You' : short(w))) : (inMatch ? 'tap to sit' : '');
+            }
+            var you = slot.querySelector('.seat-you');
+            if (you) { you.textContent = 'Sit here'; you.classList.toggle('me', !!(inMatch && (p.players || [])[qi] && String((p.players || [])[qi]).toLowerCase() === myAddr)); }
+        });
+    }
     // Host opens a lobby (no handover yet). Joiners tap the shared link, signed
     // in: their wallet + fresh silent key address join automatically. When every
     // seat is filled the HOST device begins (one handover, sponsor pays) and
@@ -606,10 +713,7 @@
         stopPoll();
         var show = function (p) {
             if (p.quadOrder && p.quadOrder.length) QUADS = p.quadOrder;
-            var el = document.getElementById('mp-lobby');
-            if (el) el.innerHTML = 'Seats ' + p.players.length + '/' + SEATS + ': ' + p.players.map(function (w, i) {
-                return '<b>' + quad(i) + '</b> ' + short(w) + (w === MY_WALLET ? ' (you)' : '');
-            }).join(' &nbsp; ') + (p.iid ? ' <span class="ld-muted">relay ' + p.iid + '</span>' : '');
+            renderMatrixLive(p);
             var bb = document.getElementById('mp-begin');
             if (bb) bb.disabled = !(p.status === 0 && p.players.length >= SEATS && PLAYERS[0] === MY_WALLET);
             // Envelope stays fresh from every lobby sighting (for rebuilds).
@@ -687,13 +791,12 @@
                 // computers): relay-signed, on-chain, earning nothing.
                 var sp = await relay('mpSponsor', {});
                 SPONSOR_ADDR = sp.address;
-                for (var i = 1; i < SEATS; i++) {
+                for (var i = 1; i < qo.length; i++) {
                     players.push(SPONSOR_ADDR);
                     keys.push(SPONSOR_ADDR);
                 }
             }
-            MY_SEAT = 0;
-            var created = await relay('mpCreate', { seatCount: SEATS, wallet: evm, sessionKey: MY_KEY.address, players: players, sessionKeys: keys, hostQuad: Number((document.getElementById('mp-color') || {}).value || 0) });
+            var created = await relay('mpCreate', { seatCount: qo.length, wallet: evm, sessionKey: MY_KEY.address, players: players, sessionKeys: keys, quadOrder: qo });
             SID = created.sessionId;
             if (created.quadOrder && created.quadOrder.length) QUADS = created.quadOrder;
             PLAYERS = created.players;
@@ -862,6 +965,10 @@
         start: start,
         rejoin: rejoin,
         begin: begin,
+        tapSlot: tapSlot,
+        setMode: setMode,
+        selState: selState,
+        renderMatrix: renderMatrixPre,
         pass: passTurn,
         timeout: timeoutSeat,
         settle: settle,
