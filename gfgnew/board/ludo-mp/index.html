@@ -40,6 +40,15 @@
         .ld-faq .ld-a a { color: #f39c12; }
         .ld-faq .ld-a code { color: #cfe8ff; font-size: 0.78rem; word-break: break-all; }
         .ld-addr { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.78rem; color: #cfe8ff; word-break: break-all; }
+        .mode-btn.active { background: linear-gradient(135deg,#f39c12,#9b59b6); border-color: transparent; }
+        .setup-slots-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+        .setup-slot { flex: 1 1 21%; min-width: 120px; border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 8px; text-align: center; }
+        .setup-slot .seat-toggle { width: 100%; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); color: #fff; font-weight: 800; font-size: 0.8rem; border-radius: 9px; padding: 8px 4px; cursor: pointer; }
+        .setup-slot.off { opacity: 0.45; }
+        .setup-slot .seat-status { display: block; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.06em; margin-top: 6px; color: #8f8fa0; }
+        .setup-slot .seat-who { display: block; font-size: 0.72rem; margin-top: 4px; color: #b9b9c6; word-break: break-all; min-height: 1.1em; }
+        .setup-slot .seat-you { margin-top: 6px; font-size: 0.72rem; font-weight: 800; border-radius: 999px; border: 1px solid #f39c12; background: transparent; color: #f39c12; padding: 4px 10px; cursor: pointer; }
+        .setup-slot .seat-you.me { background: linear-gradient(135deg,#f39c12,#9b59b6); color: #111; border-color: transparent; }
     </style>
 </head>
 <body>
@@ -56,27 +65,42 @@
                 <button class="ld-btn primary" id="mp-new">Start multiplayer match</button>
                 <button class="ld-btn" id="mp-begin" disabled>Start match</button>
                 <button class="ld-btn" id="mp-join">Join with code</button>
-                <label class="ld-muted" style="margin-left:auto">Players
-                    <select id="mp-seats" class="ld-btn" style="padding:8px 10px">
-                        <option value="2" selected>2</option>
-                        <option value="4">4</option>
-                    </select>
-                </label>
-                <label class="ld-muted">Color
-                    <select id="mp-color" class="ld-btn" style="padding:8px 10px">
-                        <option value="0" selected>Green</option>
-                        <option value="1">Yellow</option>
-                        <option value="2">Blue</option>
-                        <option value="3">Red</option>
-                    </select>
-                </label>
+                <span class="ld-muted">Players</span>
+                <button class="ld-btn mode-btn active" id="mp-mode-2p">2</button>
+                <button class="ld-btn mode-btn" id="mp-mode-4p">4</button>
+                <label class="ld-muted"><input type="checkbox" id="mp-solo"> Solo</label>
             </div>
         </div>
 
         <div class="ld-panel" id="mp-panel-lobby">
-            <b style="color:#fff;font-size:0.9rem">Start: open a lobby</b>
-            <p class="ld-muted" style="margin:6px 0 10px">Solo test plays you against the computer. Real match: press Start, share the session link, opponents tap it and join by themselves. Press Start match when every seat is filled.</p>
-            <div class="ld-row" style="margin-bottom:10px">
+            <b style="color:#fff;font-size:0.9rem">Seats: tap a color to sit, tap again to leave it</b>
+            <div class="setup-slots-row" id="mp-slots">
+                <div class="setup-slot" data-q="green">
+                    <button class="seat-toggle" style="color:#2ecc71">GREEN</button>
+                    <span class="seat-status">ACTIVE</span>
+                    <span class="seat-who"></span>
+                    <button class="seat-you">Sit here</button>
+                </div>
+                <div class="setup-slot" data-q="yellow">
+                    <button class="seat-toggle" style="color:#f1c40f">YELLOW</button>
+                    <span class="seat-status">INACTIVE</span>
+                    <span class="seat-who"></span>
+                    <button class="seat-you">Sit here</button>
+                </div>
+                <div class="setup-slot" data-q="blue">
+                    <button class="seat-toggle" style="color:#3498db">BLUE</button>
+                    <span class="seat-status">INACTIVE</span>
+                    <span class="seat-who"></span>
+                    <button class="seat-you">Sit here</button>
+                </div>
+                <div class="setup-slot" data-q="red">
+                    <button class="seat-toggle" style="color:#e74c3c">RED</button>
+                    <span class="seat-status">ACTIVE</span>
+                    <span class="seat-who"></span>
+                    <button class="seat-you">Sit here</button>
+                </div>
+            </div>
+            <div class="ld-row" style="margin-top:10px;margin-bottom:10px">
                 <label class="ld-muted"><input type="checkbox" id="mp-solo"> Solo test (computer seats)</label>
             </div>
             <div class="ld-muted" id="mp-lobby">No lobby yet.</div>
@@ -86,13 +110,7 @@
 
         <div class="ld-panel" id="mp-panel-join">
             <b style="color:#fff;font-size:0.9rem">Join: one tap</b>
-            <p class="ld-muted" style="margin:6px 0 10px">Sign in, paste the session link or code, pick a free color, press Join. Your seat key is created silently on this phone and only its address travels. Nothing to copy by hand.</p>
-            <div class="ld-row" style="margin-bottom:8px" id="mp-quads">
-                <button class="ld-btn mp-quad" data-q="green" style="border-color:#2ecc71">Green</button>
-                <button class="ld-btn mp-quad" data-q="yellow" style="border-color:#f1c40f">Yellow</button>
-                <button class="ld-btn mp-quad" data-q="blue" style="border-color:#3498db">Blue</button>
-                <button class="ld-btn mp-quad" data-q="red" style="border-color:#e74c3c">Red</button>
-            </div>
+            <p class="ld-muted" style="margin:6px 0 10px">Open the shared link and tap a free color seat above, or paste link or code here and press Join. Filled seats are locked. Your seat key is created silently and only its address travels.</p>
             <div class="ld-row">
                 <input id="mp-code-in" class="ld-btn" style="flex:1;min-width:200px" placeholder="paste session link or code">
                 <button class="ld-btn primary" id="mp-join-go">Join</button>
@@ -217,18 +235,21 @@
             .catch(function () {});
     }
     window.updatePoints = updatePoints;
-    window.mpJoinQuad = '';
-    document.querySelectorAll('.mp-quad').forEach(function (b) {
-        b.addEventListener('click', function () {
-            window.mpJoinQuad = b.getAttribute('data-q');
-            document.querySelectorAll('.mp-quad').forEach(function (x) { x.style.opacity = (x === b) ? '1' : '0.45'; });
-        });
+    function bridge() { return window.GFG_MP || null; }
+    $('mp-mode-2p').addEventListener('click', function () { var g = bridge(); if (g) g.setMode(2); });
+    $('mp-mode-4p').addEventListener('click', function () { var g = bridge(); if (g) g.setMode(4); });
+    document.querySelectorAll('#mp-slots .setup-slot').forEach(function (slot) {
+        var q = slot.getAttribute('data-q');
+        var tg = slot.querySelector('.seat-toggle');
+        if (tg) tg.addEventListener('click', function () { var g = bridge(); if (g) g.tapSlot(q); });
+        var you = slot.querySelector('.seat-you');
+        if (you) you.addEventListener('click', function () { var g = bridge(); if (g) g.tapSlot(q); });
     });
 
     $('mp-new').addEventListener('click', async function () {
         if (!window.GFG_MP) { $('mp-status').innerHTML = 'Game engine still loading, tap again in a second.'; return; }
         busyBtn('mp-new', 'Starting...');
-        try { await window.GFG_MP.start(Number($('mp-seats').value), $('mp-solo').checked); }
+        try { await window.GFG_MP.start(0, $('mp-solo').checked); }
         finally { busyBtn('mp-new', 'Start multiplayer match'); }
     });
     function busyBtn(id, label) {
@@ -265,7 +286,7 @@
         if (!window.GFG_MP) { $('mp-status').innerHTML = 'Game engine still loading, tap again in a second.'; return; }
         busyBtn('mp-join-go', 'Joining...');
         try {
-            var r = await window.GFG_MP.rejoin(code, evm, window.mpJoinQuad || '');
+            var r = await window.GFG_MP.rejoin(code, evm, '');
             if (r && !r.ok) $('mp-status').innerHTML = 'Join: <b>' + ((r && r.reason) || 'failed, tap again') + '</b>';
         } finally {
             busyBtn('mp-join-go', false);
@@ -292,6 +313,7 @@
         setTimeout(attempt, 1200);
     }
     try { window.addEventListener('gfg:auth-changed', updatePoints, false); } catch (e) {}
+    setTimeout(function () { try { if (window.GFG_MP && window.GFG_MP.renderMatrix) window.GFG_MP.renderMatrix(); } catch (e) {} }, 900);
     if (document.readyState !== 'loading') { resumeFromQuery(); }
     else document.addEventListener('DOMContentLoaded', resumeFromQuery);
 })();

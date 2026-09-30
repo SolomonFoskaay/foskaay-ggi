@@ -715,14 +715,21 @@ async function doMpCreate(body) {
   const seed = keccak256(toBytes('ggi-ludo-mp-' + sessionId));
   const seedCommit = keccak256(seed);
   const gameAddr = String(body.game || MP_ADDR.GFGGames);
+  // Quadrant seats (GFG pattern): the host activates the quadrants in play and
+  // sits first. quadOrder is fixed at create, one quadrant per seat; joiners
+  // take empty seats, filled seats are locked. Colors are display only.
   const PAL = ['green', 'yellow', 'blue', 'red'];
+  let quadOrder = Array.isArray(body.quadOrder) ? body.quadOrder.map(String).map((x) => x.toLowerCase()) : [];
+  quadOrder = quadOrder.filter((c, i) => PAL.indexOf(c) >= 0 && quadOrder.indexOf(c) === i);
   const hostQuad = PAL[Math.min(3, Math.max(0, Number(body.hostQuad || 0)))] || 'green';
-  const quadOrder = [hostQuad];
-  // Solo pre-filled seats take the remaining quadrants in canonical order.
-  for (const c of PAL) {
-    if (quadOrder.length >= players.length) break;
-    if (quadOrder.indexOf(c) === -1) quadOrder.push(c);
+  if (!quadOrder.length) {
+    quadOrder = [hostQuad];
+    for (const c of PAL) {
+      if (quadOrder.length >= players.length) break;
+      if (quadOrder.indexOf(c) === -1) quadOrder.push(c);
+    }
   }
+  if (quadOrder.length !== seatCount) throw new Error('quadrant seats must equal seat count');
   const state0 = await mpGameRead(pub, 'getInitialState', [seatCount, 0], gameAddr);
   const startHash = await mpGameRead(pub, 'hashState', [state0], gameAddr);
   const code = BigInt(sessionId).toString(36).toUpperCase().slice(-6);
@@ -746,20 +753,11 @@ async function doMpJoin(body) {
     return { sessionId: sess.sessionId, seat: lower.indexOf(wallet.toLowerCase()), players: sess.players, status: sess.status, rejoined: true, quadOrder: sess.quadOrder, view: mpViewOf(sess) };
   }
   if (sess.players.length >= sess.seatCount) throw new Error('all seats are taken');
-  const PAL = ['green', 'yellow', 'blue', 'red'];
-  const want = String(body.quad || '').toLowerCase();
-  const taken = sess.quadOrder.map(String).map((x) => x.toLowerCase());
-  let pick = PAL.indexOf(want) >= 0 ? PAL[PAL.indexOf(want)] : '';
-  if (want && (!pick || taken.indexOf(pick) !== -1)) throw new Error('that color seat is taken, pick a free one');
-  if (!pick) {
-    pick = '';
-    for (const c of PAL) { if (taken.indexOf(c) === -1) { pick = c; break; } }
-  }
-  if (!pick) throw new Error('all seats are taken');
+  // Seat = first empty index; its quadrant was fixed at create (locked map).
+  const seat = sess.players.length;
   sess.players.push(wallet);
   sess.sessionKeys.push(key);
-  sess.quadOrder.push(pick);
-  return { sessionId: sess.sessionId, seat: sess.players.length - 1, players: sess.players, status: sess.status, quadOrder: sess.quadOrder, view: mpViewOf(sess), iid: MP_IID };
+  return { sessionId: sess.sessionId, seat, quadrant: (sess.quadOrder || [])[seat] || '', players: sess.players, status: sess.status, quadOrder: sess.quadOrder, view: mpViewOf(sess), iid: MP_IID };
 }
 
 /// MPLOBBY: free read of who is seated (for the host + joiners to watch fill).
